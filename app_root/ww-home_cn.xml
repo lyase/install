@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <messages>
     <message id="template">
+        <div id="page" style="padding:10px;">
 
         <div id="banner_wrapper">
             <div id="banner_content">
@@ -33,7 +34,7 @@
                 </div>
 
                 <div id="footer_menu" style="float: right; display: inline;">
-                    <a href="http://beta.WittyWizard.org:8088">Home</a> | <a href="http://beta.WittyWizard.org:8088/contact">Contact</a>
+                    <a href="http://beta.WittyWizard.org:8088">家</a> | <a href="http://beta.WittyWizard.org:8088/contact">聯繫</a>
                 </div>
 
                 <div id="chat"></div>
@@ -54,9 +55,10 @@
             /* ]]> */
             </script>
         </div>
+        </div>
     </message>
 
-    <message id="wt">俏皮精灵，C + + Web工具包的内容管理系统（CMS）</message>
+    <message id="page.title">俏皮精灵，C + + Web工具包的内容管理系统（CMS）</message>
 
     <message id="title">俏皮精灵</message>
     <message id="home">家</message>
@@ -64,6 +66,7 @@
     <message id="chat">聊天</message>
     <message id="video">视频</message>
     <message id="contact">联系</message>
+    <message id="about">關於</message>
 
     <message id="home.intro">
 
@@ -85,6 +88,16 @@
 
         <p>
             工作联系表。
+        </p>
+
+
+    </message>
+
+    <message id="home.about">
+
+
+        <p>
+            关于在工作表.
         </p>
 
 
