@@ -1,62 +1,63 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <messages>
     <message id="template">
-
-        <div id="banner_wrapper">
-            <div id="banner_content">
-                <div id="banner_end">
-                    <div id="banner">
-                        <!-- <a href="#">Witty Wizard</a> -->
+        <div id="page" style="padding:10px;">
+            <div id="banner_wrapper">
+                <div id="banner_content">
+                    <div id="banner_end">
+                        <div id="banner">
+                            <!-- <a href="#">Witty Wizard</a> -->
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <div id="main_wrapper">
-            <div id="main_menu">
-                ${menu}
-            </div>
-            <div class="clearall"></div>
-        </div>
-
-        <div id="main_content" class="panel">
-            <div id="content" class="panel-body">
-                ${contents}
-            </div>
-        </div>
-
-        <div id="footer_wrapper" class="panel">
-            <div id="footer_content" class="panel-footer">
-                <div id="footer_copyright" style="display: inline;">
-                    Witty Wizard Content Management System (CMS)
-                    <a href="http://WittyWizard.org/">WittyWizard.org</a>
+            <div id="main_wrapper">
+                <div id="main_menu">
+                    ${menu}
                 </div>
-
-                <div id="footer_menu" style="float: right; display: inline;">
-                    <a href="http://beta.WittyWizard.org:8088">Home</a> | <a href="http://beta.WittyWizard.org:8088/contact">Contact</a>
-                </div>
-
-                <div id="chat"></div>
-                <script src="http://www.webtoolkit.eu/wt/examples/simplechat/chat.js?div=chat" type="text/javascript"></script>
-
                 <div class="clearall"></div>
             </div>
-            <script>
-            /*<![CDATA[*/
-              (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-              (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-              m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-              })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
 
-              ga('create', 'UA-48275805-1', 'wittywizard.org');
-              ga('send', 'pageview');
+            <div id="main_content" class="panel">
+                <div id="content" class="panel-body">
+                    ${contents}
+                </div>
+            </div>
 
-            /* ]]> */
-            </script>
+            <div id="footer_wrapper" class="panel">
+                <div id="footer_content" class="panel-footer">
+                    <div id="footer_copyright" style="display: inline;">
+                        Witty Wizard Content Management System (CMS)
+                        <a href="http://beta.WittyWizard.org/">beta.WittyWizard.org</a>
+                    </div>
+
+                    <div id="footer_menu" style="float: right; display: inline;">
+                        <a href="http://beta.WittyWizard.org:8088">Home</a> | <a href="http://beta.WittyWizard.org:8088/contact">Contact</a>
+                    </div>
+
+                    <div id="chat"></div>
+                    <script src="http://www.webtoolkit.eu/wt/examples/simplechat/chat.js?div=chat" type="text/javascript"></script>
+
+                    <div class="clearall"></div>
+                </div>
+                <script>
+                /*<![CDATA[*/
+                (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+                  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+                  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+                  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+                  ga('create', 'UA-48275805-1', 'wittywizard.org');
+                  ga('send', 'pageview');
+
+                /* ]]> */
+                </script>
+            </div>
         </div>
     </message>
 
-    <message id="wt">Witty Wizard, C++ Web Toolkit Content Managment System (CMS)</message>
+    <message id="page.title">Witty Wizard, C++ Web Toolkit Content Managment System (CMS)</message>
 
     <message id="title">Witty Wizard</message>
     <message id="home">Home</message>
@@ -64,6 +65,7 @@
     <message id="chat">Chat</message>
     <message id="video">Video</message>
     <message id="contact">Contact</message>
+    <message id="about">About</message>
 
     <message id="home.intro">
 
@@ -85,6 +87,16 @@
 
         <p>
             Contact Form in work.
+        </p>
+
+
+    </message>
+
+    <message id="home.about">
+
+
+        <p>
+            About Form in work.
         </p>
 
 
@@ -144,6 +156,7 @@
             target="_blank">Sintel</a>, (c) copyright Blender Foundation | durian.blender.org
         </p>
     </message>
+
     <message id="html5">
         <h2>Native video</h2>
         <p>
@@ -194,6 +207,14 @@
             </tt>
             may be used to implement the controls, using native form elements. In this way, the user-interface is easily customized and adapted to your needs and skinned using CSS.
         </p>
+    </message>
+
+    <message id="yewtube-template">
+
+        <div id="yewtube">
+            ${iframe}
+        </div>
+
     </message>
 
 </messages>
