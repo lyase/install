@@ -2,6 +2,7 @@
 <messages>
     <message id="template">
 
+        <div id="page" style="padding:10px;">
         <div id="banner_wrapper">
             <div id="banner_content">
                 <div id="banner_end">
@@ -33,7 +34,7 @@
                 </div>
 
                 <div id="footer_menu" style="float: right; display: inline;">
-                    <a href="http://beta.WittyWizard.org:8088">Home</a> | <a href="http://beta.WittyWizard.org:8088/contact">Contact</a>
+                    <a href="http://beta.WittyWizard.org:8088">домой</a> | <a href="http://beta.WittyWizard.org:8088/contact">контакт</a>
                 </div>
 
                 <div id="chat"></div>
@@ -54,9 +55,10 @@
             /* ]]> */
             </script>
         </div>
+        </div>
     </message>
 
-    <message id="wt">Мастер Остроумный, C + + Web Toolkit Содержимое Managment System (CMS)</message>
+    <message id="page.title">Мастер Остроумный, C + + Web Toolkit Содержимое Managment System (CMS)</message>
 
     <message id="title">Мастер Остроумный</message>
     <message id="home">домой</message>
@@ -64,6 +66,7 @@
     <message id="chat">Чат</message>
     <message id="video">видео</message>
     <message id="contact">контакт</message>
+    <message id="about">о</message>
 
     <message id="home.intro">
 
@@ -85,6 +88,16 @@
 
         <p>
             Контактный формуляр в работе.
+        </p>
+
+
+    </message>
+
+    <message id="home.about">
+
+
+        <p>
+            О форме в работе.
         </p>
 
 
