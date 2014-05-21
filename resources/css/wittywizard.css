@@ -6,3 +6,18 @@ body
 {
     background-color: #696C86;
 }
+
+select.form-control
+{
+    width: 220px;
+    background-color: #FFFFFF;
+    border: 1px solid #CCCCCC;
+    display: inline;
+}
+
+#videocan
+{
+    width: 100%;
+    text-align: center;
+    margin: 0 auto;
+}
