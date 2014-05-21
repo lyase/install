@@ -11,29 +11,25 @@
 
 #include "Post.h"
 /* ****************************************************************************
- * Comment
+ * Prototype Comment
  */
 class Comment;
 /* ****************************************************************************
- * Token
+ * Prototype Token
  */
 class Token;
 /* ****************************************************************************
- * dbo
- */
-namespace dbo = Wt::Dbo;
-/* ****************************************************************************
  * Comments
  */
-typedef dbo::collection< dbo::ptr<Comment> > Comments;
+typedef Wt::Dbo::collection< Wt::Dbo::ptr<Comment> > Comments;
 /* ****************************************************************************
- * Posts
+ * ptr Posts
  */
-typedef dbo::collection< dbo::ptr<Post> > Posts;
+typedef Wt::Dbo::collection< Wt::Dbo::ptr<Post> > Posts;
 /* ****************************************************************************
- * Tokens
+ * ptr Tokens
  */
-typedef dbo::collection< dbo::ptr<Token> > Tokens;
+typedef Wt::Dbo::collection< Wt::Dbo::ptr<Token> > Tokens;
 /* ****************************************************************************
  * User
  */
@@ -70,19 +66,19 @@ class User
         template<class Action>
         void persist(Action& a)
         {
-            dbo::field(a, name,                "name");
-            dbo::field(a, password,            "password");
-            dbo::field(a, passwordMethod,      "password_method");
-            dbo::field(a, passwordSalt,        "password_salt");
-            dbo::field(a, role,                "role");
-            dbo::field(a, failedLoginAttempts, "failed_login_attempts");
-            dbo::field(a, lastLoginAttempt,    "last_login_attempt");
-            dbo::field(a, oAuthId,             "oauth_id");
-            dbo::field(a, oAuthProvider,       "oauth_provider");
+            Wt::Dbo::field(a, name,                "name");
+            Wt::Dbo::field(a, password,            "password");
+            Wt::Dbo::field(a, passwordMethod,      "password_method");
+            Wt::Dbo::field(a, passwordSalt,        "password_salt");
+            Wt::Dbo::field(a, role,                "role");
+            Wt::Dbo::field(a, failedLoginAttempts, "failed_login_attempts");
+            Wt::Dbo::field(a, lastLoginAttempt,    "last_login_attempt");
+            Wt::Dbo::field(a, oAuthId,             "oauth_id");
+            Wt::Dbo::field(a, oAuthProvider,       "oauth_provider");
 
-            dbo::hasMany(a, comments,   dbo::ManyToOne, "author");
-            dbo::hasMany(a, posts,      dbo::ManyToOne, "author");
-            dbo::hasMany(a, authTokens, dbo::ManyToOne, "user");
+            Wt::Dbo::hasMany(a, comments,   Wt::Dbo::ManyToOne, "author");
+            Wt::Dbo::hasMany(a, posts,      Wt::Dbo::ManyToOne, "author");
+            Wt::Dbo::hasMany(a, authTokens, Wt::Dbo::ManyToOne, "user");
         }
 };
 
