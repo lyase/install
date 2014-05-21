@@ -36,7 +36,12 @@ HEADERS += FileItem.h model/BlogSession.h model/BlogUserDatabase.h model/Comment
             model/hitCounter.h view/BlogImpl.h view/VideoImpl.h \
     model/TheVideo.h \
     model/VideoSession.h \
-    view/VideoView.h
+    view/VideoView.h \
+    rapidxml/rapidxml.hpp \
+    rapidxml/rapidxml_xhtml.hpp \
+    rapidxml/rapidxml_utils.hpp \
+    rapidxml/rapidxml_print.hpp \
+    rapidxml/rapidxml_iterators.hpp
 #
 # Remove Other Files before posting to github
 OTHER_FILES += wt-home.xml wt-home_cn.xml wt-home_ru.xml \
@@ -112,7 +117,9 @@ OTHER_FILES += wt-home.xml wt-home_cn.xml wt-home_ru.xml \
     ../../../../../vetshelpcenter/app_root/ww-home_ru.xml \
     ../../../../../vetshelpcenter/app_root/ww-home.xml \
     ../../../../../wittywizard/app_root/ww-home.xml \
-    ../build-WittyWizard-Desktop-Debug/app_root/domains.xml
+    ../build-WittyWizard-Desktop-Debug/app_root/domains.xml \
+    rapidxml/manual.html \
+    rapidxml/license.txt
 
 # PostgreSql
 DEFINES += POSTGRES
