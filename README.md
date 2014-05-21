@@ -5,7 +5,7 @@ a C++ HTTP Library, which makes it easy to write Web Based applications.
 
 The main Goal in this project is to provide an Installation Script written in Bash, 
 and Called the WittyWizard-install.sh Script,
-and CMS written in C++, know as Witty Wizard, 
+and CMS written in C++ using Witty, so its know as Witty Wizard,
 as well as a Video Tutorial Series called The Witty Wizard, with a You-Tube Chanel. 
 
 The Tutorial Video Series, is targeted for none Programmers, as well as seasoned vets
@@ -83,3 +83,14 @@ Other Steps will cover topics like Blogs, Forums, Calenders, Email, Shopping Car
 When Completed this CMS can be used to run small to large business, and up to Governments,
 so it scales up very easy, its security has to be the best, and be easy to use.
 
+Style Guild:
+Braces are all vertically lined up with 4 spaces of indention
+function()
+{
+    if () // If statements always have braces
+    {
+    }
+    else
+    {
+    }
+}

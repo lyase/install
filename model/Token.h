@@ -12,23 +12,19 @@
 #include <Wt/Dbo/Types>
 #include <Wt/Dbo/WtSqlTraits>
 /* ****************************************************************************
- * User
+ * Prototype User
  */
 class User;
 /* ****************************************************************************
- * dbo
- */
-namespace dbo = Wt::Dbo;
-/* ****************************************************************************
  * Token
  */
-class Token : public dbo::Dbo<Token>
+class Token : public Wt::Dbo::Dbo<Token>
 {
     public:
         Token();
         Token(const std::string& value, const Wt::WDateTime& expires);
 
-        dbo::ptr<User> user;
+        Wt::Dbo::ptr<User> user;
 
         std::string    value;
         Wt::WDateTime  expires;
@@ -36,10 +32,10 @@ class Token : public dbo::Dbo<Token>
         template<class Action>
         void persist(Action& a)
         {
-            dbo::field(a, value,   "value");
-            dbo::field(a, expires, "expires");
+            Wt::Dbo::field(a, value,   "value");
+            Wt::Dbo::field(a, expires, "expires");
 
-            dbo::belongsTo(a, user, "user");
+            Wt::Dbo::belongsTo(a, user, "user");
         }
 };
 

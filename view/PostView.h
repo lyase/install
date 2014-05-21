@@ -12,13 +12,6 @@
 
 #include "../model/Post.h"
 /* ****************************************************************************
- * WText
- */
-namespace Wt
-{
-    class WText;
-}
-/* ****************************************************************************
  * BlogSession
  */
 class BlogSession;
@@ -34,12 +27,9 @@ class PostView : public Wt::WTemplate
     public:
         enum RenderType { Brief, Detail, Edit };
 
-        PostView(BlogSession& session, const std::string& basePath,
-                 dbo::ptr<Post> post, RenderType type);
+        PostView(BlogSession& session, const std::string& basePath, Wt::Dbo::ptr<Post> post, RenderType type);
 
-        virtual void resolveString(const std::string& varName,
-                                   const std::vector<Wt::WString>& args,
-                                   std::ostream& result);
+        virtual void resolveString(const std::string& varName, const std::vector<Wt::WString>& args, std::ostream& result);
 
     protected:
         virtual void renderTemplate(std::ostream& result);
@@ -47,7 +37,7 @@ class PostView : public Wt::WTemplate
     private:
         BlogSession& session_;
         std::string basePath_;
-        dbo::ptr<Post> post_;
+        Wt::Dbo::ptr<Post> post_;
 
         RenderType viewType_;
         Wt::WText *commentCount_;
@@ -55,16 +45,16 @@ class PostView : public Wt::WTemplate
         Wt::WTextArea *briefEdit_, *bodyEdit_;
 
         void render(RenderType type);
-        void updateCommentCount(dbo::ptr<Comment> comment);
-        void saveEdit();
-        void showView();
+        void UpdateCommentCount(Wt::Dbo::ptr<Comment> comment);
+        void SaveEdit();
+        void ShowView();
 
-        void publish();
-        void retract();
-        void showEdit();
-        void rm();
+        void Publish();
+        void Retract();
+        void ShowEdit();
+        void Rm();
 
-        void setState(Post::State state);
+        void SetState(Post::State state);
 };
 
 #endif // POST_VIEW_H_

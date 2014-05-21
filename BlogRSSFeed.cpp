@@ -2,6 +2,8 @@
  * Copyright (C) 2008 Emweb bvba, Kessel-Lo, Belgium.
  *
  * See the LICENSE file for terms of use.
+ *
+ * Modified for Witty Wizzard
  */
 
 #include <Wt/Http/Response>
@@ -33,13 +35,13 @@ extern std::map <std::string, std::string> myRssFeed;
  */
 BlogRSSFeed::BlogRSSFeed()
 {
-}
+} // end BlogRSSFeed::BlogRSSFeed
 /* ****************************************************************************
  * ~BlogRSSFeed
  */
 BlogRSSFeed::~BlogRSSFeed()
 {
-}
+} // end BlogRSSFeed::~BlogRSSFeed(
 /* ****************************************************************************
  * handleRequest
  */
@@ -142,5 +144,5 @@ void BlogRSSFeed::handleRequest(const Wt::Http::Request &request, Wt::Http::Resp
     response.out() << "  </channel>\n</rss>\n";
 
     t.commit();
-}
+} // end void BlogRSSFeed::handleRequest
 // --- End Of File ------------------------------------------------------------

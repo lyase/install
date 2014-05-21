@@ -2,6 +2,9 @@
  * Copyright (C) 2009 Emweb bvba, Kessel-Lo, Belgium.
  *
  * See the LICENSE file for terms of use.
+ *
+ * Modified for Witty Wizard
+ *
  */
 
 #include "CommentView.h"
@@ -19,19 +22,17 @@
 #include <Wt/WText>
 #include <Wt/WTextArea>
 
-using namespace Wt;
-namespace dbo = Wt::Dbo;
 /* ****************************************************************************
- * CommentView
+ * Comment View
  */
 CommentView::CommentView(BlogSession& session, Wt::Dbo::ptr<Comment> comment) : session_(session), comment_(comment)
 {
     comment_ = comment;
 
-    renderView();
-}
+    RenderView();
+} // end CommentView::CommentView
 /* ****************************************************************************
- * CommentView
+ * Comment View
  */
 CommentView::CommentView(BlogSession& session, long long parentId) : session_(session)
 {
@@ -41,19 +42,19 @@ CommentView::CommentView(BlogSession& session, long long parentId) : session_(se
     comment_.modify()->parent = parent;
     comment_.modify()->post = parent->post;
 
-    edit();
-}
+    Edit();
+} // end CommentView::CommentView
 /* ****************************************************************************
- * isNew
+ * Is New
  */
-bool CommentView::isNew() const
+bool CommentView::IsNew() const
 {
     return comment_.id() == -1;
-}
+} // end bool CommentView::IsNew()
 /* ****************************************************************************
- * edit
+ * Edit
  */
-void CommentView::edit()
+void CommentView::Edit()
 {
     clear();
 
@@ -61,55 +62,55 @@ void CommentView::edit()
 
     setTemplateText(tr("blog-edit-comment"));
 
-    editArea_ = new WTextArea();
+    editArea_ = new Wt::WTextArea();
     editArea_->setText(comment_->textSrc());
     editArea_->setFocus();
 
-    WPushButton *save = new WPushButton(tr("save"));
-    save->clicked().connect(this, &CommentView::save);
+    Wt::WPushButton *save = new Wt::WPushButton(tr("save"));
+    save->clicked().connect(this, &CommentView::Save);
 
-    WPushButton *cancel = new WPushButton(tr("cancel"));
-    cancel->clicked().connect(this, &CommentView::cancel);
+    Wt::WPushButton *cancel = new Wt::WPushButton(tr("cancel"));
+    cancel->clicked().connect(this, &CommentView::Cancel);
 
     bindWidget("area", editArea_);
     bindWidget("save", save);
     bindWidget("cancel", cancel);
 
     t.commit();
-}
+} // end void CommentView::Edit(
 /* ****************************************************************************
- * cancel
+ * Cancel
  */
-void CommentView::cancel()
+void CommentView::Cancel()
 {
-    if (isNew())
+    if (IsNew())
     {
         delete this;
     }
     else
     {
         Wt::Dbo::Transaction t(session_);
-        renderView();
+        RenderView();
         t.commit();
     }
-}
+} // end void CommentView::Cancel
 /* ****************************************************************************
- * renderTemplate
+ * Render Template
  */
 void CommentView::renderTemplate(std::ostream& result)
 {
     Wt::Dbo::Transaction t(session_);
 
-    WTemplate::renderTemplate(result);
+    Wt::WTemplate::renderTemplate(result);
 
     comment_.purge();
 
     t.commit();
-}
+} // end void CommentView::RenderTemplate
 /* ****************************************************************************
- * resolveString
+ * Resolve String
  */
-void CommentView::resolveString(const std::string& varName, const std::vector<WString>& args, std::ostream& result)
+void CommentView::resolveString(const std::string& varName, const std::vector<Wt::WString>& args, std::ostream& result)
 {
     if (varName == "author")
     {
@@ -117,76 +118,76 @@ void CommentView::resolveString(const std::string& varName, const std::vector<WS
     }
     else if (varName == "date")
     {
-        format(result, comment_->date.timeTo(WDateTime::currentDateTime()) + " ago");
+        format(result, comment_->date.timeTo(Wt::WDateTime::currentDateTime()) + " ago");
     }
     else if (varName == "contents")
     {
-        format(result, comment_->textHtml(), XHTMLText);
+        format(result, comment_->textHtml(), Wt::XHTMLText);
     }
     else
     {
-        WTemplate::resolveString(varName, args, result);
+        Wt::WTemplate::resolveString(varName, args, result);
     }
-}
+} // end void CommentView::ResolveString
 /* ****************************************************************************
- * renderView
+ * Render View
  */
-void CommentView::renderView()
+void CommentView::RenderView()
 {
     clear();
 
     bool isRootComment = !comment_->parent;
     setTemplateText(isRootComment ? tr("blog-root-comment") : tr("blog-comment"));
 
-    bindString("collapse-expand", WString::Empty); // NYI
+    bindString("collapse-expand", Wt::WString::Empty); // NYI
 
-    WText *replyText = new WText(isRootComment ? tr("comment-add") : tr("comment-reply"));
+    Wt::WText *replyText = new Wt::WText(isRootComment ? tr("comment-add") : tr("comment-reply"));
     replyText->setStyleClass("link");
-    replyText->clicked().connect(this, &CommentView::reply);
+    replyText->clicked().connect(this, &CommentView::Reply);
     bindWidget("reply", replyText);
 
     bool mayEdit = session_.user() && (comment_->author == session_.user() || session_.user()->role == User::Admin);
 
     if (mayEdit)
     {
-        WText *editText = new WText(tr("comment-edit"));
+        Wt::WText *editText = new Wt::WText(tr("comment-edit"));
         editText->setStyleClass("link");
-        editText->clicked().connect(this, &CommentView::edit);
+        editText->clicked().connect(this, &CommentView::Edit);
         bindWidget("edit", editText);
     }
     else
     {
-        bindString("edit", WString::Empty);
+        bindString("edit", Wt::WString::Empty);
     }
 
     bool mayDelete = (session_.user() && session_.user() == comment_->author) || session_.user() == comment_->post->author;
 
     if (mayDelete)
     {
-        WText *deleteText = new WText(tr("comment-delete"));
+        Wt::WText *deleteText = new Wt::WText(tr("comment-delete"));
         deleteText->setStyleClass("link");
-        deleteText->clicked().connect(this, &CommentView::rm);
+        deleteText->clicked().connect(this, &CommentView::Rm);
         bindWidget("delete", deleteText);
     }
     else
     {
-        bindString("delete", WString::Empty);
+        bindString("delete", Wt::WString::Empty);
     }
 
     typedef std::vector< Wt::Dbo::ptr<Comment> > CommentVector;
     CommentVector comments(comment_->children.begin(), comment_->children.end());
 
-    WContainerWidget *children = new WContainerWidget();
+    Wt::WContainerWidget *children = new Wt::WContainerWidget();
     for (int i = (int)comments.size() - 1; i >= 0; --i)
     {
         children->addWidget(new CommentView(session_, comments[i]));
     }
     bindWidget("children", children);
-}
+} // end void CommentView::RenderView
 /* ****************************************************************************
- * save
+ * Save
  */
-void CommentView::save()
+void CommentView::Save()
 {
     Wt::Dbo::Transaction t(session_);
 
@@ -199,37 +200,37 @@ void CommentView::save()
     if (isNew)
     {
         session_.add(comment_);
-        comment->date = WDateTime::currentDateTime();
+        comment->date = Wt::WDateTime::currentDateTime();
         comment->author = session_.user();
         session_.commentsChanged().emit(comment_);
     }
 
-    renderView();
+    RenderView();
 
     t.commit();
-}
+} // end void CommentView::Save
 /* ****************************************************************************
- * reply
+ * Reply
  */
-void CommentView::reply()
+void CommentView::Reply()
 {
     Wt::Dbo::Transaction t(session_);
 
-    WContainerWidget *c = resolve<WContainerWidget *>("children");
+    Wt::WContainerWidget *c = resolve<Wt::WContainerWidget *>("children");
     c->insertWidget(0, new CommentView(session_, comment_.id()));
 
     t.commit();
-}
+} // end void CommentView::Reply
 /* ****************************************************************************
- * rm
+ * Rm
  */
-void CommentView::rm()
+void CommentView::Rm()
 {
     Wt::Dbo::Transaction t(session_);
 
     comment_.modify()->setDeleted();
-    renderView();
+    RenderView();
 
     t.commit();
-}
+} // end void CommentView::Rm
 // --- End Of File ------------------------------------------------------------

@@ -18,29 +18,29 @@
 
 #include "HomeFundation.h"
 /* ****************************************************************************
- * WtHome
+ * WwHome
  */
-WtHome::WtHome(const WEnvironment& env) : Home(env)
+WwHome::WwHome(const WEnvironment& env) : Home(env)
 {
     // add Language
-    addLanguage(Lang("en", "/", "en", "English"));
+    addLanguage(Lang("en", "/"   , "en",  "English"));
     addLanguage(Lang("cn", "/cn/", "汉语", "中文 (Chinese)"));
-    addLanguage(Lang("ru", "/ru/", "ру", "Русский (Russian)"));
+    addLanguage(Lang("ru", "/ru/", "ру",  "Русский (Russian)"));
 
-    init();
-}
+    Init();
+} // end WwHome::WwHome
 /* ****************************************************************************
- * wrapView
+ * wrap View
  */
-WWidget *WtHome::wrapView(WWidget *(WtHome::*createWidget)())
+WWidget *WwHome::WrapView(WWidget *(WwHome::*createWidget)())
 {
     return makeStaticModel(boost::bind(createWidget, this));
-}
+} // end WWidget *WwHome::wrapView
 /* ****************************************************************************
- * createWtHomeApplication
+ * create WW Home Application
  */
-WApplication *createWtHomeApplication(const WEnvironment& env)
+WApplication *createWWHomeApplication(const WEnvironment& env)
 {
-    return new WtHome(env);
-}
+    return new WwHome(env);
+} // end WApplication *createWWHomeApplication
 // --- End Of File ------------------------------------------------------------

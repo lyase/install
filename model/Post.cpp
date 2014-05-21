@@ -17,18 +17,19 @@
 
 DBO_INSTANTIATE_TEMPLATES(Post);
 /* ****************************************************************************
- * permaLink
+ * perma Link
  */
 std::string Post::permaLink() const
 {
     return date.toString("yyyy/MM/dd/'" + titleToUrl() + '\'').toUTF8();
-}
+} // end
 /* ****************************************************************************
- * commentCount
+ * comment Count
  */
 std::string Post::commentCount() const
 {
     int count = (int)comments.size() - 1;
+    // Fix multilingual
     if (count == 1)
     {
         return "1 comment";
@@ -37,25 +38,23 @@ std::string Post::commentCount() const
     {
         return boost::lexical_cast<std::string>(count) + " comments";
     }
-}
+} // end
 /* ****************************************************************************
- * rootComment
+ * root Comment
  */
-dbo::ptr<Comment> Post::rootComment() const
+Wt::Dbo::ptr<Comment> Post::rootComment() const
 {
     if (session())
     {
-        return session()->find<Comment>()
-                .where("post_id = ?").bind(id())
-                .where("parent_id is null");
+        return session()->find<Comment>().where("post_id = ?").bind(id()).where("parent_id is null");
     }
     else
     {
-        return dbo::ptr<Comment>();
+        return Wt::Dbo::ptr<Comment>();
     }
-}
+} // end
 /* ****************************************************************************
- * titleToUrl
+ * title To Url
  */
 std::string Post::titleToUrl() const
 {
@@ -71,7 +70,6 @@ std::string Post::titleToUrl() const
             result[i] = tolower(result[i]);
         }
     }
-
     return result;
-}
+} // end
 // --- End Of File ------------------------------------------------------------

@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="ISO-8859-1" ?>
+<videos>
+    <category name="IAM">
+        <video name="00-00-G-IAM" title="IAM Step 0"  path="http://lightwizzard.com/media/lw/light-wizzard-in-the-flesh/00-00-G-IAM/video/light-wizzard-in-the-flesh-00-00-G-IAM" m4v="1" ogv="0" poster="http://lightwizzard.com/media/lw/light-wizzard-in-the-flesh/00-00-G-IAM/image/light-flesh.png" width="640" height="360" autoplay="0" sizes="1080,720" quality="hd,lq" pages=""></video>
+        <video name="00-01-G-IAM" title="IAM Step 1"  path="http://lightwizzard.com/media/lw/light-wizzard-in-the-flesh/00-01-G-IAM/video/light-wizzard-in-the-flesh-00-01-G-IAM" m4v="1" ogv="0" poster="http://lightwizzard.com/media/lw/light-wizzard-in-the-flesh/00-01-G-IAM/image/light-flesh.png" width="640" height="360" autoplay="0" sizes="1080,720" quality="hd,lq" pages=""></video>
+        <video name="00-01-N-IAM" title="IAM Step -1" path="http://lightwizzard.com/media/lw/light-wizzard-in-the-flesh/00-01-N-IAM/video/light-wizzard-in-the-flesh-00-01-N-IAM" m4v="1" ogv="0" poster="http://lightwizzard.com/media/lw/light-wizzard-in-the-flesh/00-01-N-IAM/image/light-flesh.png" width="640" height="360" autoplay="0" sizes="1080,720" quality="hd,lq" pages=""></video>
+        <video name="00-02-G-IAM" title="IAM Step 2"  path="http://lightwizzard.com/media/lw/light-wizzard-in-the-flesh/00-02-G-IAM/video/light-wizzard-in-the-flesh-00-02-G-IAM" m4v="1" ogv="0" poster="http://lightwizzard.com/media/lw/light-wizzard-in-the-flesh/00-02-G-IAM/image/light-flesh.png" width="640" height="360" autoplay="0" sizes="1080,720" quality="hd,lq" pages=""></video>
+        <video name="00-02-N-IAM" title="IAM Step -2" path="http://lightwizzard.com/media/lw/light-wizzard-in-the-flesh/00-02-N-IAM/video/light-wizzard-in-the-flesh-00-02-N-IAM" m4v="1" ogv="0" poster="http://lightwizzard.com/media/lw/light-wizzard-in-the-flesh/00-02-N-IAM/image/light-flesh.png" width="640" height="360" autoplay="0" sizes="1080,720" quality="hd,lq" pages=""></video>
+        <video name="00-03-G-IAM" title="IAM Step 3"  path="http://lightwizzard.com/media/lw/light-wizzard-in-the-flesh/00-03-G-IAM/video/light-wizzard-in-the-flesh-00-03-G-IAM" m4v="1" ogv="0" poster="http://lightwizzard.com/media/lw/light-wizzard-in-the-flesh/00-03-G-IAM/image/light-flesh.png" width="640" height="360" autoplay="0" sizes="1080,720" quality="hd,lq" pages=""></video>
+        <video name="00-03-N-IAM" title="IAM Step -3" path="http://lightwizzard.com/media/lw/light-wizzard-in-the-flesh/00-03-N-IAM/video/light-wizzard-in-the-flesh-00-03-N-IAM" m4v="1" ogv="0" poster="http://lightwizzard.com/media/lw/light-wizzard-in-the-flesh/00-03-N-IAM/image/light-flesh.png" width="640" height="360" autoplay="0" sizes="1080,720" quality="hd,lq" pages=""></video>
+        <video name="00-01-P-IAM" title="IAM Step +1" path="http://lightwizzard.com/media/lw/light-wizzard-in-the-flesh/00-01-P-IAM/video/light-wizzard-in-the-flesh-00-01-P-IAM" m4v="1" ogv="0" poster="http://lightwizzard.com/media/lw/light-wizzard-in-the-flesh/00-01-P-IAM/image/light-flesh.png" width="640" height="360" autoplay="0" sizes="1080,720" quality="hd,lq" pages=""></video>
+        <video name="00-02-P-IAM" title="IAM Step +2" path="http://lightwizzard.com/media/lw/light-wizzard-in-the-flesh/00-02-P-IAM/video/light-wizzard-in-the-flesh-00-02-P-IAM" m4v="1" ogv="0" poster="http://lightwizzard.com/media/lw/light-wizzard-in-the-flesh/00-02-P-IAM/image/light-flesh.png" width="640" height="360" autoplay="0" sizes="1080,720" quality="hd,lq" pages=""></video>
+        <video name="00-03-P-IAM" title="IAM Step +3" path="http://lightwizzard.com/media/lw/light-wizzard-in-the-flesh/00-03-P-IAM/video/light-wizzard-in-the-flesh-00-03-P-IAM" m4v="1" ogv="0" poster="http://lightwizzard.com/media/lw/light-wizzard-in-the-flesh/00-03-P-IAM/image/light-flesh.png" width="640" height="360" autoplay="0" sizes="1080,720" quality="hd,lq" pages=""></video>
+        <video name="00-04-G-IAM" title="IAM Step 4"  path="http://lightwizzard.com/media/lw/light-wizzard-in-the-flesh/00-04-G-IAM/video/light-wizzard-in-the-flesh-00-04-G-IAM" m4v="1" ogv="0" poster="http://lightwizzard.com/media/lw/light-wizzard-in-the-flesh/00-04-G-IAM/image/light-flesh.png" width="640" height="360" autoplay="0" sizes="1080,720" quality="hd,lq" pages=""></video>
+        <video name="00-04-N-IAM" title="IAM Step -4" path="http://lightwizzard.com/media/lw/light-wizzard-in-the-flesh/00-04-N-IAM/video/light-wizzard-in-the-flesh-00-04-N-IAM" m4v="1" ogv="0" poster="http://lightwizzard.com/media/lw/light-wizzard-in-the-flesh/00-04-N-IAM/image/light-flesh.png" width="640" height="360" autoplay="0" sizes="1080,720" quality="hd,lq" pages=""></video>
+    </category>
+    <category name="Emotions">
+        <video name="01-00-G-Emotions" title="Emotions Step 0" path="http://lightwizzard.com/media/lw/light-wizzard-in-the-flesh/01-00-G-Emotions/video/light-wizzard-in-the-flesh-01-00-G-Emotions" m4v="1" ogv="0" poster="http://lightwizzard.com/media/lw/light-wizzard-in-the-flesh/01-00-G-Emotions/image/light-flesh.png" width="640" height="360" autoplay="0" sizes="1080,720" quality="hd,lq" pages=""></video>
+        <video name="01-01-G-Emotions" title="Emotions Step 1" path="http://lightwizzard.com/media/lw/light-wizzard-in-the-flesh/01-01-G-Emotions/video/light-wizzard-in-the-flesh-01-01-G-Emotions" m4v="1" ogv="0" poster="http://lightwizzard.com/media/lw/light-wizzard-in-the-flesh/01-01-G-Emotions/image/light-flesh.png" width="640" height="360" autoplay="0" sizes="1080,720" quality="hd,lq" pages=""></video>
+    </category>
+    <category name="Universe">
+        <video name="02-00-G-Universe" title="Universe Step 0" path="http://lightwizzard.com/media/lw/light-wizzard-in-the-flesh/02-00-G-Universe/video/light-wizzard-in-the-flesh-02-00-G-Universe" m4v="1" ogv="0" poster="http://lightwizzard.com/media/lw/light-wizzard-in-the-flesh/02-00-G-Universe/image/light-flesh.png" width="640" height="360" autoplay="0" sizes="1080,720" quality="hd,lq" pages=""></video>
+        <video name="02-01-G-Universe" title="Universe Step 1" path="http://lightwizzard.com/media/lw/light-wizzard-in-the-flesh/02-01-G-Universe/video/light-wizzard-in-the-flesh-02-01-G-Universe" m4v="1" ogv="0" poster="http://lightwizzard.com/media/lw/light-wizzard-in-the-flesh/02-01-G-Universe/image/light-flesh.png" width="640" height="360" autoplay="0" sizes="1080,720" quality="hd,lq" pages=""></video>
+    </category>
+    <category name="Dimensions">
+        <video name="03-00-G-Dimensions" title="Dimensions Step 0" path="http://lightwizzard.com/media/lw/light-wizzard-in-the-flesh/03-00-G-Dimensions/video/light-wizzard-in-the-flesh-03-00-G-Dimensions" m4v="1" ogv="0" poster="http://lightwizzard.com/media/lw/light-wizzard-in-the-flesh/03-00-G-Dimensions/image/light-flesh.png" width="640" height="360" autoplay="0" sizes="1080,720" quality="hd,lq" pages=""></video>
+    </category>
+    <category name="Game">
+    </category>
+    <category name="Road Map">
+        <video name="05-00-G-Road-Map" title="Road Map Step 0" path="http://lightwizzard.com/media/lw/light-wizzard-in-the-flesh/05-00-G-Road-Map/video/light-wizzard-in-the-flesh-05-00-G-Road-Map" m4v="1" ogv="0" poster="http://lightwizzard.com/media/lw/light-wizzard-in-the-flesh/05-00-G-Road-Map/image/light-flesh.png" width="640" height="360" autoplay="0" sizes="1080,720" quality="hd,lq" pages=""></video>
+    </category>
+    <category name="Rant">
+    </category>
+    <category name="Science">
+        <video name="07-00-G-Science" title="Science Step 0" path="http://lightwizzard.com/media/lw/light-wizzard-in-the-flesh/07-00-G-Science/video/light-wizzard-in-the-flesh-07-00-G-Science" m4v="1" ogv="0" poster="http://lightwizzard.com/media/lw/light-wizzard-in-the-flesh/07-00-G-Science/image/light-flesh.png" width="640" height="360" autoplay="0" sizes="1080,720" quality="hd,lq" pages=""></video>
+    </category>
+    <category name="Sanctuary">
+    </category>
+    <category name="Trinary Energy">
+        <video name="09-00-G-Trinary-Energy" title="Trinary Energy Step 0" path="http://lightwizzard.com/media/lw/light-wizzard-in-the-flesh/09-00-G-Trinary-Energy/video/light-wizzard-in-the-flesh-09-00-G-Trinary-Energy" m4v="1" ogv="0" poster="http://lightwizzard.com/media/lw/light-wizzard-in-the-flesh/09-00-G-Trinary-Energy/image/light-flesh.png" width="640" height="360" autoplay="0" sizes="1080,720" quality="hd,lq" pages=""></video>
+    </category>
+    <category name="HisStory">
+        <video name="10-00-G-HisStory" title="HisStory Step 0" path="http://lightwizzard.com/media/lw/light-wizzard-in-the-flesh/10-00-G-HisStory/video/light-wizzard-in-the-flesh-10-00-G-HisStory" m4v="1" ogv="0" poster="http://lightwizzard.com/media/lw/light-wizzard-in-the-flesh/10-00-G-HisStory/image/light-flesh.png" width="640" height="360" autoplay="0" sizes="1080,720" quality="hd,lq" pages=""></video>
+    </category>
+    <category name="Society">
+    </category>
+    <category name="JustUs">
+    </category>
+</videos>

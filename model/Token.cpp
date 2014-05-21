@@ -15,11 +15,11 @@ DBO_INSTANTIATE_TEMPLATES(Token);
  */
 Token::Token()
 {
-}
+} // end
 /* ****************************************************************************
  * Token
  */
 Token::Token(const std::string& v, const Wt::WDateTime& e) : value(v), expires(e)
 {
-}
+} // end
 // --- End Of File ------------------------------------------------------------

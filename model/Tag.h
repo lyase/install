@@ -9,17 +9,13 @@
 
 #include <Wt/Dbo/Types>
 /* ****************************************************************************
- * Post
+ * Prototype Post
  */
 class Post;
 /* ****************************************************************************
- * dbo
- */
-namespace dbo = Wt::Dbo;
-/* ****************************************************************************
  * Posts
  */
-typedef dbo::collection< dbo::ptr<Post> > Posts;
+typedef Wt::Dbo::collection< Wt::Dbo::ptr<Post> > Posts;
 /* ****************************************************************************
  * Tag
  */
@@ -36,9 +32,9 @@ class Tag
         template<class Action>
         void persist(Action& a)
         {
-            dbo::field(a, name, "name");
+            Wt::Dbo::field(a, name, "name");
 
-            dbo::hasMany(a, posts, dbo::ManyToMany, "post_tag");
+            Wt::Dbo::hasMany(a, posts, Wt::Dbo::ManyToMany, "post_tag");
         }
 };
 

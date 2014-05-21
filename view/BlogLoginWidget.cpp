@@ -30,7 +30,7 @@ BlogLoginWidget::BlogLoginWidget(BlogSession &session, const std::string& basePa
     setModel(model);
 
     setInternalBasePath(basePath + "login");
-}
+} // end
 /* ****************************************************************************
  * create Login View
  */
@@ -48,7 +48,7 @@ void BlogLoginWidget::createLoginView()
     password->setEmptyText("password");
     password->setToolTip("password");
     password->enterPressed().connect(this, &BlogLoginWidget::attemptPasswordLogin);
-}
+} // end
 /* ****************************************************************************
  * create Logged In View
  */
@@ -60,5 +60,5 @@ void BlogLoginWidget::createLoggedInView()
     logout->setStyleClass("link");
     logout->clicked().connect(&login(), &Wt::Auth::Login::logout);
     bindWidget("logout", logout);
-}
+} // end
 // --- End Of File ------------------------------------------------------------

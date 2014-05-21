@@ -31,8 +31,8 @@ class EditUsers : public Wt::WTemplate
     public:
         EditUsers(Wt::Dbo::Session& aSesssion, const std::string& basePath);
     private:
-        void onUserClicked(Wt::Dbo::dbo_traits<User>::IdType id);
-        void limitList();
+        void OnUserClicked(Wt::Dbo::dbo_traits<User>::IdType id);
+        void LimitList();
 
         Wt::Dbo::Session& session_;
         std::string basePath_;
@@ -45,10 +45,10 @@ class EditUser : public Wt::WTemplate
 {
     public:
         EditUser(Wt::Dbo::Session& aSesssion);
-        void switchUser(Wt::Dbo::ptr<User> target);
+        void SwitchUser(Wt::Dbo::ptr<User> target);
     private:
-        void bindTemplate();
-        void switchRole();
+        void BindTemplate();
+        void SwitchRole();
 
         Wt::Dbo::Session& session_;
         Wt::Dbo::ptr<User> target_;

@@ -1,67 +1,28 @@
+#ifdef VIDEOMAN
 #ifndef VIDEO_H
 #define VIDEO_H
 #include <Wt/WApplication>
-#include <Wt/WCompositeWidget>
+#include <Wt/WContainerWidget>
+#include <Wt/WEnvironment>
 #include <Wt/WComboBox>
+//
 #include <Wt/Dbo/Dbo>
-//#include "model/BlogSession.h"
-class BlogSession;
+//
+#include <QString>
+//
+#include "model/TheVideo.h"
+#include "model/VideoSession.h"
 /* ****************************************************************************
- * myVideo
+ * Prototype VideoSession
  */
-struct myVideo
-{
-    std::string name;    // Name for Combo box
-    std::string title;   // Title for Video Player
-    std::string path;    // Full Path minus video extension and quality
-    bool m4v;            // is video m4v extension
-    bool ogv;            // is video ogv extension
-    bool isUtube;        // is U Tube video
-    std::string poster;  // Full path to image
-    int width;           // Width of Video
-    int height;          // Height of Video
-    bool autoplay;       // is autoplay
-    std::string sizes;   // coma delimited array of sizes: 1080,720
-    std::string quality; // coma delimited array of quality: hd,lq
-    std::string pages;   // coma delimited array of html content pages: page1,page2
-};
+//class VideoSession;
 /* ****************************************************************************
- * theVideo
+ * pageType
  */
-class theVideo
+enum pageType
 {
-    public:
-        std::string name;    // Name for Combo box
-        std::string title;   // Title for Video Player
-        std::string path;    // Full Path minus video extension and quality
-        bool m4v;            // is video m4v extension
-        bool ogv;            // is video ogv extension
-        bool isUtube;        // is U Tube video
-        std::string poster;  // Full path to image
-        int width;           // Width of Video
-        int height;          // Height of Video
-        bool autoplay;       // is autoplay
-        std::string sizes;   // coma delimited array of sizes: 1080,720
-        std::string quality; // coma delimited array of quality: hd,lq
-        std::string pages;   // coma delimited array of html content pages: page1,page2
-
-        template<class Action>
-        void persist(Action &a)
-        {
-            Wt::Dbo::field(a, name, "name");
-            Wt::Dbo::field(a, title, "title");
-            Wt::Dbo::field(a, path, "path");
-            Wt::Dbo::field(a, m4v, "m4v");
-            Wt::Dbo::field(a, ogv, "ogv");
-            Wt::Dbo::field(a, isUtube, "isUtube");
-            Wt::Dbo::field(a, poster, "poster");
-            Wt::Dbo::field(a, width, "width");
-            Wt::Dbo::field(a, height, "height");
-            Wt::Dbo::field(a, autoplay, "autoplay");
-            Wt::Dbo::field(a, sizes, "sizes");
-            Wt::Dbo::field(a, quality, "quality");
-            Wt::Dbo::field(a, pages, "pages");
-        }
+  iframe,
+  xml
 };
 /* ****************************************************************************
  * Video
@@ -69,50 +30,92 @@ class theVideo
 class VideoImpl : public Wt::WContainerWidget
 {
     public:
-        VideoImpl(std::string appPath, const std::string& basePath, Wt::Dbo::SqlConnectionPool* connectionPool);
+        VideoImpl(const std::string& appPath, const std::string& basePath, Wt::Dbo::SqlConnectionPool& connectionPool);
         void setInternalBasePath(const std::string& basePath);
         virtual ~VideoImpl();
+        /* --------------------------------------------------------------------
+         * session
+         */
+        VideoSession& session()  { return session_;  }
 
     private:
-        void init();
-        void createVideo();
         void refresh();
-        void handlePathChange(const std::string& path);
+        void Init();
+        void MakeVideo();
+        void HandlePathChange(const std::string& path);
 
-        void categoryComboChanged();
-        void videoComboChanged();
-        bool readVideo(std::string appPath);
-        void setCategoryItemPath();
-        void setComboBox();
-
-        std::vector<myVideo> myVideos;
+        void CategoryComboChanged();
+        void VideoComboChanged();
+        bool CreateCategoryCombo();
+        bool CreateVideoCombobox();
+        void GetVideo();
+        std::string GetCategories(std::string delimitor);
+        bool GetCategoriesPath();
+        void ClearCategories();
+        void SetCookie(std::string name, std::string myValue);
+        std::string GetCookie(std::string name);
+        //
+        std::string appPath_;
+        std::string basePath_;
+        VideoSession session_;
+        //std::vector<myVideo> myVideos;
         bool isVideo=false;
         bool bindVideo = false;
         bool isChanged=false;
-        std::string theAppPath;
-        std::string basePath_;
         Wt::WContainerWidget* items_;
-        Wt::Dbo::SqlConnectionPool* connectionPool_;
-        int categoryIndex = 0;
-        int videoIndex = 0;
-        Wt::WComboBox *categoryCombo;
-        Wt::WComboBox *videoCombo;
+        QString catagoryPath;
+        //int categoryIndex = 0;
+        //int videoIndex = 0;
+        // ComboBoxs
+        bool isComboCategory_0 = false;
+        Wt::WComboBox *ComboCategory_0;  // Category 0
+        Wt::WComboBox *ComboCategory_1;  // Category 1
+        Wt::WComboBox *ComboCategory_2;  // Category 2
+        Wt::WComboBox *ComboCategory_3;  // Category 3
+        Wt::WComboBox *ComboCategory_4;  // Category 4
+        Wt::WComboBox *ComboCategory_5;  // Category 5
+        bool isComboVideo = false;
+        Wt::WComboBox *ComboVideo;       // Video Name
+        Wt::WComboBox *ComboSizes;       // Sizes: sizes="1080,720"
+        Wt::WComboBox *ComboQuality;     // quality="hd,lq"
+        bool isTextYewTubeIframe = false;
+        Wt::WText *TextYewTubeIframe;    // yew-tube iFrame
+        bool isTextPageTop = false;
+        Wt::WText *TextPageTop;          // page top
+        bool isTextPageBottom = false;
+        Wt::WText *TextPageBottom;       // page bottom
+        //
+        std::string mp4Video;
+        std::string ogvVideo;
+        std::string poster;
+        std::string yewtubesrc;
+        std::string title;
+        int width, height;
+        std::string size;
+        std::string quality;
+        std::string pageBottom;
+        std::string pageTop;
+        bool isutube=false;
+        bool isComboChange=false;
+
+        //TheVideo myVideo;
+        int numberCats = -1;
+        std::string categoryQuery;  // Full Path from Database: Cat-1|Cat-2
+        std::string categoryPath;   // Full Path from Database: Cat-1/Cat-2
+        std::string categoryText_0; // First Category:  Cat-1
+        std::string categoryText_1; // Second Category: Cat-2
+        std::string categoryText_2; //
+        std::string categoryText_3; //
+        std::string categoryText_4; //
+        std::string categoryText_5; //
+        std::string videoText;      // Video Name
+
         #ifdef WVIDEO
             Wt::WVideo *player;
         #else
             Wt::WMediaPlayer *player;
         #endif
 };
-/* ****************************************************************************
- * VideoView
- */
-class VideoView : public Wt::WCompositeWidget
-{
-    public:
-        VideoView(std::string appPath, const std::string& basePath, Wt::Dbo::SqlConnectionPool* db);
-        void setInternalBasePath(const std::string& basePath);
-    private:
-        VideoImpl *impl_;
-};
 #endif // VIDEO_H
+#endif // VIDEOMAN
 // --- End Of File ------------------------------------------------------------

@@ -3,6 +3,9 @@
  * Copyright (C) 2008 Emweb bvba, Kessel-Lo, Belgium.
  *
  * See the LICENSE file for terms of use.
+ *
+ * Modified for Witty Wizard
+ *
  */
 #ifndef HOME_H_
 #define HOME_H_
@@ -13,25 +16,7 @@
 #include <QString>
 #include <vector>
 #include "SimpleChatServer.h"
-/* ****************************************************************************
- * WMenu
- * WStackedWidget
- * WTabWidget
- * WTreeNode
- * WTable
- */
-namespace Wt
-{
-    class WMenu;
-    class WStackedWidget;
-    class WTabWidget;
-    class WTreeNode;
-    class WTable;
-}
-/* ****************************************************************************
- * Wt
- */
-using namespace Wt;
+
 /* ****************************************************************************
  * Lang
  */
@@ -77,7 +62,7 @@ DeferredWidget<Function>* deferCreate(Function f)
 /* ****************************************************************************
  * Home
  */
-class Home : public WApplication
+class Home : public Wt::WApplication
 {
     public:
         Home(const Wt::WEnvironment& env);
@@ -89,7 +74,7 @@ class Home : public WApplication
     protected:
         virtual std::string filePrefix() const = 0;
 
-        void init();
+        void Init();
 
         void addLanguage(const Lang& l) { languages.push_back(l); }
 
@@ -99,7 +84,7 @@ class Home : public WApplication
         Wt::Dbo::SqlConnectionPool *dbConnection_;
 
     private:
-        QString appPath;
+        QString appPath_;
         /* ******************************
          * homePage_ is the base page read from template
          */
@@ -107,32 +92,30 @@ class Home : public WApplication
 
         Wt::WStackedWidget* contents_;
 
-        void createHome();
+        void CreateHome();
 
-        Wt::WWidget* home();
-        Wt::WWidget* contact();
-        Wt::WWidget* about();
-        Wt::WWidget* blog();
-        Wt::WWidget* chat();
-        Wt::WWidget* video();
+        Wt::WWidget* HomePage();
+        Wt::WWidget* Contact();
+        Wt::WWidget* About();
+        Wt::WWidget* Blog();
+        Wt::WWidget* Chat();
+        Wt::WWidget* VideoMan();
 
         Wt::WMenu* mainMenu_;
         int language_;
 
-        Wt::WWidget* wrapView(WWidget *(Home::*createFunction)());
+        Wt::WWidget* WrapView(Wt::WWidget *(Home::*createFunction)());
 
-        void updateTitle();
-        void setLanguage(int language);
+        void UpdateTitle();
+        void SetLanguage(int language);
         void setLanguageFromPath();
-        void setup();
-        void logInternalPath(const std::string& path);
-        void chatSetUser(const WString& name);
-        void handlePopup(int data);
-        std::vector<std::string> split(std::string str, std::string delim);
+        void Setup();
+        void LogInternalPath(const std::string& path);
+        void ChatSetUser(const Wt::WString& name);
+        void HandlePopup(int data);
         
         std::vector<Lang> languages;
 
 };
-
 #endif // HOME_H_
 // --- End Of File ------------------------------------------------------------

@@ -11,25 +11,21 @@
 #include <Wt/Dbo/Types>
 
 /* ****************************************************************************
- * User
+ * Prototype class User
  */
 class User;
 /* ****************************************************************************
- * dbo
- */
-namespace dbo = Wt::Dbo;
-/* ****************************************************************************
- * BlogUserDatabase
+ * Blog User Database
  */
 class BlogUserDatabase : public Wt::Auth::AbstractUserDatabase
 {
     public:
-        BlogUserDatabase(dbo::Session& session);
+        BlogUserDatabase(Wt::Dbo::Session& session);
 
         virtual Transaction *startTransaction();
 
-        dbo::ptr<User> find(const Wt::Auth::User& user) const;
-        Wt::Auth::User find(dbo::ptr<User> user) const;
+        Wt::Dbo::ptr<User> find(const Wt::Auth::User& user) const;
+        Wt::Auth::User find(Wt::Dbo::ptr<User> user) const;
 
         virtual Wt::Auth::User findWithId(const std::string& id) const;
 
@@ -61,15 +57,15 @@ class BlogUserDatabase : public Wt::Auth::AbstractUserDatabase
         virtual void setLastLoginAttempt(const Wt::Auth::User& user, const Wt::WDateTime& t);
 
     private:
-        dbo::Session& session_;
-        mutable dbo::ptr<User> user_;
+        Wt::Dbo::Session& session_;
+        mutable Wt::Dbo::ptr<User> user_;
 
         struct WithUser
         {
                 WithUser(const BlogUserDatabase& self, const Wt::Auth::User& user);
                 ~WithUser();
 
-                dbo::Transaction transaction;
+                Wt::Dbo::Transaction transaction;
         };
 
         void getUser(const std::string& id) const;

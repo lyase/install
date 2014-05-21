@@ -10,8 +10,8 @@
 #include <Wt/WTemplate>
 #include <Wt/WText>
 
-using namespace Wt;
-namespace dbo = Wt::Dbo;
+//using namespace Wt;
+//namespace dbo = Wt::Dbo;
 /* ****************************************************************************
  * EditUsers
  */
@@ -19,66 +19,68 @@ EditUsers::EditUsers(Wt::Dbo::Session& aSession, const std::string& basePath) : 
 {
     setStyleClass("user-editor");
     setTemplateText(tr("edit-users-list"));
-    limitEdit_  = new WLineEdit;
-    WPushButton* goLimit = new WPushButton(tr("go-limit"));
-    goLimit->clicked().connect(SLOT(this,EditUsers::limitList));
+    limitEdit_  = new Wt::WLineEdit;
+    Wt::WPushButton* goLimit = new Wt::WPushButton(tr("go-limit"));
+    goLimit->clicked().connect(SLOT(this, EditUsers::LimitList));
     bindWidget("limit-edit",limitEdit_);
     bindWidget("limit-button",goLimit);
-    limitList();
-}
+    LimitList();
+} // end EditUsers::EditUsers
 /* ****************************************************************************
- * limitList
+ * Limit List
  */
-void EditUsers::limitList()
+void EditUsers::LimitList()
 {
-    WContainerWidget* list = new WContainerWidget;
+    Wt::WContainerWidget* list = new Wt::WContainerWidget;
     bindWidget("user-list",list);
 
     typedef Wt::Dbo::collection<Wt::Dbo::ptr<User> > UserList;
     Wt::Dbo::Transaction t(session_);
     UserList users = session_.find<User>().where("name like ?").bind("%"+limitEdit_->text()+"%").orderBy("name");
 
-    WSignalMapper<Wt::Dbo::dbo_traits<User>::IdType >* userLinkMap = new WSignalMapper<dbo::dbo_traits<User>::IdType >(this);
-    userLinkMap->mapped().connect(this,&EditUsers::onUserClicked);
+    Wt::WSignalMapper<Wt::Dbo::dbo_traits<User>::IdType >* userLinkMap = new Wt::WSignalMapper<Wt::Dbo::dbo_traits<User>::IdType >(this);
+    userLinkMap->mapped().connect(this,&EditUsers::OnUserClicked);
     for (UserList::const_iterator i = users.begin(); i != users.end(); ++i)
     {
-        WText* t = new WText((*i)->name, list);
+        Wt::WText* t = new Wt::WText((*i)->name, list);
         t->setStyleClass("link");
-        new WBreak(list);
+        new Wt::WBreak(list);
         userLinkMap->mapConnect(t->clicked(), (*i).id());
     }
     if (!users.size())
     {
-        new WText(tr("no-users-found"),list);
+        new Wt::WText(tr("no-users-found"),list);
     }
-}
+} // end void EditUsers::LimitList
 /* ****************************************************************************
- * onUserClicked
+ * On User Clicked
  */
-void EditUsers::onUserClicked(Wt::Dbo::dbo_traits<User>::IdType id)
+void EditUsers::OnUserClicked(Wt::Dbo::dbo_traits<User>::IdType id)
 {
-    wApp->setInternalPath(basePath_+"edituser/"+boost::lexical_cast<std::string>(id), true);
-}
+    wApp->setInternalPath(basePath_ + "edituser/" + boost::lexical_cast<std::string>(id), true);
+} // end void EditUsers::OnUserClicked
+/* ************************************************************************* */
+/* ************************************************************************* */
 /* ****************************************************************************
- * EditUser
+ * Edit User
  */
-EditUser::EditUser(Wt::Dbo::Session& aSession) : WTemplate(tr("edit-user")), session_(aSession), roleButton_(new WPushButton)
+EditUser::EditUser(Wt::Dbo::Session& aSession) : Wt::WTemplate(tr("edit-user")), session_(aSession), roleButton_(new Wt::WPushButton)
 {
     bindWidget("role-button",roleButton_);
-    roleButton_->clicked().connect(SLOT(this, EditUser::switchRole));
-}
+    roleButton_->clicked().connect(SLOT(this, EditUser::SwitchRole));
+} // end EditUser::EditUser
 /* ****************************************************************************
- * switchUser
+ * Switch User
  */
-void EditUser::switchUser(Wt::Dbo::ptr<User> target)
+void EditUser::SwitchUser(Wt::Dbo::ptr<User> target)
 {
     target_ = target;
-    bindTemplate();
-}
+    BindTemplate();
+} // end void EditUser::SwitchUser
 /* ****************************************************************************
- * bindTemplate
+ * Bind Template
  */
-void EditUser::bindTemplate()
+void EditUser::BindTemplate()
 {
     bindString("username", target_->name);
     if (target_->role == User::Admin)
@@ -89,11 +91,11 @@ void EditUser::bindTemplate()
     {
         roleButton_->setText(tr("promote-user"));
     }
-}
+} // end void EditUser::BindTemplate
 /* ****************************************************************************
- * switchRole
+ * Switch Role
  */
-void EditUser::switchRole()
+void EditUser::SwitchRole()
 {
     Wt::Dbo::Transaction t(session_);
     target_.reread();
@@ -106,6 +108,6 @@ void EditUser::switchRole()
         target_.modify()->role = User::Admin;
     }
     t.commit();
-    bindTemplate();
-}
+    BindTemplate();
+} // end void EditUser::SwitchRole
 // --- End Of File ------------------------------------------------------------

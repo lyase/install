@@ -18,22 +18,22 @@ using namespace Wt;
 /* ****************************************************************************
  * WtHome
  */
-class WtHome : public Home
+class WwHome : public Home
 {
     public:
-        WtHome(const WEnvironment& env);
+        WwHome(const WEnvironment& env);
 
     protected:
         virtual std::string filePrefix() const { return "wt-"; }
 
     private:
-        WWidget *wrapView(WWidget *(WtHome::*createFunction)());
+        WWidget *WrapView(WWidget *(WwHome::*createFunction)());
 
 };
 /* ****************************************************************************
  * createWtHomeApplication
  */
-WApplication *createWtHomeApplication(const WEnvironment& env);
+WApplication *createWWHomeApplication(const WEnvironment& env);
 
 #endif // WT_HOME_H_
 // --- End Of File ------------------------------------------------------------

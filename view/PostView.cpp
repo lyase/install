@@ -2,6 +2,9 @@
  * Copyright (C) 2009 Emweb bvba, Kessel-Lo, Belgium.
  *
  * See the LICENSE file for terms of use.
+ *
+ * Modified for Witty Wizard
+ *
  */
 
 #include "CommentView.h"
@@ -20,33 +23,31 @@
 #include <Wt/WText>
 #include <Wt/WTextArea>
 
-using namespace Wt;
-namespace dbo = Wt::Dbo;
 /* ****************************************************************************
- * PostView
+ * Post View
  */
-PostView::PostView(BlogSession& session, const std::string& basePath, dbo::ptr<Post> post, RenderType type) : session_(session), basePath_(basePath), post_(post)
+PostView::PostView(BlogSession& session, const std::string& basePath, Wt::Dbo::ptr<Post> post, RenderType type) : session_(session), basePath_(basePath), post_(post)
 {
     viewType_ = Brief;
     render(type);
-}
+} // end PostView::PostView(
 /* ****************************************************************************
- * renderTemplate
+ * Render Template
  */
 void PostView::renderTemplate(std::ostream& result)
 {
-    dbo::Transaction t(session_);
+    Wt::Dbo::Transaction t(session_);
 
     WTemplate::renderTemplate(result);
 
     post_.purge();
 
     t.commit();
-}
+} // end void PostView::RenderTemplate(
 /* ****************************************************************************
- * resolveString
+ * Resolve String
  */
-void PostView::resolveString(const std::string& varName, const std::vector<WString>& args, std::ostream& result)
+void PostView::resolveString(const std::string& varName, const std::vector<Wt::WString>& args, std::ostream& result)
 {
     if (varName == "title")
     {
@@ -60,26 +61,24 @@ void PostView::resolveString(const std::string& varName, const std::vector<WStri
     {
         if (!post_->briefSrc.empty())
         {
-            format(result, post_->briefHtml, XHTMLText);
+            format(result, post_->briefHtml, Wt::XHTMLText);
         }
         else
         {
-            format(result, post_->bodyHtml, XHTMLText);
+            format(result, post_->bodyHtml, Wt::XHTMLText);
         }
     }
     else if (varName == "brief+body")
     {
-        format(result, "<div>" + post_->briefHtml + "</div>"
-               "<div id=\"" + basePath_ + post_->permaLink() + "/more\">"
-               "<div>" + post_->bodyHtml + "</div></div>", XHTMLUnsafeText);
+        format(result, "<div>" + post_->briefHtml + "</div><div id=\"" + basePath_ + post_->permaLink() + "/more\"><div>" + post_->bodyHtml + "</div></div>", Wt::XHTMLUnsafeText);
     }
     else
     {
         WTemplate::resolveString(varName, args, result);
     }
-}
+} // end void PostView::ResolveString
 /* ****************************************************************************
- * render
+ * Render
  */
 void PostView::render(RenderType type)
 {
@@ -95,10 +94,10 @@ void PostView::render(RenderType type)
             {
                 setTemplateText(tr("blog-post"));
 
-                commentCount_ = new WText(post_->commentCount());
+                commentCount_ = new Wt::WText(post_->commentCount());
 
                 CommentView *comments = new CommentView(session_, post_->rootComment());
-                session_.commentsChanged().connect(this, &PostView::updateCommentCount);
+                session_.commentsChanged().connect(this, &PostView::UpdateCommentCount);
 
                 bindWidget("comment-count", commentCount_);
                 bindWidget("comments", comments);
@@ -110,29 +109,22 @@ void PostView::render(RenderType type)
             {
                 setTemplateText(tr("blog-post-brief"));
 
-                WAnchor *titleAnchor
-                        = new WAnchor(WLink(WLink::InternalPath, basePath_ + post_->permaLink()),
-                                      post_->title);
+                Wt::WAnchor *titleAnchor = new Wt::WAnchor(Wt::WLink(Wt::WLink::InternalPath, basePath_ + post_->permaLink()), post_->title);
                 bindWidget("title", titleAnchor);
 
                 if (!post_->briefSrc.empty())
                 {
-                    WAnchor *moreAnchor
-                            = new WAnchor(WLink(WLink::InternalPath,
-                                                basePath_ + post_->permaLink() + "/more"),
-                                          tr("blog-read-more"));
+                    Wt::WAnchor *moreAnchor = new Wt::WAnchor(Wt::WLink(Wt::WLink::InternalPath, basePath_ + post_->permaLink() + "/more"), tr("blog-read-more"));
                     bindWidget("read-more", moreAnchor);
                 }
                 else
                 {
-                    bindString("read-more", WString::Empty);
+                    bindString("read-more", Wt::WString::Empty);
                 }
 
-                commentCount_ = new WText("(" + post_->commentCount() + ")");
+                commentCount_ = new Wt::WText("(" + post_->commentCount() + ")");
 
-                WAnchor *commentsAnchor
-                        = new WAnchor(WLink(WLink::InternalPath,
-                                            basePath_ + post_->permaLink() + "/comments"));
+                Wt::WAnchor *commentsAnchor = new Wt::WAnchor(Wt::WLink(Wt::WLink::InternalPath, basePath_ + post_->permaLink() + "/comments"));
                 commentsAnchor->addWidget(commentCount_);
                 bindWidget("comment-count", commentsAnchor);
 
@@ -142,17 +134,17 @@ void PostView::render(RenderType type)
             {
                 setTemplateText(tr("blog-post-edit"));
 
-                bindWidget("title-edit", titleEdit_ = new WLineEdit(post_->title));
-                bindWidget("brief-edit", briefEdit_ = new WTextArea(post_->briefSrc));
-                bindWidget("body-edit", bodyEdit_ = new WTextArea(post_->bodySrc));
+                bindWidget("title-edit", titleEdit_ = new Wt::WLineEdit(post_->title));
+                bindWidget("brief-edit", briefEdit_ = new Wt::WTextArea(post_->briefSrc));
+                bindWidget("body-edit", bodyEdit_ = new Wt::WTextArea(post_->bodySrc));
 
-                WPushButton *saveButton = new WPushButton(tr("save"));
-                WPushButton *cancelButton = new WPushButton(tr("cancel"));
+                Wt::WPushButton *saveButton = new Wt::WPushButton(tr("save"));
+                Wt::WPushButton *cancelButton = new Wt::WPushButton(tr("cancel"));
                 bindWidget("save", saveButton);
                 bindWidget("cancel", cancelButton);
 
-                saveButton->clicked().connect(this, &PostView::saveEdit);
-                cancelButton->clicked().connect(this, &PostView::showView);
+                saveButton->clicked().connect(this, &PostView::SaveEdit);
+                cancelButton->clicked().connect(this, &PostView::ShowView);
 
                 break;
             }
@@ -162,44 +154,44 @@ void PostView::render(RenderType type)
     {
         if (session_.user() == post_->author)
         {
-            WPushButton *publishButton;
+            Wt::WPushButton *publishButton;
             if (post_->state != Post::Published)
             {
-                publishButton = new WPushButton(tr("publish"));
-                publishButton->clicked().connect(this, &PostView::publish);
+                publishButton = new Wt::WPushButton(tr("publish"));
+                publishButton->clicked().connect(this, &PostView::Publish);
             }
             else
             {
-                publishButton = new WPushButton(tr("retract"));
-                publishButton->clicked().connect(this, &PostView::retract);
+                publishButton = new Wt::WPushButton(tr("retract"));
+                publishButton->clicked().connect(this, &PostView::Retract);
             }
             bindWidget("publish", publishButton);
 
-            WPushButton *editButton = new WPushButton(tr("edit"));
-            editButton->clicked().connect(this, &PostView::showEdit);
+            Wt::WPushButton *editButton = new Wt::WPushButton(tr("edit"));
+            editButton->clicked().connect(this, &PostView::ShowEdit);
             bindWidget("edit", editButton);
 
-            WPushButton *deleteButton = new WPushButton(tr("delete"));
-            deleteButton->clicked().connect(this, &PostView::rm);
+            Wt::WPushButton *deleteButton = new Wt::WPushButton(tr("delete"));
+            deleteButton->clicked().connect(this, &PostView::Rm);
             bindWidget("delete", deleteButton);
         }
         else
         {
-            bindString("publish", WString::Empty);
-            bindString("edit", WString::Empty);
-            bindString("delete", WString::Empty);
+            bindString("publish", Wt::WString::Empty);
+            bindString("edit", Wt::WString::Empty);
+            bindString("delete", Wt::WString::Empty);
         }
     }
 
-    WAnchor *postAnchor = new WAnchor(WLink(WLink::InternalPath, basePath_ + "author/" + post_->author->name.toUTF8()),  post_->author->name);
+    Wt::WAnchor *postAnchor = new Wt::WAnchor(Wt::WLink(Wt::WLink::InternalPath, basePath_ + "author/" + post_->author->name.toUTF8()),  post_->author->name);
     bindWidget("author", postAnchor);
-}
+} // end void PostView::Render
 /* ****************************************************************************
- * saveEdit
+ * Save Edit
  */
-void PostView::saveEdit()
+void PostView::SaveEdit()
 {
-    dbo::Transaction t(session_);
+    Wt::Dbo::Transaction t(session_);
 
     bool newPost = post_.id() == -1;
 
@@ -220,7 +212,7 @@ void PostView::saveEdit()
         post->state = Post::Unpublished;
         post->author = session_.user();
 
-        dbo::ptr<Comment> rootComment = session_.add(new Comment);
+        Wt::Dbo::ptr<Comment> rootComment = session_.add(new Comment);
         rootComment.modify()->post = post_;
     }
 
@@ -229,11 +221,11 @@ void PostView::saveEdit()
     render(viewType_);
 
     t.commit();
-}
+} // end void PostView::SaveEdit
 /* ****************************************************************************
- * showView
+ * Show View
  */
-void PostView::showView()
+void PostView::ShowView()
 {
     if (post_.id() == -1)
     {
@@ -241,31 +233,31 @@ void PostView::showView()
     }
     else
     {
-        dbo::Transaction t(session_);
+        Wt::Dbo::Transaction t(session_);
         render(viewType_);
         t.commit();
     }
-}
+} // end void PostView::ShowView
 /* ****************************************************************************
- * publish
+ * Publish
  */
-void PostView::publish()
+void PostView::Publish()
 {
-    setState(Post::Published);
-}
+    SetState(Post::Published);
+} // end void PostView::Publish
 /* ****************************************************************************
- * retract
+ * Retract
  */
-void PostView::retract()
+void PostView::Retract()
 {
-    setState(Post::Unpublished);
-}
+    SetState(Post::Unpublished);
+} // end void PostView::Retract
 /* ****************************************************************************
- * setState
+ * Set State
  */
-void PostView::setState(Post::State state)
+void PostView::SetState(Post::State state)
 {
-    dbo::Transaction t(session_);
+    Wt::Dbo::Transaction t(session_);
 
     post_.modify()->state = state;
     if (state == Post::Published)
@@ -275,42 +267,46 @@ void PostView::setState(Post::State state)
     render(viewType_);
 
     t.commit();
-}
+} // end void PostView::SetState
 /* ****************************************************************************
- * showEdit
+ * Show Edit
  */
-void PostView::showEdit()
+void PostView::ShowEdit()
 {
-    dbo::Transaction t(session_);
+    Wt::Dbo::Transaction t(session_);
 
     render(Edit);
 
     t.commit();
-}
+} // end void PostView::ShowEdit
 /* ****************************************************************************
- * rm
+ * Rm
  */
-void PostView::rm()
+void PostView::Rm()
 {
-    dbo::Transaction t(session_);
+    Wt::Dbo::Transaction t(session_);
     post_.remove();
     t.commit();
 
     delete this;
-}
+} // end void PostView::Rm
 /* ****************************************************************************
- * updateCommentCount
+ * update Comment Count
  */
-void PostView::updateCommentCount(dbo::ptr<Comment> comment)
+void PostView::UpdateCommentCount(Wt::Dbo::ptr<Comment> comment)
 {
     if (comment->post == post_)
     {
         std::string count = comment->post->commentCount();
 
         if (commentCount_->text().toUTF8()[0] == '(')
+        {
             commentCount_->setText("(" + count + ")");
+        }
         else
+        {
             commentCount_->setText(count);
+        }
     }
-}
+} // end void PostView::UpdateCommentCount
 // --- End Of File ------------------------------------------------------------

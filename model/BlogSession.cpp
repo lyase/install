@@ -3,15 +3,6 @@
  *
  * See the LICENSE file for terms of use.
  */
-
-#include "BlogSession.h"
-#include "Comment.h"
-#include "Post.h"
-#include "Tag.h"
-#include "Token.h"
-#include "User.h"
-#include "asciidoc/asciidoc.h"
-
 #include <Wt/Auth/AuthService>
 #include <Wt/Auth/HashFunction>
 #include <Wt/Auth/Identity>
@@ -19,7 +10,19 @@
 #include <Wt/Auth/PasswordStrengthValidator>
 #include <Wt/Auth/PasswordVerifier>
 #include <Wt/Auth/GoogleService>
-
+// Database
+#include <Wt/Dbo/Session>
+#include <Wt/Dbo/ptr>
+#include <Wt/Dbo/Dbo>
+#ifdef POSTGRES
+    #include <Wt/Dbo/backend/Postgres>
+#elif SQLITE3
+    #include <Wt/Dbo/backend/Sqlite3>
+#elif MYSQL
+    #include <Wt/Dbo/backend/MySQL>
+#elif FIREBIRD
+    #include <Wt/Dbo/backend/Firebird>
+#endif // FIREBIRD
 #include <Wt/Dbo/FixedSqlConnectionPool>
 
 #ifndef WIN32
@@ -29,23 +32,28 @@
 #if !defined(WIN32) && !defined(__CYGWIN__) && !defined(ANDROID)
     #define HAVE_CRYPT
 #endif
-
-/* ****************************************************************************
- *
- */
-using namespace Wt;
-namespace dbo = Wt::Dbo;
+//
+#include "BlogSession.h"
+#include "Comment.h"
+#include "Post.h"
+#include "Tag.h"
+#include "Token.h"
+#include "User.h"
+#include "asciidoc/asciidoc.h"
 /* ****************************************************************************
  * Unix Crypt Hash Function
- * vector
+ * BlogOAuth
  */
 namespace
 {
     const std::string ADMIN_USERNAME = "admin";
     const std::string ADMIN_PASSWORD = "admin";
 
-#ifdef HAVE_CRYPT
-    class UnixCryptHashFunction : public Auth::HashFunction
+    #ifdef HAVE_CRYPT
+    /* ************************************************************************
+     * UnixCryptHashFunction
+     */
+    class UnixCryptHashFunction : public Wt::Auth::HashFunction
     {
         public:
             virtual std::string compute(const std::string& msg, const std::string& salt) const
@@ -56,7 +64,7 @@ namespace
 
             virtual bool verify(const std::string& msg, const std::string& salt, const std::string& hash) const
             {
-                (void)salt; // Eat Salt Warning
+                (void)salt; // Eat Salt warning
                 return crypt(msg.c_str(), hash.c_str()) == hash;
             }
 
@@ -64,10 +72,12 @@ namespace
             {
                 return "crypt";
             }
-    };
-#endif // HAVE_CRYPT
-
-    class BlogOAuth : public std::vector<const Auth::OAuthService *>
+    }; // end
+    #endif // HAVE_CRYPT
+    /* ************************************************************************
+     * BlogOAuth
+     */
+    class BlogOAuth : public std::vector<const Wt::Auth::OAuthService *>
     {
         public:
             ~BlogOAuth()
@@ -79,14 +89,14 @@ namespace
             }
     };
 
-    Auth::AuthService blogAuth;
-    Auth::PasswordService blogPasswords(blogAuth);
+    Wt::Auth::AuthService blogAuth;
+    Wt::Auth::PasswordService blogPasswords(blogAuth);
     BlogOAuth blogOAuth;
-}
+} // end
 /* ****************************************************************************
  * Blog Session
  */
-BlogSession::BlogSession(dbo::SqlConnectionPool &connectionPool) : connectionPool_(connectionPool), users_(*this)
+BlogSession::BlogSession(Wt::Dbo::SqlConnectionPool &connectionPool) : connectionPool_(connectionPool), users_(*this)
 {
     setConnectionPool(connectionPool_);
 
@@ -98,30 +108,31 @@ BlogSession::BlogSession(dbo::SqlConnectionPool &connectionPool) : connectionPoo
 
     try
     {
-        dbo::Transaction t(*this);
+        Wt::Dbo::Transaction t(*this);
         createTables();
 
-        dbo::ptr<User> admin = add(new User());
+        Wt::Dbo::ptr<User> admin = add(new User());
         User *a = admin.modify();
         a->name = ADMIN_USERNAME;
         a->role = User::Admin;
 
-        Auth::User authAdmin = users_.findWithIdentity(Auth::Identity::LoginName, a->name);
+        Wt::Auth::User authAdmin = users_.findWithIdentity(Wt::Auth::Identity::LoginName, a->name);
         blogPasswords.updatePassword(authAdmin, ADMIN_PASSWORD);
 
-        dbo::ptr<Post> post = add(new Post());
+        Wt::Dbo::ptr<Post> post = add(new Post());
         Post *p = post.modify();
 
         p->state = Post::Published;
         p->author = admin;
         p->title = "Welcome!";
         p->briefSrc = "Welcome to your own blog.";
+        // Fix Security
         p->bodySrc = "We have created for you an " + ADMIN_USERNAME + " user with password " + ADMIN_PASSWORD;
         p->briefHtml = asciidoc(p->briefSrc);
         p->bodyHtml = asciidoc(p->bodySrc);
-        p->date = WDateTime::currentDateTime();
+        p->date = Wt::WDateTime::currentDateTime();
 
-        dbo::ptr<Comment> rootComment = add(new Comment());
+        Wt::Dbo::ptr<Comment> rootComment = add(new Comment());
         rootComment.modify()->post = post;
 
         t.commit();
@@ -133,7 +144,7 @@ BlogSession::BlogSession(dbo::SqlConnectionPool &connectionPool) : connectionPoo
         std::cerr << e.what() << std::endl;
         std::cerr << "Using existing database";
     }
-}
+} // end
 /* ****************************************************************************
  * configure Auth
  */
@@ -141,53 +152,59 @@ void BlogSession::configureAuth()
 {
     blogAuth.setAuthTokensEnabled(true, "bloglogin");
 
-    Auth::PasswordVerifier *verifier = new Auth::PasswordVerifier();
-    verifier->addHashFunction(new Auth::BCryptHashFunction(7));
+    Wt::Auth::PasswordVerifier *verifier = new Wt::Auth::PasswordVerifier();
+    verifier->addHashFunction(new Wt::Auth::BCryptHashFunction(7));
     #ifdef WT_WITH_SSL
-        verifier->addHashFunction(new Auth::SHA1HashFunction());
+        verifier->addHashFunction(new Wt::Auth::SHA1HashFunction());
     #endif
     #ifdef HAVE_CRYPT
         verifier->addHashFunction(new UnixCryptHashFunction());
     #endif
     blogPasswords.setVerifier(verifier);
     blogPasswords.setAttemptThrottlingEnabled(true);
-    blogPasswords.setStrengthValidator(new Auth::PasswordStrengthValidator());
+    blogPasswords.setStrengthValidator(new Wt::Auth::PasswordStrengthValidator());
 
-    if (Auth::GoogleService::configured())
+    if (Wt::Auth::GoogleService::configured())
     {
-        blogOAuth.push_back(new Auth::GoogleService(blogAuth));
+        blogOAuth.push_back(new Wt::Auth::GoogleService(blogAuth));
     }
-}
+} // end
 /* ****************************************************************************
  * create Connection Pool
  */
-dbo::SqlConnectionPool *BlogSession::createConnectionPool(const std::string &dbParm)
+Wt::Dbo::SqlConnectionPool *BlogSession::createConnectionPool(const std::string &dbParm)
 {
-    /* ************************************************************************
+    /* ------------------------------------------------------------------------
      * SqlConnection dbConnection
      */
     Wt::Dbo::SqlConnection *dbConnection;
     #ifdef POSTGRES
-        dbConnection = new dbo::backend::Postgres(dbParm);
+        dbConnection = new Wt::Dbo::backend::Postgres(dbParm);
     #elif SQLITE3
-        dbo::backend::Sqlite3 *sqlite3 = new dbo::backend::Sqlite3(dbParm);
+        Wt::Dbo::backend::Sqlite3 *sqlite3 = new Wt::Dbo::backend::Sqlite3(dbParm);
         sqlite3->setDateTimeStorage(Wt::Dbo::SqlDateTime, Wt::Dbo::backend::Sqlite3::PseudoISO8601AsText);
         dbConnection = sqlite3;
     #elif MYSQL
-        dbConnection = new dbo::backend::MySQL(dbParm);
+        dbConnection = new Wt::Dbo::backend::MySQL(dbParm);
     #elif FIREBIRD
         // Complety untested
-        QRegExp rx("(\\t)"); // RegEx for ' ' or ',' or '.' or ':' or '\t'
-        QStringList query = dbParm.split(rx);
-        dbConnection = new dbo::backend::Firebird(query[0], query[1], query[2], query[3], "", "", ""); // Server:localhost, Path:File, user, password
+        #ifdef REGX
+            QRegExp rx("(\\t)"); // RegEx for ' ' or ',' or '.' or ':' or '\t'
+            QStringList query = dbParm.split(rx);
+            dbConnection = new Wt::Dbo::backend::Firebird(query[0], query[1], query[2], query[3], "", "", ""); // Server:localhost, Path:File, user, password
+        #else
+            std::vector <std::string> query;
+            boost::split( query, dbParm, boost::is_any_of( "\t" ) );
+            dbConnection = new Wt::Dbo::backend::Firebird(query[0], query[1], query[2], query[3], "", "", ""); // Server:localhost, Path:File, user, password
+        #endif
     #endif // FIREBIRD
     dbConnection->setProperty("show-queries", "true");
-    return new dbo::FixedSqlConnectionPool(dbConnection, 10);
-}
+    return new Wt::Dbo::FixedSqlConnectionPool(dbConnection, 10);
+} // end
 /* ****************************************************************************
  * user
  */
-dbo::ptr<User> BlogSession::user() const
+Wt::Dbo::ptr<User> BlogSession::user() const
 {
     if (login_.loggedIn())
     {
@@ -195,21 +212,21 @@ dbo::ptr<User> BlogSession::user() const
     }
     else
     {
-        return dbo::ptr<User>();
+        return Wt::Dbo::ptr<User>();
     }
-}
+} // end
 /* ****************************************************************************
  * password Auth
  */
-Auth::PasswordService *BlogSession::passwordAuth() const
+Wt::Auth::PasswordService *BlogSession::passwordAuth() const
 {
     return &blogPasswords;
-}
+} // end
 /* ****************************************************************************
- * vector
+ * oAuth
  */
-const std::vector<const Auth::OAuthService *> &BlogSession::oAuth() const
+const std::vector<const Wt::Auth::OAuthService *> &BlogSession::oAuth() const
 {
     return blogOAuth;
-}
+} // end
 // --- End Of File ------------------------------------------------------------

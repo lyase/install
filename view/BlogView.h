@@ -9,14 +9,10 @@
 
 #include <Wt/WCompositeWidget>
 #include "BlogImpl.h"
-class BlogImpl;
 /* ****************************************************************************
- * WContainerWidget
+ * Prototype Blog Impl
  */
-namespace Wt
-{
-    class WContainerWidget;
-}
+class BlogImpl;
 /* ****************************************************************************
  * BlogView
  */

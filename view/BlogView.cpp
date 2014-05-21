@@ -38,24 +38,21 @@
 
 #include "BlogImpl.h"
 
-//using namespace Wt;
-//namespace dbo = Wt::Dbo;
-
 /* ****************************************************************************
- * Blog View
+ * Blog View Constructor
  */
 BlogView::BlogView(const std::string& basePath, Wt::Dbo::SqlConnectionPool& db, const std::string& rssFeedUrl, Wt::WContainerWidget* parent) : Wt::WCompositeWidget(parent), userChanged_(this)
 {
     impl_ = new BlogImpl(basePath, db, rssFeedUrl, this);
     setImplementation(impl_);
-}
+} // end
 /* ****************************************************************************
  * set Internal Base Path
  */
 void BlogView::setInternalBasePath(const std::string& basePath)
 {
     impl_->setInternalBasePath(basePath);
-}
+} // end
 /* ****************************************************************************
  * user
  */
@@ -69,5 +66,5 @@ Wt::WString BlogView::user()
     {
         return Wt::WString::Empty;
     }
-}
+} // end
 // --- End Of File ------------------------------------------------------------

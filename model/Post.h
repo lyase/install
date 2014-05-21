@@ -16,25 +16,21 @@
 #include "Comment.h"
 #include "Tag.h"
 /* ****************************************************************************
- * User
+ * Prototype User
  */
 class User;
 /* ****************************************************************************
- * dbo
+ * ptr Comments
  */
-namespace dbo = Wt::Dbo;
+typedef Wt::Dbo::collection< Wt::Dbo::ptr<Comment> > Comments;
 /* ****************************************************************************
- * Comments
+ * ptr Tags
  */
-typedef dbo::collection< dbo::ptr<Comment> > Comments;
-/* ****************************************************************************
- * Tags
- */
-typedef dbo::collection< dbo::ptr<Tag> > Tags;
+typedef Wt::Dbo::collection< Wt::Dbo::ptr<Tag> > Tags;
 /* ****************************************************************************
  * Post
  */
-class Post : public dbo::Dbo<Post>
+class Post : public Wt::Dbo::Dbo<Post>
 {
     public:
         enum State
@@ -43,7 +39,7 @@ class Post : public dbo::Dbo<Post>
             Published = 1
         };
 
-        dbo::ptr<User> author;
+        Wt::Dbo::ptr<User> author;
         State          state;
 
         Wt::WDateTime  date;
@@ -58,24 +54,24 @@ class Post : public dbo::Dbo<Post>
 
         std::string permaLink() const;
         std::string commentCount() const;
-        dbo::ptr<Comment> rootComment() const;
+        Wt::Dbo::ptr<Comment> rootComment() const;
         std::string titleToUrl() const;
 
         template<class Action>
         void persist(Action& a)
         {
-            dbo::field(a, state,     "state");
-            dbo::field(a, date,      "date");
-            dbo::field(a, title,     "title");
-            dbo::field(a, briefSrc,  "brief_src");
-            dbo::field(a, briefHtml, "brief_html");
-            dbo::field(a, bodySrc,   "body_src");
-            dbo::field(a, bodyHtml,  "body_html");
+            Wt::Dbo::field(a, state,     "state");
+            Wt::Dbo::field(a, date,      "date");
+            Wt::Dbo::field(a, title,     "title");
+            Wt::Dbo::field(a, briefSrc,  "brief_src");
+            Wt::Dbo::field(a, briefHtml, "brief_html");
+            Wt::Dbo::field(a, bodySrc,   "body_src");
+            Wt::Dbo::field(a, bodyHtml,  "body_html");
 
-            dbo::belongsTo(a, author, "author");
+            Wt::Dbo::belongsTo(a, author, "author");
 
-            dbo::hasMany(a, comments, dbo::ManyToOne,  "post");
-            dbo::hasMany(a, tags,     dbo::ManyToMany, "post_tag");
+            Wt::Dbo::hasMany(a, comments, Wt::Dbo::ManyToOne,  "post");
+            Wt::Dbo::hasMany(a, tags,     Wt::Dbo::ManyToMany, "post_tag");
         }
 };
 

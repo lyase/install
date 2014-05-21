@@ -12,34 +12,30 @@
 #include <Wt/Dbo/Types>
 #include <Wt/Dbo/WtSqlTraits>
 /* ****************************************************************************
- * Comment
+ * Prototype Comment
  */
 class Comment;
 /* ****************************************************************************
- * Post
+ * Prototype Post
  */
 class Post;
 /* ****************************************************************************
- * User
+ * Prototype User
  */
 class User;
 /* ****************************************************************************
- * dbo
+ * ptr Comments
  */
-namespace dbo = Wt::Dbo;
-/* ****************************************************************************
- * Comments
- */
-typedef dbo::collection<dbo::ptr<Comment> > Comments;
+typedef Wt::Dbo::collection<Wt::Dbo::ptr<Comment> > Comments;
 /* ****************************************************************************
  * Comment
  */
 class Comment
 {
     public:
-        dbo::ptr<User>    author;
-        dbo::ptr<Post>    post;
-        dbo::ptr<Comment> parent;
+        Wt::Dbo::ptr<User>    author;
+        Wt::Dbo::ptr<Post>    post;
+        Wt::Dbo::ptr<Comment> parent;
 
         Wt::WDateTime     date;
 
@@ -54,15 +50,15 @@ class Comment
         template<class Action>
         void persist(Action& a)
         {
-            dbo::field(a, date, "date");
-            dbo::field(a, textSrc_, "text_source");
-            dbo::field(a, textHtml_, "text_html");
+            Wt::Dbo::field(a, date, "date");
+            Wt::Dbo::field(a, textSrc_, "text_source");
+            Wt::Dbo::field(a, textHtml_, "text_html");
 
-            dbo::belongsTo(a, post, "post", dbo::OnDeleteCascade);
-            dbo::belongsTo(a, author, "author");
-            dbo::belongsTo(a, parent, "parent", dbo::OnDeleteCascade);
+            Wt::Dbo::belongsTo(a, post, "post", Wt::Dbo::OnDeleteCascade);
+            Wt::Dbo::belongsTo(a, author, "author");
+            Wt::Dbo::belongsTo(a, parent, "parent", Wt::Dbo::OnDeleteCascade);
 
-            dbo::hasMany(a, children, dbo::ManyToOne, "parent");
+            Wt::Dbo::hasMany(a, children, Wt::Dbo::ManyToOne, "parent");
         }
 
     private:

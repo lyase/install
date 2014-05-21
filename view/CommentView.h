@@ -9,25 +9,15 @@
 
 #include <Wt/WTemplate>
 #include <Wt/Dbo/ptr>
+
 /* ****************************************************************************
- * WTextArea
- */
-namespace Wt
-{
-    class WTextArea;
-}
-/* ****************************************************************************
- * BlogSession
+ * Prototype BlogSession
  */
 class BlogSession;
 /* ****************************************************************************
- * Comment
+ * Prototype Comment
  */
 class Comment;
-/* ****************************************************************************
- * dbo
- */
-namespace dbo = Wt::Dbo;
 /* ****************************************************************************
  * CommentView
  */
@@ -38,28 +28,26 @@ class CommentView : public Wt::WTemplate
         CommentView(BlogSession& session, long long parentId);
 
         // Existing comment
-        CommentView(BlogSession& session, dbo::ptr<Comment> comment);
+        CommentView(BlogSession& session, Wt::Dbo::ptr<Comment> comment);
 
-        virtual void resolveString(const std::string& varName,
-                                   const std::vector<Wt::WString>& args,
-                                   std::ostream& result);
+        virtual void resolveString(const std::string& varName, const std::vector<Wt::WString>& args, std::ostream& result);
 
     protected:
         virtual void renderTemplate(std::ostream& result);
 
     private:
         BlogSession& session_;
-        dbo::ptr<Comment> comment_;
+        Wt::Dbo::ptr<Comment> comment_;
         Wt::WTextArea *editArea_;
 
-        void reply();
-        void edit();
-        void rm();
-        void save();
-        void cancel();
-        bool isNew() const;
+        void Reply();
+        void Edit();
+        void Rm();
+        void Save();
+        void Cancel();
+        bool IsNew() const;
 
-        void renderView();
+        void RenderView();
 };
 
 #endif // COMMENT_VIEW_H_

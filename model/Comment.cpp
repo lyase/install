@@ -31,9 +31,9 @@ namespace
 
         return s;
     }
-}
+} // end
 /* ****************************************************************************
- * setText
+ * set Text
  */
 void Comment::setText(const Wt::WString& src)
 {
@@ -95,12 +95,12 @@ void Comment::setText(const Wt::WString& src)
     replace(html, "<br /><br />", "<div class=\"vspace\"></div>");
 
     textHtml_ = Wt::WString::fromUTF8(html);
-}
+} // end
 /* ****************************************************************************
- * setDeleted
+ * set Deleted
  */
 void Comment::setDeleted()
 {
     textHtml_ = Wt::WString::tr("comment-deleted");
-}
+} // end
 // --- End Of File ------------------------------------------------------------

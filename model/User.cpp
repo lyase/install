@@ -18,19 +18,19 @@ DBO_INSTANTIATE_TEMPLATES(User);
 User::User() : role(Visitor), failedLoginAttempts(0)
 {
 
-}
+} // end
 /* ****************************************************************************
- * latestPosts
+ * latest Posts
  */
 Posts User::latestPosts(int count) const
 {
     return posts.find().where("state = ?").bind(Post::Published).orderBy("date desc").limit(count);
-}
+} // end
 /* ****************************************************************************
- * allPosts
+ * all Posts
  */
 Posts User::allPosts(Post::State state) const
 {
     return posts.find().where("state = ?").bind(state).orderBy("date desc");
-}
+} // end
 // --- End Of File ------------------------------------------------------------

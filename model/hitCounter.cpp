@@ -2,4 +2,4 @@
 
 hitCounter::hitCounter()
 {
-}
+} // end

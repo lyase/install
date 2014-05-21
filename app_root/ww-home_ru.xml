@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<messages>
+    <message id="template">
+
+        <div id="banner_wrapper">
+            <div id="banner_content">
+                <div id="banner_end">
+                    <div id="banner">
+                        <!-- <a href="#">Witty Wizard</a> -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="main_wrapper">
+            <div id="main_menu">
+                ${menu}
+            </div>
+            <div class="clearall"></div>
+        </div>
+
+        <div id="main_content" class="panel">
+            <div id="content" class="panel-body">
+                ${contents}
+            </div>
+        </div>
+
+        <div id="footer_wrapper" class="panel">
+            <div id="footer_content" class="panel-footer">
+                <div id="footer_copyright" style="display: inline;">
+                    Мастер Остроумный система управления контентом (CMS)
+                    <a href="http://WittyWizard.org/">WittyWizard.org</a>
+                </div>
+
+                <div id="footer_menu" style="float: right; display: inline;">
+                    <a href="http://beta.WittyWizard.org:8088">Home</a> | <a href="http://beta.WittyWizard.org:8088/contact">Contact</a>
+                </div>
+
+                <div id="chat"></div>
+                <script src="http://www.webtoolkit.eu/wt/examples/simplechat/chat.js?div=chat" type="text/javascript"></script>
+
+                <div class="clearall"></div>
+            </div>
+            <script>
+            /*<![CDATA[*/
+              (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+              (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+              m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+              })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+              ga('create', 'UA-48275805-1', 'wittywizard.org');
+              ga('send', 'pageview');
+
+            /* ]]> */
+            </script>
+        </div>
+    </message>
+
+    <message id="wt">Мастер Остроумный, C + + Web Toolkit Содержимое Managment System (CMS)</message>
+
+    <message id="title">Мастер Остроумный</message>
+    <message id="home">домой</message>
+    <message id="blog">Блог</message>
+    <message id="chat">Чат</message>
+    <message id="video">видео</message>
+    <message id="contact">контакт</message>
+
+    <message id="home.intro">
+
+        <h3><span>Остроумный Wizzard: введение</span></h3>
+
+        <p>
+            Вес (произносится как <i> Witty </i>) является C + + библиотека для разработки веб-приложений.
+        </p>
+
+        <p>
+            <b> Остроумный Мастер </b> является проектом, чтобы сделать написание Wt приложений проще, поэтому его не Типичные Managment System контентом (CMS),
+            но его гораздо проще по всем, это дает конечному пользователю чего-то начать и построить на.
+        </p>
+
+    </message>
+
+    <message id="home.contact">
+
+
+        <p>
+            Контактный формуляр в работе.
+        </p>
+
+
+    </message>
+
+    <message id="chatter">
+
+        <h2><span>Клиент чата Wt</span></h2>
+        <p>Это клиент и сервер многопользовательского чата.</p>
+
+        <p>
+        Для простоты примера, всё - сервер и клиенты - выполняется в одном процессе.
+        Тем не менее, поскольку все операции ввода/вывода в Wt асинхронны,
+        даже при использовании технологии "server push", которая
+        нуждается в открытом соединении с каждым клиентом постоянно, клиенты
+        не привязаны к потокам, и такое приложение способно легко обслужить
+        тысячи пользователей одновременно.
+        </p>
+
+        <p>
+            Клиент содержится в виджете (SimpleChatWidget) и может быть инстанцирован столько раз, сколько потребуется, даже в пределах одного приложения.<br />
+
+            Благодаря абстракции виджетов, можно прямиком включать клиент чата в Ваше собственное приложение, компонуя его с классами клиента и сервера.
+        </p>
+    </message>
+
+    <message id="details">
+
+        <p>
+            Реализация использует инициируемые сервером обновления - особенность,
+            которая не во многом отличается от обычного клиент-серверного взаимодействия в
+            Wt, и позволяет обновлять сессию вне обычного цикла обработки событий. При
+            получении сообщения от того или иного пользователя, пользовательские интерфейсы
+            (т.е. деревья виджетов) текущей и всех остальных сессий обновляются и изменения
+            отсылаются ("pushed") соответствующим клиентам одновременно.
+        </p>
+
+    </message>
+
+    <message id="serverpushwarning">Note, you do not have JavaScript and this chat will have degraded functionality</message>
+
+    <message id="intro">
+        <h1>Using WVideo</h1>
+        <p>
+            Although the <tt>WMediaPlayer</tt> implements a cross-browser video player,
+            in some cases, one may want direct access to a native
+            HTML <tt>&lt;video&gt;</tt> element. This is provided by
+            the <tt>WVideo</tt> widget.
+        </p>
+
+        <p>
+            The trailer used in the examples below
+            is <a href="http://durian.blender.org/" target="_blank">Sintel</a>, (c) copyright Blender Foundation | durian.blender.org
+        </p>
+    </message>
+    <message id="html5">
+        <h2>Родной видео</h2>
+        <p>
+            Ниже видео класс, с <tt>WImage</tt> (статического JPEG изображение),
+            как запасной вариант. Видео будет играть на браузерах, которые поддерживают MP4 или ОГВ видеопотоки (Firefox, Chrome, Safari, ...)
+            изначально (с помощью HTML <tt>&lt;video&gt;</tt>), и показать изображение на друга браузеры (Internet Explorer, Opera, ...).
+        </p>
+    </message>
+    <message id="flash-fallback">
+        <h2>Native video with Flash player fall-back</h2>
+        <p>
+            For browsers that support HTML <tt>&lt;video&gt;</tt>, this
+            video below looks exactly like the one above. On other browsers,
+            the player below falls back to a Flash player, which plays an
+            MP4 video. If flash is not supported on your system, a static image is shown.
+        </p>
+        <p>
+            The Flash-based video player can be any player. The example
+            below uses <a href="http://flv-player.net/" target="_blank">FLV
+            Player</a> as fallback for HTML5 video, but any flash player can do the job.
+        </p>
+    </message>
+
+    <message id="mediaplayer">
+        <h1>
+            Using WMediaPlayer
+        </h1>
+        <p>
+            <tt>
+                WMediaPlayer
+            </tt>
+            provides an interactive audio/video player, with flexible support for user-interface controls, and good cross-browser support through a combination of native HTML elements (
+            <tt>
+                &lt;video&gt;
+            </tt>
+                    ,
+            <tt>
+                &lt;audio&gt;
+            </tt>
+            ) and flash fall-back.
+        </p>
+        <p>
+            A unique feature of the video player is that regardless of the technology used for video playback, the same
+            <tt>
+                WWidget
+            </tt>
+            may be used to implement the controls, using native form elements. In this way, the user-interface is easily customized and adapted to your needs and skinned using CSS.
+        </p>
+    </message>
+
+</messages>

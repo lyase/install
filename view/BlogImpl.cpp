@@ -3,19 +3,6 @@
  *
  * See the LICENSE file for terms of use.
  */
-#include "BlogImpl.h"
-#include "PostView.h"
-#include "BlogView.h"
-#include "EditUsers.h"
-#include "BlogLoginWidget.h"
-
-#include "model/BlogSession.h"
-#include "model/Comment.h"
-#include "model/Post.h"
-#include "model/Tag.h"
-#include "model/Token.h"
-#include "model/User.h"
-
 #include <Wt/WAnchor>
 #include <Wt/WApplication>
 #include <Wt/WCheckBox>
@@ -30,61 +17,76 @@
 #include <Wt/Auth/PasswordService>
 #include <Wt/Auth/PasswordVerifier>
 
-#include <Wt/Dbo/backend/Sqlite3>
+//#include <Wt/Dbo/backend/Sqlite3>
 
 #include <boost/algorithm/string/classification.hpp>
 #include <boost/algorithm/string/split.hpp>
 #include <boost/algorithm/string.hpp>
 
+#include "BlogImpl.h"
+#include "PostView.h"
+#include "BlogView.h"
+#include "EditUsers.h"
+#include "BlogLoginWidget.h"
+
+#include "model/BlogSession.h"
+#include "model/Comment.h"
+#include "model/Post.h"
+#include "model/Tag.h"
+#include "model/Token.h"
+#include "model/User.h"
+
 /* ****************************************************************************
  * Blog Impl
  */
-BlogImpl::BlogImpl(const std::string& basePath, Wt::Dbo::SqlConnectionPool& connectionPool, const std::string& rssFeedUrl, BlogView* blogView) : basePath_(basePath), rssFeedUrl_(rssFeedUrl), session_(connectionPool), blogView_(blogView), panel_(0), authorPanel_(0), users_(0), userEditor_(0), mustLoginWarning_(0), mustBeAdministratorWarning_(0), invalidUser_(0)
+BlogImpl::BlogImpl(const std::string& basePath, Wt::Dbo::SqlConnectionPool& connectionPool, const std::string& rssFeedUrl, BlogView* blogView) : basePath_(basePath), session_(connectionPool), rssFeedUrl_(rssFeedUrl), blogView_(blogView), panel_(0), authorPanel_(0), users_(0), userEditor_(0), mustLoginwarning_(0), mustBeAdministratorwarning_(0), invalidUser_(0)
 {
     Wt::WApplication *app = wApp;
-
+    // Do we want to use our own xml or use a common Template?
     app->messageResourceBundle().use(Wt::WApplication::appRoot() + "blog");
+    // Do we want every Domain to have their own Resources? if so add path
     app->useStyleSheet(Wt::WApplication::resourcesUrl() + "css/blog.css");
     app->useStyleSheet(Wt::WApplication::resourcesUrl() + "css/asciidoc.css");
+    //
     app->internalPathChanged().connect(this, &BlogImpl::handlePathChange);
-
+    //
     loginStatus_ = new Wt::WTemplate(tr("blog-login-status"), this);
     panel_ = new Wt::WStackedWidget(this);
     items_ = new Wt::WContainerWidget(this);
-
+    //
     session_.login().changed().connect(this, &BlogImpl::onUserChanged);
-
+    //
     loginWidget_ = new BlogLoginWidget(session_, basePath);
     loginWidget_->hide();
-
+    //
     Wt::WText *loginLink = new Wt::WText(tr("login"));
     loginLink->setStyleClass("link");
     loginLink->clicked().connect(loginWidget_, &WWidget::show);
     loginLink->clicked().connect(loginLink, &WWidget::hide);
-
+    //
     Wt::WText *registerLink = new Wt::WText(tr("Wt.Auth.register"));
     registerLink->setStyleClass("link");
     registerLink->clicked().connect(loginWidget_, &BlogLoginWidget::registerNewUser);
-
+    //
     Wt::WAnchor* archiveLink = new Wt::WAnchor(Wt::WLink(Wt::WLink::InternalPath, basePath_ + "all"), tr("archive"));
-
+    //
     loginStatus_->bindWidget("login", loginWidget_);
     loginStatus_->bindWidget("login-link", loginLink);
     loginStatus_->bindWidget("register-link", registerLink);
     loginStatus_->bindString("feed-url", rssFeedUrl_);
     loginStatus_->bindWidget("archive-link", archiveLink);
-
+    //
     onUserChanged();
-
+    //
     loginWidget_->processEnvironment();
-}
+} // end
 /* ****************************************************************************
  * ~Blog Impl
  */
 BlogImpl::~BlogImpl()
 {
     clear();
-}
+} // end
 /* ****************************************************************************
  * on User Changed
  */
@@ -98,7 +100,7 @@ void BlogImpl::onUserChanged()
     {
         loggedOut();
     }
-}
+} // end
 /* ****************************************************************************
  * set Internal Base Path
  */
@@ -106,14 +108,14 @@ void BlogImpl::setInternalBasePath(const std::string& basePath)
 {
     basePath_ = basePath;
     refresh();
-}
+} // end
 /* ****************************************************************************
  * logout
  */
 void BlogImpl::logout()
 {
     session_.login().logout();
-}
+} // end
 /* ****************************************************************************
  * logged Out
  */
@@ -129,7 +131,7 @@ void BlogImpl::loggedOut()
 
     refresh();
     panel_->hide();
-}
+} // end
 /* ****************************************************************************
  * logged In
  */
@@ -170,7 +172,7 @@ void BlogImpl::loggedIn()
     loginStatus_->bindWidget("profile-link", profileLink);
 
     bindPanelTemplates();
-}
+} // end
 /* ****************************************************************************
  * bind Panel Templates
  */
@@ -194,7 +196,7 @@ void BlogImpl::bindPanelTemplates()
     }
 
     t.commit();
-}
+} // end
 /* ****************************************************************************
  * edit Users
  */
@@ -210,7 +212,7 @@ void BlogImpl::editUsers()
     }
 
     panel_->setCurrentWidget(users_);
-}
+} // end
 /* ****************************************************************************
  * author Panel
  */
@@ -224,27 +226,32 @@ void BlogImpl::authorPanel()
         bindPanelTemplates();
     }
     panel_->setCurrentWidget(authorPanel_);
-}
+} // end
 /* ****************************************************************************
  * edit Profile
  */
 void BlogImpl::editProfile()
 {
     loginWidget_->letUpdatePassword(session_.login().user(), true);
-}
+} // end
 /* ****************************************************************************
  * refresh
  */
 void BlogImpl::refresh()
 {
-    handlePathChange(wApp->internalPath());
-}
+    //handlePathChange(wApp->internalPath());
+    handlePathChange();
+} // end
 /* ****************************************************************************
  * handle Path Change
  */
-void BlogImpl::handlePathChange(const std::string& path)
+//void BlogImpl::handlePathChange(const std::string& path)
+void BlogImpl::handlePathChange()
 {
-    (void)path; // Eat path Warning
+    /* *-----------------------------------------------------------------------
+     * Do we need path passed in as a
+     */
+    //(void)path; // Eat path warning
     Wt::WApplication *app = wApp;
 
     if (app->internalPathMatches(basePath_))
@@ -295,7 +302,7 @@ void BlogImpl::handlePathChange(const std::string& path)
 
         t.commit();
     }
-}
+} // end
 /* ****************************************************************************
  * edit User
  */
@@ -321,7 +328,7 @@ void BlogImpl::editUser(const std::string& ids)
         {
             panel_->addWidget(userEditor_ = new EditUser(session_));
         }
-        userEditor_->switchUser(target);
+        userEditor_->SwitchUser(target);
         panel_->setCurrentWidget(userEditor_);
     }
     catch (Wt::Dbo::ObjectNotFoundException)
@@ -332,7 +339,7 @@ void BlogImpl::editUser(const std::string& ids)
         }
         panel_->setCurrentWidget(invalidUser_);
     }
-}
+} // end
 /* ****************************************************************************
  * check Logged In
  */
@@ -340,11 +347,11 @@ bool BlogImpl::checkLoggedIn()
 {
     if (session_.user()) { return true; }
     panel_->show();
-    if (!mustLoginWarning_)
+    if (!mustLoginwarning_)
     {
-        panel_->addWidget(mustLoginWarning_ = new Wt::WTemplate(tr("blog-mustlogin")));
+        panel_->addWidget(mustLoginwarning_ = new Wt::WTemplate(tr("blog-mustlogin")));
     }
-    panel_->setCurrentWidget(mustLoginWarning_);
+    panel_->setCurrentWidget(mustLoginwarning_);
     return false;
 }
 /* ****************************************************************************
@@ -354,27 +361,27 @@ bool BlogImpl::checkAdministrator()
 {
     if (session_.user() && (session_.user()->role == User::Admin)) { return true; }
     panel_->show();
-    if (!mustBeAdministratorWarning_)
+    if (!mustBeAdministratorwarning_)
     {
-        panel_->addWidget(mustBeAdministratorWarning_ = new Wt::WTemplate(tr("blog-mustbeadministrator")));
+        panel_->addWidget(mustBeAdministratorwarning_ = new Wt::WTemplate(tr("blog-mustbeadministrator")));
     }
-    panel_->setCurrentWidget(mustBeAdministratorWarning_);
+    panel_->setCurrentWidget(mustBeAdministratorwarning_);
     return false;
-}
+} // end
 /* ****************************************************************************
  * find User
  */
 Wt::Dbo::ptr<User> BlogImpl::findUser(const std::string& name)
 {
     return session_.find<User>("where name = ?").bind(name);
-}
+} // end
 /* ****************************************************************************
  * year Month Differ
  */
 bool BlogImpl::yearMonthDiffer(const Wt::WDateTime& dt1, const Wt::WDateTime& dt2)
 {
     return dt1.date().year() != dt2.date().year() || dt1.date().month() != dt2.date().month();
-}
+} // end
 /* ****************************************************************************
  * show Archive
  */
@@ -404,7 +411,7 @@ void BlogImpl::showArchive(Wt::WContainerWidget *parent)
 
         formerDate = (*i)->date;
     }
-}
+} // end
 /* ****************************************************************************
  * show Posts By Date Topic
  */
@@ -466,7 +473,7 @@ void BlogImpl::showPostsByDateTopic(const std::string& path, Wt::WContainerWidge
     {
         showError(tr("blog-no-post"));
     }
-}
+} // end
 /* ****************************************************************************
  * new Post
  */
@@ -482,6 +489,7 @@ void BlogImpl::newPost()
     Post *p = post.modify();
     p->state = Post::Unpublished;
     p->author = session_.user();
+    // FIX Multilingual
     p->title = "Title";
     p->briefSrc = "Brief ...";
     p->bodySrc = "Body ...";
@@ -489,14 +497,14 @@ void BlogImpl::newPost()
     showPost(post, PostView::Edit, unpublishedPosts);
 
     t.commit();
-}
+} // end
 /* ****************************************************************************
  * show Posts
  */
 void BlogImpl::showPosts(Wt::Dbo::ptr<User> user)
 {
     showPosts(user->latestPosts(), items_);
-}
+} // end
 /* ****************************************************************************
  * show Posts
  */
@@ -506,19 +514,19 @@ void BlogImpl::showPosts(const Posts& posts, Wt::WContainerWidget* parent)
     {
         showPost(*i, PostView::Brief, parent);
     }
-}
+} // end
 /* ****************************************************************************
  * show Post
  */
 void BlogImpl::showPost(const Wt::Dbo::ptr<Post> post, PostView::RenderType type, Wt::WContainerWidget* parent)
 {
     parent->addWidget(new PostView(session_, basePath_, post, type));
-}
+} // end
 /* ****************************************************************************
  * show Error
  */
 void BlogImpl::showError(const Wt::WString& msg)
 {
     items_->addWidget(new Wt::WText(msg));
-}
+} // end
 // --- End Of File ------------------------------------------------------------

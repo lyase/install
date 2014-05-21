@@ -210,7 +210,7 @@ void SimpleChatWidget::render(WFlags<RenderFlag> flags)
         }
     }
 
-    WContainerWidget::render(flags);
+    Wt::WContainerWidget::render(flags);
 }
 /* ************************************************************************* */
 /*
@@ -232,18 +232,18 @@ bool SimpleChatWidget::startChat(const WString& user)
         clear();
         userNameEdit_ = 0;
 
-        messages_ = new WContainerWidget();
-        userList_ = new WContainerWidget();
+        messages_ = new Wt::WContainerWidget();
+        userList_ = new Wt::WContainerWidget();
         messageEdit_ = new WTextArea();
         messageEdit_->setRows(2);
         messageEdit_->setFocus();
 
         // Display scroll bars if contents overflows
-        messages_->setOverflow(WContainerWidget::OverflowAuto);
-        userList_->setOverflow(WContainerWidget::OverflowAuto);
+        messages_->setOverflow(Wt::WContainerWidget::OverflowAuto);
+        userList_->setOverflow(Wt::WContainerWidget::OverflowAuto);
 
         sendButton_ = new WPushButton("Send");
-        WPushButton *logoutButton = new WPushButton("Logout");
+        WPushButton *logoutButton = new Wt::WPushButton("Logout");
 
         createLayout(messages_, userList_, messageEdit_, sendButton_, logoutButton);
 
