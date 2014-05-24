@@ -26,7 +26,9 @@ SOURCES += BlogRSSFeed.cpp FileItem.cpp main.cpp view/BlogLoginWidget.cpp view/B
             model/hitCounter.cpp view/BlogImpl.cpp view/VideoImpl.cpp \
     model/TheVideo.cpp \
     model/VideoSession.cpp \
-    view/VideoView.cpp
+    view/VideoView.cpp \
+    WittyWizard.cpp \
+    model/HitCounter.cpp
 
 HEADERS += FileItem.h model/BlogSession.h model/BlogUserDatabase.h model/Comment.h \
             model/Post.h model/Tag.h model/Token.h model/User.h \
@@ -41,85 +43,10 @@ HEADERS += FileItem.h model/BlogSession.h model/BlogUserDatabase.h model/Comment
     rapidxml/rapidxml_xhtml.hpp \
     rapidxml/rapidxml_utils.hpp \
     rapidxml/rapidxml_print.hpp \
-    rapidxml/rapidxml_iterators.hpp
+    rapidxml/rapidxml_iterators.hpp \
+    WittyWizard.h \
+    model/HitCounter.h
 #
-# Remove Other Files before posting to github
-OTHER_FILES += wt-home.xml wt-home_cn.xml wt-home_ru.xml \
-                css/reset.css css/home.css css/asciidoc.css css/blog.css css/blogexample.css css/chatwidget_ie6.css css/chatwidget.css \
-                index.html model/update-sqlite3-3.1.12.sql blog.xml css/wt/wt.css css/wt/wt_ie.css simplechat.xml \
-    ../wt-home-build-desktop-Debug/app_root/blog.xml \
-    ../wt-home-build-desktop-Debug/app_root/simplechat.xml \
-    ../wt-home-build-desktop-Debug/app_root/wt-home_cn.xml \
-    ../wt-home-build-desktop-Debug/app_root/wt-home_ru.xml \
-    ../wt-home-build-desktop-Debug/app_root/wt-home.xml \
-    ../wt-home-build-desktop-Debug/doc_root/resources/css/chat/chatapp.css \
-    ../wt-home-build-desktop-Debug/doc_root/resources/css/chat/chatwidget_ie6.css \
-    ../wt-home-build-desktop-Debug/doc_root/resources/css/chat/chatwidget.css \
-    ../wt-home-build-desktop-Debug/app_root/domains.xml \
-    domains.xml \
-    ../../../../../../../lightwizzard/app_root/blog.xml \
-    ../../../../../../../lightwizzard/app_root/simplechat.xml \
-    ../../../../../../../lightwizzard/app_root/wt-home_cn.xml \
-    ../../../../../../../lightwizzard/app_root/wt-home_ru.xml \
-    ../../../../../../../lightwizzard/app_root/wt-home.xml \
-    ../../../../../../../vetshelpcenter/app_root/blog.xml \
-    ../../../../../../../vetshelpcenter/app_root/simplechat.xml \
-    ../../../../../../../vetshelpcenter/app_root/wt-home_cn.xml \
-    ../../../../../../../vetshelpcenter/app_root/wt-home_ru.xml \
-    ../../../../../../../vetshelpcenter/app_root/wt-home.xml \
-    ../../../../../../../wittywizard/app_root/blog.xml \
-    ../../../../../../../wittywizard/app_root/simplechat.xml \
-    ../../../../../../../wittywizard/app_root/wt-home_cn.xml \
-    ../../../../../../../wittywizard/app_root/wt-home_ru.xml \
-    ../../../../../../../wittywizard/app_root/wt-home.xml \
-    ../../../../../../../lightwizzard/app_root/video/video.xml \
-    ../../../../../lightwizzard/app_root/blog.xml \
-    ../../../../../lightwizzard/app_root/simplechat.xml \
-    ../../../../../vetshelpcenter/app_root/blog.xml \
-    ../../../../../vetshelpcenter/app_root/wt-home_ru.xml \
-    ../../../../../vetshelpcenter/app_root/wt-home.xml \
-    ../../../../../vetshelpcenter/app_root/simplechat.xml \
-    ../../../../../wittywizard/app_root/blog.xml \
-    ../../../../../wittywizard/app_root/simplechat.xml \
-    ../../../../../wittywizard/app_root/wt-home.xml \
-    Notes/git-update.sh \
-    Notes/README.html \
-    Notes/credentials.txt \
-    Notes/More-Notes.txt \
-    Notes/Notes.txt \
-    Notes/README.md \
-    Notes/vm-source-code.txt \
-    Notes/Wt-Mail-list-1.txt \
-    README.md \
-    ../../../../../lightwizzard/app_root/video/video.xml \
-    ../build-WittyWizard-Desktop-Debug/doc_root/resources/css/wittywizard.css \
-    ../build-WittyWizard-Desktop-Debug/doc_root/resources/css/wittywizard_ie.css \
-    ../build-WittyWizard-Desktop-Debug/app_root/wt-home.xml \
-    ../build-WittyWizard-Desktop-Debug/app_root/wt-home_ru.xml \
-    ../build-WittyWizard-Desktop-Debug/app_root/wt-home_cn.xml \
-    ../build-WittyWizard-Desktop-Debug/app_root/blog.xml \
-    ../../../../../vetshelpcenter/app_root/video/video.xml \
-    ../../../../../wittywizard/app_root/video/video.xml \
-    ../build-WittyWizard-Desktop-Debug/app_root/video/video.xml \
-    app_root/simplechat.xml \
-    app_root/domains.xml \
-    app_root/blog.xml \
-    app_root/video/video.xml \
-    ../../../../../lightwizzard/app_root/ww-home.xml \
-    ../../../../../lightwizzard/app_root/ww-home_ru.xml \
-    ../../../../../lightwizzard/app_root/ww-home_cn.xml \
-    app_root/ww-home.xml \
-    app_root/ww-home_ru.xml \
-    app_root/ww-home_cn.xml \
-    ../../../../../wittywizard/app_root/ww-home_cn.xml \
-    ../../../../../wittywizard/app_root/ww-home_ru.xml \
-    ../../../../../vetshelpcenter/app_root/ww-home_cn.xml \
-    ../../../../../vetshelpcenter/app_root/ww-home_ru.xml \
-    ../../../../../vetshelpcenter/app_root/ww-home.xml \
-    ../../../../../wittywizard/app_root/ww-home.xml \
-    ../build-WittyWizard-Desktop-Debug/app_root/domains.xml \
-    rapidxml/manual.html \
-    rapidxml/license.txt
 
 # PostgreSql
 DEFINES += POSTGRES
