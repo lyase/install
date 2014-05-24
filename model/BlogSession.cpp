@@ -2,6 +2,9 @@
  * Copyright (C) 2008 Emweb bvba, Kessel-Lo, Belgium.
  *
  * See the LICENSE file for terms of use.
+ *
+ * Modified for Witty Wizard
+ *
  */
 #include <Wt/Auth/AuthService>
 #include <Wt/Auth/HashFunction>
