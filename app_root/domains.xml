@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="ISO-8859-1" ?>
 <domains>
-    <domain domainhost="default"    path="/home/wittywizard/"  title="Title Default Site" user="DataBase-User-Name" password="DataBase-Password" port="5432" dbname="DataBase-Name"  rssTitle="Title blog" rssURL="http://domain.tdl:8088/ww/blog" rssDescription="RSS Descirption"></domain>
-    <domain domainhost="localhost"  path="/home/wittywizard/"  title="Title Local Host"   user="DataBase-User-Name" password="DataBase-Password" port="5432" dbname="DataBase-Name"  rssTitle="Title blog" rssURL="http://domain.tdl:8088/ww/blog" rssDescription="RSS Descirption"></domain>
-    <domain domainhost="domain.tdl" path="/home/user-account/" title="Title domain.tdl"   user="DataBase-User-Name" password="DataBase-Password" port="5432" dbname="DataBase-Name"  rssTitle="Title blog" rssURL="http://domain.tdl:8088/ww/blog" rssDescription="RSS Descirption"></domain>
+    <domain domainhost="default"    path="/home/wittywizard/"  title="Title Default Site" user="DataBase-User-Name" password="DataBase-Password" port="5432" dbname="DataBase-Name"  rssTitle="Title blog" rssURL="http://domain.tdl:8088/ww/blog" rssDescription="RSS Descirption" gaAccount=""></domain>
+    <domain domainhost="localhost"  path="/home/wittywizard/"  title="Title Local Host"   user="DataBase-User-Name" password="DataBase-Password" port="5432" dbname="DataBase-Name"  rssTitle="Title blog" rssURL="http://domain.tdl:8088/ww/blog" rssDescription="RSS Descirption" gaAccount=""></domain>
+    <domain domainhost="domain.tdl" path="/home/user-account/" title="Title domain.tdl"   user="DataBase-User-Name" password="DataBase-Password" port="5432" dbname="DataBase-Name"  rssTitle="Title blog" rssURL="http://domain.tdl:8088/ww/blog" rssDescription="RSS Descirption" gaAccount=""></domain>
 </domains>
