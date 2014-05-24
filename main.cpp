@@ -4,6 +4,8 @@
  * See the LICENSE file for terms of use.
  *
  * Modified for Witty Wizzard
+ * Last Update: 22 May 2014
+ * Version: 1.0.0
  *
  */
 
@@ -56,7 +58,7 @@ std::map <std::string, std::string> myRssFeed;
 std::string rootPrefix="ww"; // this is used to fix path issues in Wt, must be in run and in path of all menu items and resources
 /* ****************************************************************************
  * makeConnectionPool
- * Would it be faster to save this to a database?
+ * FIXIT: Would it be faster to save this to a database?
  */
 bool makeConnectionPool(QString filePath)
 {
