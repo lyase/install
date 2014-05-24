@@ -83,14 +83,19 @@ Other Steps will cover topics like Blogs, Forums, Calenders, Email, Shopping Car
 When Completed this CMS can be used to run small to large business, and up to Governments,
 so it scales up very easy, its security has to be the best, and be easy to use.
 
+
+
 Style Guild:
 Braces are all vertically lined up with 4 spaces of indention
+/* ****************************************************************************
+ *
+ /*
 function()
 {
-    if () // If statements always have braces
+    if (isTrue) // If statements always have braces
     {
     }
     else
     {
-    }
-}
+    } // end if isTrue -> braces have comments
+} // end function
