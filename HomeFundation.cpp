@@ -2,6 +2,9 @@
  * Copyright (C) 2008 Emweb bvba, Kessel-Lo, Belgium.
  *
  * See the LICENSE file for terms of use.
+ *
+ * Modified for Witty Wizard
+ *
  */
 
 #include <Wt/WAnchor>
@@ -23,14 +26,14 @@
 WwHome::WwHome(const WEnvironment& env) : Home(env)
 {
     // add Language
-    addLanguage(Lang("en", "/"   , "en",  "English"));
+    addLanguage(Lang("en", "/en/", "en",  "English"));
     addLanguage(Lang("cn", "/cn/", "汉语", "中文 (Chinese)"));
     addLanguage(Lang("ru", "/ru/", "ру",  "Русский (Russian)"));
 
     Init();
 } // end WwHome::WwHome
 /* ****************************************************************************
- * wrap View
+ * Wrap View
  */
 WWidget *WwHome::WrapView(WWidget *(WwHome::*createWidget)())
 {
