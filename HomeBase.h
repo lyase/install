@@ -16,7 +16,7 @@
 #include <QString>
 #include <vector>
 #include "SimpleChatServer.h"
-
+#include "WittyWizard.h"
 /* ****************************************************************************
  * Lang
  */
@@ -38,7 +38,6 @@ class DeferredWidget : public Wt::WContainerWidget
 {
     public:
         DeferredWidget(Function f) : f_(f) { }
-
     private:
         void load()
         {
@@ -48,7 +47,6 @@ class DeferredWidget : public Wt::WContainerWidget
                 addWidget(f_());
             }
         }
-
         Function f_;
 };
 /* ****************************************************************************
@@ -85,14 +83,21 @@ class Home : public Wt::WApplication
 
     private:
         QString appPath_;
-        /* ******************************
+        /* --------------------------------------------------------------------
          * homePage_ is the base page read from template
          */
         Wt::WWidget* homePage_;
-
+        //
         Wt::WStackedWidget* contents_;
-
+        //
+        QString domainName;
+        //
+        std::string myHost;
+        std::string myUrlScheme;
+        std::string myBaseUrl;
+        //
         void CreateHome();
+        int IsPathLanguage(std::string langPath);
 
         Wt::WWidget* HomePage();
         Wt::WWidget* Contact();
@@ -102,20 +107,25 @@ class Home : public Wt::WApplication
         Wt::WWidget* VideoMan();
 
         Wt::WMenu* mainMenu_;
-        int language_;
+        int language_ = 0;
 
         Wt::WWidget* WrapView(Wt::WWidget *(Home::*createFunction)());
 
         void UpdateTitle();
-        void SetLanguage(int language);
-        void setLanguageFromPath();
-        void Setup();
+        void SetLanguage(int language, std::string langPath);
+        void SetLanguageFromPath();
         void LogInternalPath(const std::string& path);
         void ChatSetUser(const Wt::WString& name);
-        void HandlePopup(int data);
-        
+        void HandleLanguagePopup(int data);
+        void HandleThemePopup(int data);
+        void SetTheme(bool fromCookie, int index);
+        // Language Vector Array
         std::vector<Lang> languages;
-
+        //
+        std::string lastPath = "";
+        std::string currentMenuItem = "";
+        // Used to prevent internalPath changes
+        bool isPathChanging = false;
 };
 #endif // HOME_H_
 // --- End Of File ------------------------------------------------------------
