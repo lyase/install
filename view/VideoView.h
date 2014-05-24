@@ -18,7 +18,7 @@ class VideoView : public Wt::WCompositeWidget
 {
     public:
         VideoView(const std::string& appPath, const std::string& basePath, Wt::Dbo::SqlConnectionPool& db);
-        void setInternalBasePath(const std::string& basePath);
+        void SetInternalBasePath(const std::string& basePath);
     private:
         VideoImpl *impl_;
 };

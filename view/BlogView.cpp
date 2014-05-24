@@ -49,7 +49,7 @@ BlogView::BlogView(const std::string& basePath, Wt::Dbo::SqlConnectionPool& db, 
 /* ****************************************************************************
  * set Internal Base Path
  */
-void BlogView::setInternalBasePath(const std::string& basePath)
+void BlogView::SetInternalBasePath(const std::string& basePath)
 {
     impl_->setInternalBasePath(basePath);
 } // end

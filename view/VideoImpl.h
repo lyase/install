@@ -31,7 +31,7 @@ class VideoImpl : public Wt::WContainerWidget
 {
     public:
         VideoImpl(const std::string& appPath, const std::string& basePath, Wt::Dbo::SqlConnectionPool& connectionPool);
-        void setInternalBasePath(const std::string& basePath);
+        void SetInternalBasePath(const std::string& basePath);
         virtual ~VideoImpl();
         /* --------------------------------------------------------------------
          * session
@@ -52,16 +52,15 @@ class VideoImpl : public Wt::WContainerWidget
         std::string GetCategories(std::string delimitor);
         bool GetCategoriesPath();
         void ClearCategories();
-        void SetCookie(std::string name, std::string myValue);
-        std::string GetCookie(std::string name);
         //
         std::string appPath_;
         std::string basePath_;
         VideoSession session_;
+        Wt::WWidget* videoPage_;
         //std::vector<myVideo> myVideos;
-        bool isVideo=false;
+        bool isVideo = false;
         bool bindVideo = false;
-        bool isChanged=false;
+        bool isChanged = false;
         Wt::WContainerWidget* items_;
         QString catagoryPath;
         //int categoryIndex = 0;
@@ -95,8 +94,8 @@ class VideoImpl : public Wt::WContainerWidget
         std::string quality;
         std::string pageBottom;
         std::string pageTop;
-        bool isutube=false;
-        bool isComboChange=false;
+        bool isutube = false;
+        bool isComboChange = false;
 
         //TheVideo myVideo;
         int numberCats = -1;

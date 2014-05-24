@@ -15,9 +15,9 @@ VideoView::VideoView(const std::string& appPath, const std::string& basePath, Wt
 /* ****************************************************************************
  * set Internal Base Path
  */
-void VideoView::setInternalBasePath(const std::string& basePath)
+void VideoView::SetInternalBasePath(const std::string& basePath)
 {
-    impl_->setInternalBasePath(basePath);
+    impl_->SetInternalBasePath(basePath);
 } // end
 #endif // VIDEOMAN
 // --- End Of File ------------------------------------------------------------

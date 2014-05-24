@@ -35,6 +35,7 @@
 #include "model/Tag.h"
 #include "model/Token.h"
 #include "model/User.h"
+#include "WittyWizard.h"
 
 /* ****************************************************************************
  * Blog Impl
@@ -44,9 +45,16 @@ BlogImpl::BlogImpl(const std::string& basePath, Wt::Dbo::SqlConnectionPool& conn
     Wt::WApplication *app = wApp;
     // Do we want to use our own xml or use a common Template?
     app->messageResourceBundle().use(Wt::WApplication::appRoot() + "blog");
+    std::string myTheme = GetCookie("theme");
+    std::string themePath = "css/";
+    if (myTheme.empty())
+    {
+        themePath = "themes/wittywizard/" + myTheme;
+    }
     // Do we want every Domain to have their own Resources? if so add path
-    app->useStyleSheet(Wt::WApplication::resourcesUrl() + "css/blog.css");
-    app->useStyleSheet(Wt::WApplication::resourcesUrl() + "css/asciidoc.css");
+    app->useStyleSheet(Wt::WApplication::resourcesUrl() + themePath + "/blog.css");
+    app->useStyleSheet(Wt::WApplication::resourcesUrl() + themePath + "/asciidoc.css");
+
     //
     app->internalPathChanged().connect(this, &BlogImpl::handlePathChange);
     //

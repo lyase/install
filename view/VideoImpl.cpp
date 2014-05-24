@@ -12,6 +12,7 @@
 #include <Wt/WImage>
 #include <Wt/WComboBox>
 #include <Wt/WText>
+#include <Wt/WTemplate>
 #ifdef WVIDEO
     #include <Wt/WVideo>
 #else
@@ -40,16 +41,20 @@
 //#include "VideoView.h"
 #include "model/VideoSession.h"
 #include "model/TheVideo.h"
+#include "WittyWizard.h"
 
+//#define USE_TEMPLATE
 /* ****************************************************************************
  * Video Impl
  * This gets called every time the page is refreshed
  */
-VideoImpl::VideoImpl(const std::string& appPath, const std::string& basePath, Wt::Dbo::SqlConnectionPool& connectionPool) : appPath_(appPath), basePath_(basePath), session_(appPath, connectionPool)
+VideoImpl::VideoImpl(const std::string& appPath, const std::string& basePath, Wt::Dbo::SqlConnectionPool& connectionPool) : appPath_(appPath), basePath_(basePath), session_(appPath, connectionPool), videoPage_(0)
 {
     Wt::log("start") << " *** VideoImpl::VideoImpl() *** ";
+#ifndef USE_TEMPLATE
     items_ = new Wt::WContainerWidget(this);\
     items_->setId("videocan");
+#endif
     Init();
 } // end VideoImpl::VideoImpl
 /* ****************************************************************************
@@ -76,16 +81,20 @@ void VideoImpl::Init()
 void VideoImpl::MakeVideo()
 {
     Wt::log("start") << " *** VideoImpl::MakeVideo( ) *** ";
+#ifdef USE_TEMPLATE
+    Wt::WApplication *app = Wt::WApplication::instance();
+    Wt::WTemplate *result = new Wt::WTemplate(Wt::WString::tr("videoman-template"), app->root()); //  <message id="videoman-template">
+    videoPage_ = result;
+#endif
+
     // Set Category and Video from Internal Path, ComboBox or Cookie
     GetCategoriesPath();
     // Clear all the WContainerWidget Items
     items_->clear();
     //
-    isChanged=true;
     CreateCategoryCombo();
-    isChanged=true;
+    //
     CreateVideoCombobox();
-    isChanged=false;
     Wt::log("end") << " ** VideoImpl::MakeVideo() ** ";
 } // end void VideoImpl::MakeVideo()
 /* ****************************************************************************
@@ -591,26 +600,26 @@ void VideoImpl::GetVideo()
         switch (numberCats)
         {
             case 0:
-                Wt::WApplication::instance()->setInternalPath("/video/" + ComboCategory_0->currentText().toUTF8() + "/" + ComboVideo->currentText().toUTF8(), true);
+                Wt::WApplication::instance()->setInternalPath(basePath_ + ComboCategory_0->currentText().toUTF8() + "/" + ComboVideo->currentText().toUTF8(), true);
                 break;
             case 1:
-                Wt::WApplication::instance()->setInternalPath("/video/" + ComboCategory_0->currentText().toUTF8() + "/" + ComboVideo->currentText().toUTF8(), true);
-                Wt::log("notice") << "VideoImpl::getVideo() set Internal Path = " << ComboCategory_0->currentText().toUTF8() << "/" << ComboVideo->currentText().toUTF8() << " ";
+                Wt::WApplication::instance()->setInternalPath(basePath_ + ComboCategory_0->currentText().toUTF8() + "/" + ComboVideo->currentText().toUTF8(), true);
+                Wt::log("notice") << "<<<<<<< VideoImpl::getVideo() set Internal Path = " << ComboCategory_0->currentText().toUTF8() << "/" << ComboVideo->currentText().toUTF8() << " >>>>>>>";
                 break;
             case 2:
-                Wt::WApplication::instance()->setInternalPath("/video/" + ComboCategory_0->currentText().toUTF8()  + "/" + ComboCategory_1->currentText().toUTF8() + "/" + ComboVideo->currentText().toUTF8(), true);
+                Wt::WApplication::instance()->setInternalPath(basePath_ + ComboCategory_0->currentText().toUTF8()  + "/" + ComboCategory_1->currentText().toUTF8() + "/" + ComboVideo->currentText().toUTF8(), true);
                 break;
             case 3:
-                Wt::WApplication::instance()->setInternalPath("/video/" + ComboCategory_0->currentText().toUTF8() + "/" + ComboCategory_1->currentText().toUTF8() + "/" + ComboCategory_2->currentText().toUTF8() + "/" + ComboVideo->currentText().toUTF8(), true);
+                Wt::WApplication::instance()->setInternalPath(basePath_ + ComboCategory_0->currentText().toUTF8() + "/" + ComboCategory_1->currentText().toUTF8() + "/" + ComboCategory_2->currentText().toUTF8() + "/" + ComboVideo->currentText().toUTF8(), true);
                 break;
             case 4:
-                Wt::WApplication::instance()->setInternalPath("/video/" + ComboCategory_0->currentText().toUTF8() + "/" + ComboCategory_1->currentText().toUTF8() + "/" + ComboCategory_2->currentText().toUTF8() + "/" + ComboCategory_3->currentText().toUTF8() + "/" + ComboVideo->currentText().toUTF8(), true);
+                Wt::WApplication::instance()->setInternalPath(basePath_ + ComboCategory_0->currentText().toUTF8() + "/" + ComboCategory_1->currentText().toUTF8() + "/" + ComboCategory_2->currentText().toUTF8() + "/" + ComboCategory_3->currentText().toUTF8() + "/" + ComboVideo->currentText().toUTF8(), true);
                 break;
             case 5:
-                Wt::WApplication::instance()->setInternalPath("/video/" + ComboCategory_0->currentText().toUTF8() + "/" + ComboCategory_1->currentText().toUTF8() + "/" + ComboCategory_2->currentText().toUTF8() + "/" + ComboCategory_3->currentText().toUTF8() + "/" + ComboCategory_4->currentText().toUTF8() + "/" + ComboVideo->currentText().toUTF8(), true);
+                Wt::WApplication::instance()->setInternalPath(basePath_ + ComboCategory_0->currentText().toUTF8() + "/" + ComboCategory_1->currentText().toUTF8() + "/" + ComboCategory_2->currentText().toUTF8() + "/" + ComboCategory_3->currentText().toUTF8() + "/" + ComboCategory_4->currentText().toUTF8() + "/" + ComboVideo->currentText().toUTF8(), true);
                 break;
             case 6:
-                Wt::WApplication::instance()->setInternalPath("/video/" + ComboCategory_0->currentText().toUTF8() + "/" + ComboCategory_1->currentText().toUTF8() + "/" + ComboCategory_2->currentText().toUTF8() + "/" + ComboCategory_3->currentText().toUTF8() + "/" + ComboCategory_4->currentText().toUTF8() + "/" + ComboCategory_5->currentText().toUTF8()+ "/" + ComboVideo->currentText().toUTF8(), true);
+                Wt::WApplication::instance()->setInternalPath(basePath_ + ComboCategory_0->currentText().toUTF8() + "/" + ComboCategory_1->currentText().toUTF8() + "/" + ComboCategory_2->currentText().toUTF8() + "/" + ComboCategory_3->currentText().toUTF8() + "/" + ComboCategory_4->currentText().toUTF8() + "/" + ComboCategory_5->currentText().toUTF8()+ "/" + ComboVideo->currentText().toUTF8(), true);
                 break;
         }
         ComboVideo->activated().connect(this, &VideoImpl::VideoComboChanged);
@@ -876,9 +885,7 @@ void VideoImpl::CategoryComboChanged()
         categoryQuery = GetCategories("|");
         videoText = ""; // delete video, set index 0
         Wt::log("notice") << "-> VideoImpl::CategoryComboChanged() # Categories: " << std::to_string(numberCats) << " : categoryQuery = __" << categoryQuery << "__";
-        isChanged = true;
         CreateVideoCombobox();
-        isChanged = false;
     }
 } // end void VideoImpl::CategoryComboChanged()
 /* ****************************************************************************
@@ -1023,32 +1030,33 @@ bool VideoImpl::GetCategoriesPath()
     Wt::log("start") << " *** VideoImpl::GetCategoriesPath() ***";
     // Create an instance of app to access Internal Paths
     Wt::WApplication* app = Wt::WApplication::instance();
-    if (!app->internalPathMatches("/video/"))
+    if (!app->internalPathMatches(basePath_))
     {
         return false;
     }
     bool isInternalPathLegal=false;
     ClearCategories();
-    categoryText_0 = app->internalPathNextPart("/video/"); // /video/cat-1/video-1;
+    categoryText_0 = app->internalPathNextPart(basePath_); // /en/video/
+    Wt::log("notice") << " <<<< VideoImpl::GetCategoriesPath() categoryText_0 = " << categoryText_0;
     // Check each step of the Path and assign it to a variable, and set categoryQuery and videoText
     if (!categoryText_0.empty())
     {
-        categoryText_1 = app->internalPathNextPart("/video/" + categoryText_0 + "/");                 // Contains first Category or Video
+        categoryText_1 = app->internalPathNextPart(basePath_ + categoryText_0 + "/");                 // Contains first Category or Video
         if (!categoryText_1.empty())
         {
-            categoryText_2 = app->internalPathNextPart("/video/" + categoryText_1 + "/");             // Contains second Category or Video
+            categoryText_2 = app->internalPathNextPart(basePath_ + categoryText_1 + "/");             // Contains second Category or Video
             if (!categoryText_2.empty())
             {
-                categoryText_3 = app->internalPathNextPart("/video/" + categoryText_2 + "/");         // Contains third Category or Video
+                categoryText_3 = app->internalPathNextPart(basePath_ + categoryText_2 + "/");         // Contains third Category or Video
                 if (!categoryText_3.empty())
                 {
-                    categoryText_4 = app->internalPathNextPart("/video/" + categoryText_3 + "/");     // Contains forth Category or Video
+                    categoryText_4 = app->internalPathNextPart(basePath_ + categoryText_3 + "/");     // Contains forth Category or Video
                     if (!categoryText_4.empty())
                     {
-                        categoryText_5 = app->internalPathNextPart("/video/" + categoryText_4 + "/"); // Contains fith Category or Video
+                        categoryText_5 = app->internalPathNextPart(basePath_ + categoryText_4 + "/"); // Contains fith Category or Video
                         if (!categoryText_5.empty())
                         {
-                            videoText = app->internalPathNextPart("/video/" + categoryText_5 + "/");  // Contains sixth Video
+                            videoText = app->internalPathNextPart(basePath_ + categoryText_5 + "/");  // Contains sixth Video
                             if (!videoText.empty())
                             {
                                 categoryQuery = categoryText_0 + "|" + categoryText_1 + "|" + categoryText_2 + "|" + categoryText_3 + "|" + categoryText_4 + "|" + categoryText_5;
@@ -1057,7 +1065,7 @@ bool VideoImpl::GetCategoriesPath()
                                 categoryText_5 = "";
                                 if (numberCats == 5)
                                 {
-                                    isInternalPathLegal=true;
+                                    isInternalPathLegal = true;
                                 }
                                 Wt::log("notice") << "1 ->>>>>>> VideoImpl::GetCategoriesPath() categoryText_3 = " << categoryText_3 << " | categoryText_4 = " << categoryText_4 << " | videoText = " << videoText << " <<<<<-";
                             }
@@ -1069,7 +1077,7 @@ bool VideoImpl::GetCategoriesPath()
                                 categoryText_5 = "";
                                 if (numberCats == 4)
                                 {
-                                    isInternalPathLegal=true;
+                                    isInternalPathLegal = true;
                                 }
                                 Wt::log("notice") << "1.5 ->>>>>>> VideoImpl::GetCategoriesPath() categoryText_3 = " << categoryText_3 << " | categoryText_4 = " << categoryText_4 << " | videoText = " << videoText << " <<<<<-";
                             }
@@ -1082,7 +1090,7 @@ bool VideoImpl::GetCategoriesPath()
                             categoryText_5 = "";
                             if (numberCats == 4)
                             {
-                                isInternalPathLegal=true;
+                                isInternalPathLegal = true;
                             }
                             Wt::log("notice") << "2 ->>>>>>> VideoImpl::GetCategoriesPath() categoryText_3 = " << categoryText_3 << " | categoryText_4 = " << categoryText_4 << " | videoText = " << videoText << " <<<<<-";
                         }
@@ -1095,7 +1103,7 @@ bool VideoImpl::GetCategoriesPath()
                         categoryText_4 = "";
                         if (numberCats == 3)
                         {
-                            isInternalPathLegal=true;
+                            isInternalPathLegal = true;
                         }
                         Wt::log("notice") << "3 ->>>>>>> VideoImpl::GetCategoriesPath() categoryText_2 = " << categoryText_2 << " | categoryText_3 = " << categoryText_3 << " | videoText = " << videoText << " <<<<<-";
                     }
@@ -1108,7 +1116,7 @@ bool VideoImpl::GetCategoriesPath()
                     categoryText_3 = "";
                     if (numberCats == 2)
                     {
-                        isInternalPathLegal=true;
+                        isInternalPathLegal = true;
                     }
                     Wt::log("notice") << "4 ->>>>>>> VideoImpl::GetCategoriesPath() categoryText_1 = " << categoryText_1 << " | categoryText_2 = " << categoryText_2 << " | videoText = " << videoText << " <<<<<-";
                 }
@@ -1120,18 +1128,18 @@ bool VideoImpl::GetCategoriesPath()
                 categoryText_1 = "";
                 if (numberCats == 1)
                 {
-                    isInternalPathLegal=true;
+                    isInternalPathLegal = true;
                 }
-                Wt::log("notice") << "5 ->>>>>>> VideoImpl::GetCategoriesPath() categoryText_0 = " << categoryText_0  << " | videoText = " << videoText << " <<<<<-";
+                Wt::log("notice") << "5 ->>>>>>> VideoImpl::GetCategoriesPath() categoryText_0 = " << categoryText_0  << "categoryText_1 = " << categoryText_1  << " | videoText = " << videoText << " <<<<<-";
             }
         } // end if (!categoryText_1.empty())
         else
         {
-            videoText = categoryText_0;
-            categoryText_0 = categoryQuery = "";
+            videoText = categoryText_1;
+            categoryText_1 = "";
             if (numberCats == 0)
             {
-                isInternalPathLegal=true;
+                isInternalPathLegal = true;
             }
             Wt::log("notice") << "6 ->>>>>>> VideoImpl::GetCategoriesPath() categoryText_0 = " << categoryText_0 << " | videoText = " << videoText << " <<<<<-";
         }
@@ -1233,7 +1241,7 @@ bool VideoImpl::GetCategoriesPath()
         if (!categoryPath.empty())
         {
             categoryQuery = GetCategories("|");
-            if (ComboVideo)
+            if (isComboVideo) // not working (ComboVideo)
             {
                 videoText = ComboVideo->currentText().toUTF8();
             }
@@ -1254,7 +1262,7 @@ bool VideoImpl::GetCategoriesPath()
     } // end if (categoryPath.empty())
     if (!videoText.empty())
     {
-        isInternalPathLegal=true;
+        isInternalPathLegal = true;
     }
     Wt::log("end") << "->>>>>>> VideoImpl::GetCategoriesPath() categoryPath = " << categoryPath << " | categoryQuery = " << categoryQuery << " | videoText = " << videoText << " <<<<<-";
     return isInternalPathLegal;
@@ -1264,50 +1272,53 @@ bool VideoImpl::GetCategoriesPath()
  */
 void VideoImpl::HandlePathChange(const std::string& path)
 {
-    Wt::log("start") << " *** VideoImpl::HandlePathChange(path) = " << path << " | isChanged = " << isChanged << " | basePath_ = " << basePath_ << " *** "; // /video/1/1
+    Wt::log("start") << " *** VideoImpl::HandlePathChange(path: " << path << ") | isChanged = " << isChanged << " | basePath_ = " << basePath_ << " *** "; // /video/1/1
     // set categoryQuery
     GetCategoriesPath();
     // get app for internal paths
     Wt::WApplication *app = wApp;
-    if (app->internalPathMatches(basePath_))
+    if (app->internalPathMatches(basePath_)) // /en/video/
     {
-        if (app->internalPathMatches("/video/")) // if this is video
+        Wt::log("notice") << "<<<<<<<<<<<<<<<<<<<<<<< VideoImpl::HandlePathChange() basePath_ match ";
+        if (!isChanged) // if we are not changing path in another function
         {
-            if (!isChanged) // if we are not changing path in another function
+            std::string newCategory = GetCategories("|"); // check comboboxes
+            if (categoryQuery == newCategory) // Has Path Changed -
             {
-                std::string newCategory = GetCategories("|");
-                if (categoryQuery == newCategory) // Has Path Changed
+                if (videoText != ComboVideo->currentText().toUTF8())
                 {
-                    if (videoText != ComboVideo->currentText().toUTF8())
-                    {
-                        videoText = ComboVideo->currentText().toUTF8();
-                        GetVideo();
-                    } // end if (videoText != ComboVideo->currentText().toUTF8())
-                } // end if (categoryQuery == newCategory)
-            } // end if (!isChanged)
-        } // end if (app->internalPathMatches("/video/"))
+                    videoText = ComboVideo->currentText().toUTF8();
+                    GetVideo();
+                } // end if (videoText != ComboVideo->currentText().toUTF8())
+            } // end if (categoryQuery == newCategory)
+            newCategory = GetCategories("|"); // check comboboxes
+            if (path != newCategory)
+            {
+                Wt::log("notice") << "<<<<<<<<<<<<<<<<<<<<<<< VideoImpl::HandlePathChange() Change Internal Path ";
+                if (isComboVideo) // not working (ComboVideo)
+                {
+                    videoText = ComboVideo->currentText().toUTF8();
+                }
+                Wt::WApplication::instance()->setInternalPath(basePath_ + newCategory + "/" + videoText, true);
+            }
+        } // end if (!isChanged)
     }
-    else
-    {
-        //v1->pause(); // Fix pause feature
-        Wt::log("stop") << " ** VideoImpl::HandlePathChange() video stop ** ";
-    } // end if (app->internalPathMatches(basePath_))
     Wt::log("end") << " ** VideoImpl::HandlePathChange() ** ";
 } // end void VideoImpl::HandlePathChange(const std::string& path)
 /* ****************************************************************************
  * set Internal Base Path
  */
-void VideoImpl::setInternalBasePath(const std::string& basePath)
+void VideoImpl::SetInternalBasePath(const std::string& basePath)
 {
     basePath_ = basePath;
     refresh();
-} // end
+} // end void VideoImpl::SetInternalBasePath
 /* ****************************************************************************
  * refresh
  */
 void VideoImpl::refresh()
 {
-    HandlePathChange(wApp->internalPath());
+    //HandlePathChange(wApp->internalPath());
 } // end void VideoImpl::refresh()
 /* ****************************************************************************
  * Clear Categories
@@ -1324,32 +1335,5 @@ void VideoImpl::ClearCategories()
     categoryText_4 = "";
     categoryText_5 = "";
 } // end void VideoImpl::ClearCategories()
-/* ****************************************************************************
- * Set Cookie
- */
-void VideoImpl::SetCookie(std::string name, std::string myValue)
-{
-    Wt::WApplication *app = Wt::WApplication::instance();
-    app->setCookie(name, myValue, 150000, "", "/");
-} // end void VideoImpl::SetCookie
-/* ****************************************************************************
- * Get Cookie
- * std::string myCookie = GetCookie("videoman");
- */
-std::string VideoImpl::GetCookie(std::string name)
-{
-    std::string myCookie = "";
-    try
-    {
-        myCookie = Wt::WApplication::instance()->environment().getCookie(name);
-    }
-    catch (std::exception& e)
-    {
-        std::cerr << e.what() << std::endl;
-        std::cerr << "VideoImpl::GetCookie: Failed reading cookie: " << name;
-        Wt::log("error") << "VideoImpl::GetCookie()  Failed reading cookie: " << name;
-    }
-    return myCookie;
-} // end std::string VideoImpl::GetCookie
 #endif // VIDEOMAN
 // --- End Of File ------------------------------------------------------------
