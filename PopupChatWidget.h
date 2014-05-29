@@ -3,8 +3,10 @@
  * Copyright (C) 2008 Emweb bvba, Heverlee, Belgium.
  *
  * See the LICENSE file for terms of use.
+ *
+ * Modified for Witty Wizard
+ *
  */
-
 #ifndef POPUP_CHATWIDGET_H_
 #define POPUP_CHATWIDGET_H_
 
