@@ -23,27 +23,34 @@
 /* ****************************************************************************
  * WwHome
  */
-WwHome::WwHome(const WEnvironment& env) : Home(env)
+WwHome::WwHome(const Wt::WEnvironment& env) : Home(env)
 {
     // add Language
-    addLanguage(Lang("en", "/en/", "en",  "English"));
-    addLanguage(Lang("cn", "/cn/", "汉语", "中文 (Chinese)"));
-    addLanguage(Lang("ru", "/ru/", "ру",  "Русский (Russian)"));
-
+    addLanguage(Lang("en", "en_US", "en",  "English"));
+    addLanguage(Lang("cn", "zh_CN", "汉语", "中文 (Chinese)"));
+    addLanguage(Lang("ru", "ru_RU", "ру",  "Русский (Russian)"));
+    // add Theme
+    addTheme(Theme("red"));
+    addTheme(Theme("white"));
+    addTheme(Theme("blue"));
+    addTheme(Theme("green"));
+    addTheme(Theme("tan"));
+    addTheme(Theme("default"));
+    // Initialize Home
     Init();
 } // end WwHome::WwHome
 /* ****************************************************************************
  * Wrap View
  */
-WWidget *WwHome::WrapView(WWidget *(WwHome::*createWidget)())
+Wt::WWidget *WwHome::WrapView(Wt::WWidget *(WwHome::*createWidget)())
 {
     return makeStaticModel(boost::bind(createWidget, this));
 } // end WWidget *WwHome::wrapView
 /* ****************************************************************************
  * create WW Home Application
  */
-WApplication *createWWHomeApplication(const WEnvironment& env)
+Wt::WApplication *createWWHomeApplication(const Wt::WEnvironment& env)
 {
     return new WwHome(env);
-} // end WApplication *createWWHomeApplication
+} // end Wt::WApplication *createWWHomeApplication
 // --- End Of File ------------------------------------------------------------
