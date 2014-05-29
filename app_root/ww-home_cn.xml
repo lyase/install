@@ -1,64 +1,59 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <messages>
     <message id="template">
+        <link id="wittywizardstylesheet" href="" type="text/css" rel="stylesheet" />
         <div id="page" style="padding:10px;">
-
-        <div id="banner_wrapper">
-            <div id="banner_content">
-                <div id="banner_end">
-                    <div id="banner">
-                        <!-- <a href="#">Witty Wizard</a> -->
+            <div id="banner_wrapper">
+                <div id="banner_content">
+                    <div id="banner_end">
+                        <div id="banner">
+                            ${banner}
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <div id="main_wrapper">
-            <div id="main_menu">
-                ${menu}
-            </div>
-            <div class="clearall"></div>
-        </div>
-
-        <div id="main_content" class="panel">
-            <div id="content" class="panel-body">
-                ${contents}
-            </div>
-        </div>
-
-        <div id="footer_wrapper" class="panel">
-            <div id="footer_content" class="panel-footer">
-                <div id="footer_copyright" style="display: inline;">
-                    俏皮精灵内容管理系统（CMS）
-                    <a href="http://WittyWizard.org/">WittyWizard.org</a>
+            <div id="main_wrapper">
+                <div id="main_menu">
+                    ${menu}
                 </div>
-
-                <div id="footer_menu" style="float: right; display: inline;">
-                    <a href="http://beta.WittyWizard.org:8088">家</a> | <a href="http://beta.WittyWizard.org:8088/contact">聯繫</a>
-                </div>
-
-                <div id="chat"></div>
-                <script src="http://www.webtoolkit.eu/wt/examples/simplechat/chat.js?div=chat" type="text/javascript"></script>
-
                 <div class="clearall"></div>
             </div>
-            <script>
-            /*<![CDATA[*/
-              (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-              (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-              m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-              })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
 
-              ga('create', 'UA-48275805-1', 'wittywizard.org');
-              ga('send', 'pageview');
+            <div id="main_content" class="panel">
+                <div id="content" class="panel-body">
+                    ${contents}
+                </div>
+            </div>
 
-            /* ]]> */
-            </script>
+            <div id="footer_wrapper" class="panel">
+                <div id="footer_content" class="panel-footer">
+                    <div id="footer_copyright" style="display: inline;">
+                        ${copyright}
+                    </div>
+
+                    <div id="footer_menu" style="float: right; display: inline;">
+                        ${footermenu}
+                    </div>
+
+                    <div id="hitcounter">
+                        ${hitcounter}
+                    </div>
+
+                    <div id="chat"></div>
+                    <!-- <div id="chatscript">${chat}</div> -->
+                    <!-- <script src="http://www.webtoolkit.eu/wt/examples/simplechat/chat.js?div=chat" type="text/javascript"></script> -->
+
+                    <div class="clearall"></div>
+                </div>
+            </div>
         </div>
+        <div id="ga">
+            ${ga}
         </div>
     </message>
 
-    <message id="page.title">俏皮精灵，C + + Web工具包的内容管理系统（CMS）</message>
+    <message id="page.title">俏皮精灵，C++ 卷筒纸工具包的内容管理系统（CMS）</message>
 
     <message id="title">俏皮精灵</message>
     <message id="home">家</message>
@@ -67,6 +62,24 @@
     <message id="video">视频</message>
     <message id="contact">联系</message>
     <message id="about">關於</message>
+    <message id="language">语</message>
+    <message id="search">搜索</message>
+    <message id="help">帮助</message>
+    <message id="theme">主题</message>
+
+    <message id="red">红</message>
+    <message id="white">白</message>
+    <message id="blue">蓝色</message>
+    <message id="green">绿色</message>
+    <message id="tan">所以</message>
+    <message id="default">默认</message>
+
+    <message id="hits">点击</message>
+    <message id="unique-hits">独特点击数</message>
+
+    <message id="banner-source"></message>
+    <message id="banner-alt">俏皮精灵的CMS</message>
+    <message id="copyright">俏皮精灵内容管理系统（CMS）</message>
 
     <message id="home.intro">
 
@@ -85,21 +98,17 @@
 
     <message id="home.contact">
 
-
         <p>
             工作联系表。
         </p>
-
 
     </message>
 
     <message id="home.about">
 
-
         <p>
             关于在工作表.
         </p>
-
 
     </message>
 
@@ -138,75 +147,6 @@
                     “推”给这些客户端同时进行。
         </p>
 
-    </message>
-
-    <message id="serverpushwarning">请注意，您不必JavaScript和这个聊天会有退化的功能</message>
-
-    <message id="intro">
-        <h1>Using WVideo</h1>
-        <p>
-            Although the <tt>WMediaPlayer</tt> implements a cross-browser video player,
-            in some cases, one may want direct access to a native
-            HTML <tt>&lt;video&gt;</tt> element. This is provided by
-            the <tt>WVideo</tt> widget.
-        </p>
-
-        <p>
-            The trailer used in the examples below
-            is <a href="http://durian.blender.org/"
-            target="_blank">Sintel</a>, (c) copyright Blender Foundation | durian.blender.org
-        </p>
-    </message>
-    <message id="html5">
-        <h2>原生视频</h2>
-        <p>
-        下面是视频类，用的<tt> WImage</tt>的（一个静态JPEG
-                    图像）作为后备。视频将在支持的浏览器玩
-                    MP4或远洋船视频流（火狐，Chrome，Safari浏览器，...）
-                    本机（使用HTML的<tt>的&lt;video&gt;</tt>的），并显示在图像上其他
-                    浏览器（IE浏览器，歌剧，...）。
-        </p>
-    </message>
-    <message id="flash-fallback">
-        <h2>Native video with Flash player fall-back</h2>
-        <p>
-            For browsers that support HTML <tt>&lt;video&gt;</tt>, this
-            video below looks exactly like the one above. On other browsers,
-            the player below falls back to a Flash player, which plays an
-            MP4 video. If flash is not supported on your system, a static image is shown.
-        </p>
-        <p>
-            The Flash-based video player can be any player. The example
-            below uses <a href="http://flv-player.net/" target="_blank">FLV
-            Player</a> as fallback for HTML5 video, but any flash player can do the job.
-        </p>
-    </message>
-
-    <message id="mediaplayer">
-        <h1>
-            Using WMediaPlayer
-        </h1>
-        <p>
-            <tt>
-                WMediaPlayer
-            </tt>
-            provides an interactive audio/video player, with flexible support for user-interface controls, and good cross-browser support through a combination of native HTML elements (
-            <tt>
-                &lt;video&gt;
-            </tt>
-                    ,
-            <tt>
-                &lt;audio&gt;
-            </tt>
-            ) and flash fall-back.
-        </p>
-        <p>
-            A unique feature of the video player is that regardless of the technology used for video playback, the same
-            <tt>
-                WWidget
-            </tt>
-            may be used to implement the controls, using native form elements. In this way, the user-interface is easily customized and adapted to your needs and skinned using CSS.
-        </p>
     </message>
 
 </messages>
