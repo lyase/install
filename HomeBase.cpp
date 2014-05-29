@@ -65,6 +65,7 @@
     #include "view/VideoView.h"
     #include "view/VideoImpl.h"
 #endif
+#include "view/HitView.h"
 #include "WittyWizard.h"
 /* ****************************************************************************
  * default Language
@@ -86,11 +87,10 @@ extern std::map <std::string, std::string> myRssFeed;
  */
 Home::Home(const Wt::WEnvironment& env) : Wt::WApplication(env), homePage_(0)
 {
-
     Wt::log("start") << " *** Home::Home() env.hostName() = " << env.hostName().c_str() << " *** ";
     myHost = env.hostName().c_str(); // localhost:8088
     myUrlScheme = env.urlScheme().c_str(); // http or https
-    myBaseUrl = myUrlScheme + "://" + myHost + "/";
+    myBaseUrl = myUrlScheme + "://" + myHost + "/"; // FIXIT
     QString filePath = appRoot().c_str();
     filePath.append("domains.xml");
     domainName = env.hostName().c_str();
@@ -197,7 +197,9 @@ Home::~Home()
  */
 void Home::Init()
 {
-    Wt::log("start") << " *** Home::Setup() *** ";
+    Wt::log("start") << " *** Home::Init() *** ";
+    // Set Base URL
+    SetBaseURL();
     // Clear the Screen
     root()->clear();
     // Create Home Page
@@ -211,47 +213,55 @@ void Home::Init()
     internalPathChanged().connect(this, &Home::LogInternalPath);
 } // end void Home::Init()
 /* ****************************************************************************
+ * Set Base URL
+ * URL Schema: http or https + Root Prefix defined in deploy-path + Language Code
+ */
+void Home::SetBaseURL()
+{
+    myBaseUrl = myUrlScheme + "://" + myHost + "/" + rootPrefix + "/" + languages[language_].name_ + "/";
+} // end void Home::SetBaseURL
+/* ****************************************************************************
  * Create Home
  * Set up menu
  */
 void Home::CreateHome()
 {
-    Wt::WTemplate *result = new Wt::WTemplate(Wt::WString::tr("template"), root()); //  <message id="template">
-    homePage_ = result;
+    Wt::WTemplate* homeTemplate = new Wt::WTemplate(Wt::WString::tr("template"), root()); // in ww-home.xml -> <message id="template">
+    homePage_ = homeTemplate;
     //
-    Wt::WStackedWidget *contents = new Wt::WStackedWidget();
+    Wt::WStackedWidget* contents = new Wt::WStackedWidget();
     Wt::WAnimation fade(Wt::WAnimation::Fade, Wt::WAnimation::Linear, 250);
     contents->setTransitionAnimation(fade);
     contents->setId("main_page");
     // Create a navigation bar with a link to a web page.
     Wt::WNavigationBar *navigation = new Wt::WNavigationBar(contents);
-    navigation->setId("navigation");
+    //navigation->setId("navigation");
     //navigation->setTitle("Witty Wizard", "http://www.google.com/search?q=witty+wizard");
     navigation->setTitle(Wt::WString::tr("title"));
     //navigation->setResponsive(true); // caused it to be collapsable
 
     Wt::WStackedWidget *contentsStack = new Wt::WStackedWidget(contents);
     //contentsStack->setId("contents");
-    contentsStack->addStyleClass("contents");
+    //contentsStack->addStyleClass("contents");
 
     // Setup a Left-aligned menu.
     mainMenu_ = new Wt::WMenu(contentsStack, contents);
-    mainMenu_->setId("mainmenu");
-    mainMenu_->setStyleClass("mainmenu");
+    //mainMenu_->setId("mainmenu");
+    //mainMenu_->setStyleClass("mainmenu");
     navigation->addMenu(mainMenu_);
     // FIXIT
     Wt::WText *searchResult = new Wt::WText(Wt::WString::tr("search"));
 
     mainMenu_->addItem(Wt::WString::tr("home"),  HomePage())->setPathComponent("");
     mainMenu_->addItem(Wt::WString::tr("blog"),  deferCreate(boost::bind(&Home::Blog, this))); // http://localhost:8088/?_=/blog or http://localhost:8088/blog
-    mainMenu_->addItem(Wt::WString::tr("chat"),  deferCreate(boost::bind(&Home::Chat, this))); // http://localhost:8088/?_=/chat
+    mainMenu_->addItem(Wt::WString::tr("chat"),  deferCreate(boost::bind(&Home::Chat, this))); //
     // Make sure you can completly remove any module, this goes for blog or chat also
     #ifdef VIDEOMAN
         mainMenu_->addItem(Wt::WString::tr("video"), deferCreate(boost::bind(&Home::VideoMan, this)));
         // FIXIT add Menu Options for all videos
     #endif // VIDEOMAN
     mainMenu_->addItem(Wt::WString::tr("contact"), deferCreate(boost::bind(&Home::Contact, this)));
-    mainMenu_->addItem(Wt::WString::tr("about"), deferCreate(boost::bind(&Home::About, this)));
+    mainMenu_->addItem(Wt::WString::tr("about"),   deferCreate(boost::bind(&Home::About, this)));
     //mainMenu_->addItem("Search", searchResult);
 
     // Setup a Right-aligned menu.
@@ -259,9 +269,8 @@ void Home::CreateHome()
     //rightMenu->setId("rightmenu");
     navigation->addMenu(rightMenu, Wt::AlignRight);
 
-    // Create a Language popup submenu for the Help menu.
+    // Create a Language popup submenu for the Language Menu.
     Wt::WPopupMenu *languagePopup = new Wt::WPopupMenu();
-    languagePopup->setId("languages");
     for (unsigned i = 0; i < languages.size(); ++i)
     {
         // Get Language
@@ -270,40 +279,25 @@ void Home::CreateHome()
         Wt::WMenuItem *mi = languagePopup->addItem(Wt::WString::fromUTF8(l.longDescription_));
         mi->triggered().connect(boost::bind(&Home::HandleLanguagePopup, this, i));
     }
-    // Create a Theme popup submenu for the Help menu.
-    Wt::WPopupMenu *themePopup = new Wt::WPopupMenu();
-    themePopup->setId("theme");
-    // Add Theme Item Red
-    Wt::WMenuItem *mit = themePopup->addItem(Wt::WString::tr("red"));
-    mit->triggered().connect(boost::bind(&Home::HandleThemePopup, this, 0));
-    // Add Theme Item White
-    mit = themePopup->addItem(Wt::WString::tr("white"));
-    mit->triggered().connect(boost::bind(&Home::HandleThemePopup, this, 1));
-    // Add Theme Item Blue
-    mit = themePopup->addItem(Wt::WString::tr("blue"));
-    mit->triggered().connect(boost::bind(&Home::HandleThemePopup, this, 2));
-    // Add Theme Item Green
-    mit = themePopup->addItem(Wt::WString::tr("green"));
-    mit->triggered().connect(boost::bind(&Home::HandleThemePopup, this, 3));
-    // Add Theme Item Tan
-    mit = themePopup->addItem(Wt::WString::tr("tan"));
-    mit->triggered().connect(boost::bind(&Home::HandleThemePopup, this, 4));
-    // Add Theme Item default
-    mit = themePopup->addItem(Wt::WString::tr("default"));
-    mit->triggered().connect(boost::bind(&Home::HandleThemePopup, this, 5));
-
-
     // Language Popdown
     Wt::WMenuItem *item = new Wt::WMenuItem(Wt::WString::tr("language"));
-    item->setId("language");
     // Add Language Popup to Menu
     item->setMenu(languagePopup);
     rightMenu->addItem(item);
 
-
+    // Create a Theme popup submenu for the Theme Menu.
+    Wt::WPopupMenu *themePopup = new Wt::WPopupMenu();
+    for (unsigned i = 0; i < themes.size(); ++i)
+    {
+        // Get Theme
+        const Theme& l = themes[i];
+        // Add Popup Item with Description.
+        Wt::WMenuItem *mit = themePopup->addItem(Wt::WString::fromUTF8(l.name_));
+        mit->triggered().connect(boost::bind(&Home::HandleThemePopup, this, i));
+        // Wt::log("notice") << " <<<<<<<<<<<<<<< Home::CreateHome() themes " << l.name_ << " >>>>>>>>>>>>>>>>>>>>> ";
+    }
     // Theme Popdown
     Wt::WMenuItem *themeItem = new Wt::WMenuItem(Wt::WString::tr("theme"));
-    themeItem->setId("help");
     // Add Theme Popup to Menu
     themeItem->setMenu(themePopup);
     rightMenu->addItem(themeItem);
@@ -330,31 +324,50 @@ void Home::CreateHome()
     mainMenu_->setInternalPathEnabled("/"); // Not sure about this, should it be /en/ ?
     // Bind to Template
     //result->bindWidget("menu", mainMenu_);
-    result->bindWidget("menu", navigation);
-    result->bindWidget("contents", contents);
+    homeTemplate->bindWidget("menu", navigation);
+    homeTemplate->bindWidget("contents", contents);
     // Banner
-    Wt::WText *banner = new Wt::WText("<!-- <a href='#'>Witty Wizard</a> -->", Wt::XHTMLUnsafeText);
+    std::string myBannerSource = Wt::WString::tr("banner-source").toUTF8();
+    std::string myBannerAlt = Wt::WString::tr("banner-alt").toUTF8();
+    Wt::WText* banner;
+    if (!myBannerSource.empty())
+    {
+        banner = new Wt::WText("<img src='" + myBannerSource + "' alt='" + myBannerAlt + "'>", Wt::XHTMLUnsafeText);
+    }
+    else
+    {
+        banner = new Wt::WText("");
+    }
     // CopyRight
-    Wt::WText *copyright = new Wt::WText("Witty Wizard Content Management System (CMS) <a href='http://beta.WittyWizard.org/'>beta.WittyWizard.org</a>", Wt::XHTMLUnsafeText);
+    Wt::WText* copyright = new Wt::WText("<a href='" + myBaseUrl + "'>" + Wt::WString::tr("copyright") + "</a>", Wt::XHTMLUnsafeText); // FIXIT add copyright page to CMS
     // Footer Menu
-    Wt::WText *footermenu = new Wt::WText("<a href='http://beta.WittyWizard.org:8088'>Home</a> | <a href='http://beta.WittyWizard.org:8088/contact'>Contact</a>", Wt::XHTMLUnsafeText);
+    Wt::WText* footermenu = new Wt::WText("<a href='" + myBaseUrl + "'>" + Wt::WString::tr("home") + "</a> | <a href='" + myBaseUrl + "contact'>" + Wt::WString::tr("contact") + "</a>", Wt::XHTMLUnsafeText);
     // Google Analytics
-    Wt::WText *ga = new Wt::WText("<script>/*<![CDATA[*/(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)})(window,document,'script','//www.google-analytics.com/analytics.js','ga');ga('create', '" + std::string("UA-48275805-1") + "', '" + myHost + "');ga('send', 'pageview');/* ]]> */</script>", Wt::XHTMLUnsafeText);
+    Wt::WText* ga = new Wt::WText("<script>/*<![CDATA[*/(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)})(window,document,'script','//www.google-analytics.com/analytics.js','ga');ga('create', '" + std::string("UA-48275805-1") + "', '" + myHost + "');ga('send', 'pageview');/* ]]> */</script>", Wt::XHTMLUnsafeText);
     //
-    Wt::WText *hitcounter = new Wt::WText("Hits:");
-
-    result->bindWidget("banner", banner);
-    result->bindWidget("copyright", copyright);
-    result->bindWidget("footermenu", footermenu);
-    result->bindWidget("ga", ga);
-    result->bindWidget("hitcounter", hitcounter);
+    homeTemplate->bindWidget("banner", banner);
+    homeTemplate->bindWidget("copyright", copyright);
+    homeTemplate->bindWidget("footermenu", footermenu);
+    homeTemplate->bindWidget("ga", ga);
+    homeTemplate->bindWidget("hitcounter", HitCounter());
     /*
     sideBarContent_ = new WContainerWidget();
     result->bindWidget("sidebar", sideBarContent_);
     */
 } // end void Home::CreateHome
 /* ****************************************************************************
- * set Language
+ * Hit Counter
+ */
+Wt::WWidget* Home::HitCounter()
+{
+    HitView* hitCounter = new HitView(*dbConnection_, languages[language_].code_);
+    hitCounter->setObjectName("hitcounter");
+    //
+    return hitCounter->Update();
+} // end Wt::WWidget* Home::HitCounter
+/* ****************************************************************************
+ * Handle Language Popup
+ * data: passed in as a index into languages
  */
 void Home::HandleLanguagePopup(int data)
 {
@@ -365,12 +378,12 @@ void Home::HandleLanguagePopup(int data)
     if (IsPathLanguage(languagePath) == -1)
     {
         Wt::log("notice") << "Home::HandleLanguagePopup(Language not found in internal Path. " << ")";
-        thePath = '/' + languages[data].code_ + thePath;
+        thePath = '/' + languages[data].name_ + thePath;
     }
     else // Legal Langauge Code
     {
         //
-        if (languages[data].code_ == languagePath)
+        if (languages[data].name_ == languagePath)
         {
             Wt::log("error") << "Home::HandleLanguagePopup(Language has not changed. " << ")";
             return; // No Reason to change anything, they picked the same Lanuage they are in
@@ -378,13 +391,15 @@ void Home::HandleLanguagePopup(int data)
         else
         {
             // We must replace the Old Lanuage First
-            if (!StringReplace(thePath, languagePath, languages[data].code_))
+            if (!StringReplace(thePath, languagePath, languages[data].name_))
             {
                 Wt::log("error") << "Home::HandleLanguagePopup(Error in String Replace " << ")";
             }
         }
     }
     Wt::WApplication::instance()->setInternalPath(thePath,  true);
+    language_ = data;
+    SetLanguageFromPath();
     Wt::log("end") << " *** Home::HandleLanguagePopup(data: " << data << ") *** ";
 } // end void Home::HandleLanguagePopup
 /* ****************************************************************************
@@ -393,14 +408,14 @@ void Home::HandleLanguagePopup(int data)
 void Home::HandleThemePopup(int data)
 {
     Wt::log("start") << " *** Home::HandleThemePopup(data: " << data << ") *** ";
-    SetTheme(false, data);
+    SetWizardTheme(false, data);
 } // end void Home::HandleThemePopup
 /* ****************************************************************************
  * Set Theme
  */
-void Home::SetTheme(bool fromCookie, int index)
+void Home::SetWizardTheme(bool fromCookie, int index)
 {
-    Wt::log("start") << " *** Home::SetTheme(FromCookie: " << "data: " << index << ") *** ";
+    Wt::log("start") << " *** Home::SetWizardTheme(FromCookie: " << "data: " << index << ") *** ";
     std::string myTheme;
     if (fromCookie)
     {
@@ -408,45 +423,20 @@ void Home::SetTheme(bool fromCookie, int index)
     }
     else
     {
-        switch (index)
-        {
-            case 0: // Red
-                Wt::log("notice") << "Home::SetTheme(set Theme to Red)";
-                myTheme = "red";
-                break;
-            case 1: // White
-                Wt::log("notice") << "Home::SetTheme(set Theme to White)";
-                myTheme = "white";
-                break;
-            case 2: // Blue
-                Wt::log("notice") << "Home::SetTheme(set Theme to Blue)";
-                myTheme = "blue";
-                break;
-            case 3: // Green
-                Wt::log("notice") << "Home::SetTheme(set Theme to Green)";
-                myTheme = "green";
-                break;
-            case 4: // Tan
-                Wt::log("notice") << "Home::SetTheme(set Theme to Tan)";
-                myTheme = "tan";
-                break;
-            case 5: // Default
-                Wt::log("notice") << "Home::SetTheme(set Theme to Default)";
-                myTheme = "default";
-                break;
-        }
-        SetCookie("theme", myTheme);
+        myTheme = themes[index].name_;
     }
     if (!myTheme.empty())
     {
         // page or Wt-inline-css document.getElementById('wittywizardstylesheet').href='new_css.css';  style.property
         // + myBaseUrl
+        // FIXIT check for legal path
         std::string jsCss = "document.getElementById('wittywizardstylesheet').href='" + Wt::WApplication::resourcesUrl() + "themes/wittywizard/" + myTheme + "/ww-" + myTheme + ".css';";
         this->doJavaScript(jsCss);
         //useStyleSheet(Wt::WApplication::resourcesUrl() + "themes/wittywizard/" + myTheme + "/ww-" + myTheme + ".css");
+        SetCookie("theme", myTheme);
         SetCookie("themepath", Wt::WApplication::resourcesUrl() + "themes/wittywizard/");
     }
-} // end void Home::SetTheme
+} // end void Home::SetWizardTheme
 /* ****************************************************************************
  * Set Language
  * index: Index to Language
@@ -490,7 +480,7 @@ void Home::SetLanguage(int index, std::string languageCode)
     // Get Language
     const Lang& theLanguage = languages[index];
     // Set Local
-    setLocale(theLanguage.code_);
+    setLocale(theLanguage.name_);
     // Change Menu Base Path
     mainMenu_->setInternalBasePath('/' + languageCode + '/');
     // Change Path
@@ -518,6 +508,11 @@ void Home::SetLanguage(int index, std::string languageCode)
     }
     #endif
     UpdateTitle();
+    if (language_ != index)
+    {
+        language_ = index; // Set language_ to current Language
+        Init();
+    }
     language_ = index; // Set language_ to current Language
     isPathChanging = false; // Set isPathChanging so SetLanguageFromPath will fire
 } // end void Home::SetLanguage
@@ -535,19 +530,25 @@ void Home::SetLanguageFromPath()
     std::string thePath = internalPath(); // begins with /
     std::string languageCode = internalPathNextPart("/"); // Checks First
     int newLanguage = 0;
-    bool updateLanguage = false;
-    // this will only happen if menu home is clicked
+    // If Language Code is not set, set it to a Default Language
     if (languageCode.empty())
     {
+
+        // Get Language
+        const Lang& theLanguage = languages[language_];
+        // Set Local
+        languageCode = theLanguage.name_;
+        /*
         languageCode = defaultLanguage;
-        updateLanguage = true;
+        language_ = defaultLanguageIndex;
+        */
         Wt::log("start") << " *** Home::SetLanguageFromPath() languageCode empty -> set languageCode to default = " << languageCode << " | internalPathNextPart = " << internalPathNextPart("/")  << " | thePath = " << thePath << " *** ";
     }
     else
     {
         for (unsigned i = 0; i < languages.size(); ++i)
         {
-            if (languages[i].code_ == languageCode)
+            if (languages[i].name_ == languageCode)
             {
                 newLanguage = i;
                 Wt::log("start") << " *** Home::SetLanguageFromPath() languageCode = " << languageCode << " found at " << i << " | thePath = " << thePath << " ***"; // en, cn, ru...
@@ -555,28 +556,12 @@ void Home::SetLanguageFromPath()
             }
         }
     }
-    // Only update if Language changes or it needs to be updated
-    if (lastPath.empty())
-    {
-        updateLanguage = true;
-    }
-    else
-    {
-        if (lastPath != thePath)
-        {
-            updateLanguage = true;
-        }
-    }
-    // do I really need to test newLanguage != language_
-    if (newLanguage != language_ || updateLanguage)
-    {
-        SetLanguage(newLanguage, languageCode);
-        // Set Theme
-        SetTheme(true, 0);
-    }
+    SetLanguage(newLanguage, languageCode);
+    // Set Theme
+    SetWizardTheme(true, 0);
 } // end void Home::SetLanguageFromPath
 /* ****************************************************************************
- * update Title
+ * Update Title
  */
 void Home::UpdateTitle()
 {
@@ -586,17 +571,17 @@ void Home::UpdateTitle()
     }
 } // end void Home::UpdateTitle
 /* ****************************************************************************
- * logInternalPath
+ * Log Internal Path
  */
 void Home::LogInternalPath(const std::string& path)
 {
     // simulate an access log for the interal paths
-    Wt::log("start") << " *** Home::logInternalPath(" << path << ") *** ";
+    Wt::log("start") << " *** Home::LogInternalPath(" << path << ") *** ";
 } // end void Home::LogInternalPath
 /* ****************************************************************************
  * Home Page
  */
-Wt::WWidget *Home::HomePage()
+Wt::WWidget* Home::HomePage()
 {
     return new Wt::WText(Wt::WString::tr("home.intro"));
 } // end Wt::WWidget *Home::HomePage
@@ -620,8 +605,8 @@ Wt::WWidget *Home::About()
 Wt::WWidget *Home::Blog()
 {
     const Lang& l = languages[language_];
-    std::string langPath = l.path_;
-    BlogView *blog = new BlogView(langPath + "blog/", *dbConnection_, "/" + rootPrefix + "/blog/feed/");
+    std::string langPath = l.name_;
+    BlogView *blog = new BlogView("/" + langPath + "/blog/", *dbConnection_, "/" + rootPrefix + "/blog/feed/");
     blog->setObjectName("blog");
 
     if (!blog->user().empty())
@@ -633,16 +618,16 @@ Wt::WWidget *Home::Blog()
     return blog;
 } // end Wt::WWidget *Home::Blog
 /* ****************************************************************************
- * Video Man
+ * Video Manager
  */
 #ifdef VIDEOMAN
 Wt::WWidget *Home::VideoMan()
 {
     //
     const Lang& l = languages[language_];
-    std::string langPath = l.path_;
+    std::string langPath = l.name_;
     std::string myAppRoot = appPath_.toStdString() + appRoot().substr(2).c_str();
-    VideoView* thisVideo = new VideoView(myAppRoot + "video/", langPath + "video/", *dbConnection_);
+    VideoView* thisVideo = new VideoView(myAppRoot + "video/", "/" + langPath + "/video/", *dbConnection_);
     thisVideo->setObjectName("video");
 
     return thisVideo;
@@ -658,7 +643,7 @@ int Home::IsPathLanguage(std::string langPath)
     int foundLanguage = -1;
     for (unsigned i = 0; i < languages.size(); ++i)
     {
-        if (languages[i].code_ == langPath)
+        if (languages[i].name_ == langPath)
         {
             foundLanguage = i;
             Wt::log("notice") << " *** Home::IsPathLanguage() langPath = " << langPath << " found at " << i << " ***"; // en, cn, ru ...
