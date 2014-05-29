@@ -1,3 +1,6 @@
+/* ****************************************************************************
+ * Edit Users
+ */
 #include "EditUsers.h"
 
 #include <Wt/Dbo/Dbo>
@@ -9,11 +12,8 @@
 #include <Wt/WSignalMapper>
 #include <Wt/WTemplate>
 #include <Wt/WText>
-
-//using namespace Wt;
-//namespace dbo = Wt::Dbo;
 /* ****************************************************************************
- * EditUsers
+ * Edit Users
  */
 EditUsers::EditUsers(Wt::Dbo::Session& aSession, const std::string& basePath) : session_(aSession), basePath_(basePath)
 {

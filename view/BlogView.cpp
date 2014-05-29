@@ -2,6 +2,9 @@
  * Copyright (C) 2008 Emweb bvba, Kessel-Lo, Belgium.
  *
  * See the LICENSE file for terms of use.
+ *
+ * Modified for Witty Wizard
+ *
  */
 
 #include "PostView.h"
@@ -30,7 +33,7 @@
 #include <Wt/Auth/PasswordService>
 #include <Wt/Auth/PasswordVerifier>
 
-#include <Wt/Dbo/backend/Sqlite3>
+//#include <Wt/Dbo/backend/Sqlite3>
 
 #include <boost/algorithm/string/classification.hpp>
 #include <boost/algorithm/string/split.hpp>

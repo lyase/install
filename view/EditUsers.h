@@ -1,3 +1,6 @@
+/* ****************************************************************************
+ * Edit Users
+ */
 #ifndef EDIT_USERS_H_
 #define EDIT_USERS_H_
 
@@ -24,7 +27,7 @@ namespace Wt
     }
 }
 /* ****************************************************************************
- * EditUsers
+ * Edit Users
  */
 class EditUsers : public Wt::WTemplate
 {
@@ -39,7 +42,7 @@ class EditUsers : public Wt::WTemplate
         Wt::WLineEdit* limitEdit_;
 };
 /* ****************************************************************************
- * EditUser
+ * Edit User
  */
 class EditUser : public Wt::WTemplate
 {

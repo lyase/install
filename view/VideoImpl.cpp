@@ -1,8 +1,11 @@
 /* ****************************************************************************
- * Witty Wizzard
+ * Witty Wizard
  * Video Manager
  * Version: 1.0.0
  * Last Date Modified: 20 May 2014
+ *
+ * Requires Cookie Patch: https://github.com/chan-jesus/vidanueva/blob/master/witty.patch
+ *
  */
 #ifdef VIDEOMAN
 #include <Wt/WApplication>
@@ -42,8 +45,6 @@
 #include "model/VideoSession.h"
 #include "model/TheVideo.h"
 #include "WittyWizard.h"
-
-//#define USE_TEMPLATE
 /* ****************************************************************************
  * Video Impl
  * This gets called every time the page is refreshed
@@ -51,10 +52,8 @@
 VideoImpl::VideoImpl(const std::string& appPath, const std::string& basePath, Wt::Dbo::SqlConnectionPool& connectionPool) : appPath_(appPath), basePath_(basePath), session_(appPath, connectionPool), videoPage_(0)
 {
     Wt::log("start") << " *** VideoImpl::VideoImpl() *** ";
-#ifndef USE_TEMPLATE
     items_ = new Wt::WContainerWidget(this);\
     items_->setId("videocan");
-#endif
     Init();
 } // end VideoImpl::VideoImpl
 /* ****************************************************************************
@@ -81,16 +80,18 @@ void VideoImpl::Init()
 void VideoImpl::MakeVideo()
 {
     Wt::log("start") << " *** VideoImpl::MakeVideo( ) *** ";
-#ifdef USE_TEMPLATE
-    Wt::WApplication *app = Wt::WApplication::instance();
-    Wt::WTemplate *result = new Wt::WTemplate(Wt::WString::tr("videoman-template"), app->root()); //  <message id="videoman-template">
-    videoPage_ = result;
-#endif
+    #ifdef USE_TEMPLATE
+        Wt::WApplication *app = Wt::WApplication::instance();
+        Wt::WTemplate *videoTemplate = new Wt::WTemplate(Wt::WString::tr("videoman-template"), app->root()); //  <message id="videoman-template">
+        videoPage_ = videoTemplate;
+    #endif
 
     // Set Category and Video from Internal Path, ComboBox or Cookie
     GetCategoriesPath();
-    // Clear all the WContainerWidget Items
-    items_->clear();
+    #ifndef USE_TEMPLATE
+        // Clear all the WContainerWidget Items
+        items_->clear();
+    #endif
     //
     CreateCategoryCombo();
     //
@@ -470,21 +471,39 @@ bool VideoImpl::CreateCategoryCombo()
                 break;
             case 1:
                 ComboCategory_0->activated().connect(this, &VideoImpl::CategoryComboChanged);
+                #ifdef USE_TEMPLATE
+                    videoTemplate->bindWidget("catcombobinder-0", ComboCategory_0);
+                #endif
                 break;
             case 2:
                 ComboCategory_0->activated().connect(this, &VideoImpl::CategoryComboChanged);
                 ComboCategory_1->activated().connect(this, &VideoImpl::CategoryComboChanged);
+                #ifdef USE_TEMPLATE
+                    videoTemplate->bindWidget("catcombobinder-0", ComboCategory_0);
+                    videoTemplate->bindWidget("catcombobinder-1", ComboCategory_1);
+                #endif
                 break;
             case 3:
                 ComboCategory_0->activated().connect(this, &VideoImpl::CategoryComboChanged);
                 ComboCategory_1->activated().connect(this, &VideoImpl::CategoryComboChanged);
                 ComboCategory_2->activated().connect(this, &VideoImpl::CategoryComboChanged);
+                #ifdef USE_TEMPLATE
+                    videoTemplate->bindWidget("catcombobinder-0", ComboCategory_0);
+                    videoTemplate->bindWidget("catcombobinder-1", ComboCategory_1);
+                    videoTemplate->bindWidget("catcombobinder-2", ComboCategory_2);
+                #endif
                 break;
             case 4:
                 ComboCategory_0->activated().connect(this, &VideoImpl::CategoryComboChanged);
                 ComboCategory_1->activated().connect(this, &VideoImpl::CategoryComboChanged);
                 ComboCategory_2->activated().connect(this, &VideoImpl::CategoryComboChanged);
                 ComboCategory_3->activated().connect(this, &VideoImpl::CategoryComboChanged);
+                #ifdef USE_TEMPLATE
+                    videoTemplate->bindWidget("catcombobinder-0", ComboCategory_0);
+                    videoTemplate->bindWidget("catcombobinder-1", ComboCategory_1);
+                    videoTemplate->bindWidget("catcombobinder-2", ComboCategory_2);
+                    videoTemplate->bindWidget("catcombobinder-3", ComboCategory_3);
+                #endif
                 break;
             case 5:
                 ComboCategory_0->activated().connect(this, &VideoImpl::CategoryComboChanged);
@@ -492,6 +511,13 @@ bool VideoImpl::CreateCategoryCombo()
                 ComboCategory_2->activated().connect(this, &VideoImpl::CategoryComboChanged);
                 ComboCategory_3->activated().connect(this, &VideoImpl::CategoryComboChanged);
                 ComboCategory_4->activated().connect(this, &VideoImpl::CategoryComboChanged);
+                #ifdef USE_TEMPLATE
+                    videoTemplate->bindWidget("catcombobinder-0", ComboCategory_0);
+                    videoTemplate->bindWidget("catcombobinder-1", ComboCategory_1);
+                    videoTemplate->bindWidget("catcombobinder-2", ComboCategory_2);
+                    videoTemplate->bindWidget("catcombobinder-3", ComboCategory_3);
+                    videoTemplate->bindWidget("catcombobinder-4", ComboCategory_4);
+                #endif
                 break;
             case 6:
                 ComboCategory_0->activated().connect(this, &VideoImpl::CategoryComboChanged);
@@ -500,6 +526,14 @@ bool VideoImpl::CreateCategoryCombo()
                 ComboCategory_3->activated().connect(this, &VideoImpl::CategoryComboChanged);
                 ComboCategory_4->activated().connect(this, &VideoImpl::CategoryComboChanged);
                 ComboCategory_5->activated().connect(this, &VideoImpl::CategoryComboChanged);
+                #ifdef USE_TEMPLATE
+                    videoTemplate->bindWidget("catcombobinder-0", ComboCategory_0);
+                    videoTemplate->bindWidget("catcombobinder-1", ComboCategory_1);
+                    videoTemplate->bindWidget("catcombobinder-2", ComboCategory_2);
+                    videoTemplate->bindWidget("catcombobinder-3", ComboCategory_3);
+                    videoTemplate->bindWidget("catcombobinder-4", ComboCategory_4);
+                    videoTemplate->bindWidget("catcombobinder-5", ComboCategory_5);
+                #endif
                 break;
         } // end switch (numberCats)
     }
@@ -858,6 +892,9 @@ void VideoImpl::GetVideo()
                 this->doJavaScript(jsPageBottom);
             } // end if (!TextPageTop)
         } // end if (isPageTop)
+        #ifdef USE_TEMPLATE
+            videoTemplate->bindWidget("videocombobinder", ComboVideo);
+        #endif
         // Commit Transaction
         t.commit();
     }

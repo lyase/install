@@ -3,6 +3,9 @@
  * Copyright (C) 2009 Emweb bvba, Kessel-Lo, Belgium.
  *
  * See the LICENSE file for terms of use.
+ *
+ * Modified for Witty Wizard
+ *
  */
 #ifndef POST_VIEW_H_
 #define POST_VIEW_H_

@@ -3,6 +3,9 @@
  * Copyright (C) 2009 Emweb bvba, Kessel-Lo, Belgium.
  *
  * See the LICENSE file for terms of use.
+ *
+ * Modified for Witty Wizard
+ *
  */
 #ifndef BLOG_LOGIN_WIDGET_H_
 #define BLOG_LOGIN_WIDGET_H_
@@ -23,6 +26,5 @@ class BlogLoginWidget : public Wt::Auth::AuthWidget
         virtual void createLoginView();
         virtual void createLoggedInView();
 };
-
 #endif // BLOG_LOGIN_WIDGET_H_
 // --- End Of File ------------------------------------------------------------

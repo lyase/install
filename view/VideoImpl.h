@@ -13,10 +13,6 @@
 #include "model/TheVideo.h"
 #include "model/VideoSession.h"
 /* ****************************************************************************
- * Prototype VideoSession
- */
-//class VideoSession;
-/* ****************************************************************************
  * pageType
  */
 enum pageType
@@ -25,7 +21,7 @@ enum pageType
   xml
 };
 /* ****************************************************************************
- * Video
+ * Video Implement
  */
 class VideoImpl : public Wt::WContainerWidget
 {
@@ -113,6 +109,9 @@ class VideoImpl : public Wt::WContainerWidget
             Wt::WVideo *player;
         #else
             Wt::WMediaPlayer *player;
+        #endif
+        #ifdef USE_TEMPLATE
+            Wt::WTemplate *videoTemplate;
         #endif
 };
 #endif // VIDEO_H

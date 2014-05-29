@@ -2,6 +2,9 @@
  * Copyright (C) 2008 Emweb bvba, Kessel-Lo, Belgium.
  *
  * See the LICENSE file for terms of use.
+ *
+ * Modified for Witty Wizard
+ *
  */
 #include <Wt/WAnchor>
 #include <Wt/WApplication>
@@ -38,13 +41,13 @@
 #include "WittyWizard.h"
 
 /* ****************************************************************************
- * Blog Impl
+ * Blog Implementation
  */
 BlogImpl::BlogImpl(const std::string& basePath, Wt::Dbo::SqlConnectionPool& connectionPool, const std::string& rssFeedUrl, BlogView* blogView) : basePath_(basePath), session_(connectionPool), rssFeedUrl_(rssFeedUrl), blogView_(blogView), panel_(0), authorPanel_(0), users_(0), userEditor_(0), mustLoginwarning_(0), mustBeAdministratorwarning_(0), invalidUser_(0)
 {
     Wt::WApplication *app = wApp;
-    // Do we want to use our own xml or use a common Template?
-    app->messageResourceBundle().use(Wt::WApplication::appRoot() + "blog");
+    // Do we want to use our own Template or use a common Template?
+    app->messageResourceBundle().use(Wt::WApplication::appRoot() + "blog"); // ./app_root/
     std::string myTheme = GetCookie("theme");
     std::string themePath = "css/";
     if (myTheme.empty())

@@ -2,8 +2,10 @@
  * Copyright (C) 2011 Emweb bvba, Kessel-Lo, Belgium.
  *
  * See the LICENSE file for terms of use.
+ *
+ * Modified for Witty Wizard
+ *
  */
-
 #include <Wt/WLineEdit>
 #include <Wt/WTemplate>
 #include <Wt/WText>
@@ -13,9 +15,6 @@
 #include "model/BlogSession.h"
 #include "model/Token.h"
 #include "model/User.h"
-
-//using namespace Wt;
-
 /* ****************************************************************************
  * Blog Login Widget
  */

@@ -1,5 +1,8 @@
 /* ****************************************************************************
  * Blog Impl
+ *
+ * Modified for Witty Wizard
+ *
  */
 #ifndef BLOGIMPL_H
 #define BLOGIMPL_H
