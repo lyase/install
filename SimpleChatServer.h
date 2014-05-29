@@ -3,6 +3,9 @@
  * Copyright (C) 2008 Emweb bvba, Heverlee, Belgium.
  *
  * See the LICENSE file for terms of use.
+ *
+ * Modified for Witty Wizard
+ *
  */
 #ifndef SIMPLECHATSERVER_H_
 #define SIMPLECHATSERVER_H_
