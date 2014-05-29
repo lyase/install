@@ -22,8 +22,16 @@
  */
 struct Lang
 {
-    Lang(const std::string& code, const std::string& path, const std::string& shortDescription, const std::string& longDescription) : code_(code), path_(path), shortDescription_(shortDescription), longDescription_(longDescription) { }
-    std::string code_, path_, shortDescription_, longDescription_;
+    Lang(const std::string& name, const std::string& code, const std::string& shortDescription, const std::string& longDescription) : name_(name), code_(code), shortDescription_(shortDescription), longDescription_(longDescription) { }
+    std::string name_, code_, shortDescription_, longDescription_;
+};
+/* ****************************************************************************
+ * Theme
+ */
+struct Theme
+{
+    Theme(const std::string& name) : name_(name) { }
+    std::string name_;
 };
 /* ****************************************************************************
  * DeferredWidget
@@ -68,15 +76,17 @@ class Home : public Wt::WApplication
         virtual ~Home();
 
         void googleAnalyticsLogger();
+        void SetBaseURL();
 
     protected:
         virtual std::string filePrefix() const = 0;
 
         void Init();
-
+        // Add Language
         void addLanguage(const Lang& l) { languages.push_back(l); }
+        // Add Theme
+        void addTheme(const Theme& l) { themes.push_back(l); }
 
-        Wt::WString tr(const char* key);
         std::string href(const std::string& url, const std::string& description);
 
         Wt::Dbo::SqlConnectionPool *dbConnection_;
@@ -105,6 +115,7 @@ class Home : public Wt::WApplication
         Wt::WWidget* Blog();
         Wt::WWidget* Chat();
         Wt::WWidget* VideoMan();
+        Wt::WWidget* HitCounter();
 
         Wt::WMenu* mainMenu_;
         int language_ = 0;
@@ -118,9 +129,11 @@ class Home : public Wt::WApplication
         void ChatSetUser(const Wt::WString& name);
         void HandleLanguagePopup(int data);
         void HandleThemePopup(int data);
-        void SetTheme(bool fromCookie, int index);
+        void SetWizardTheme(bool fromCookie, int index);
         // Language Vector Array
         std::vector<Lang> languages;
+        // Theme Vector Array
+        std::vector<Theme> themes;
         //
         std::string lastPath = "";
         std::string currentMenuItem = "";
