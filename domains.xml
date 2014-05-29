@@ -1,6 +1,0 @@
-<?xml version="1.0" encoding="ISO-8859-1" ?>
-<domains>
-    <domain domainhost="default" path="/home/path/default" title="Title" user="userName" password="Password" port="5432" dbname="dbName"  rssTitle="blog Title" rssURL="http://tdl.domain.com/wt/blog" rssDescription="Description of rss feed"></domain>
-    <domain domainhost="localhost" path="/home/path/localhost" title="Title" user="userName" password="Password" port="5432" dbname="dbName"  rssTitle="blog Title" rssURL="http://localhost/wt/blog" rssDescription="Description of rss feed"></domain>
-    <domain domainhost="tdl.domain.com" path="/home/path/tdl.domain.com" title="Title" user="userName" password="Password" port="5432" dbname="dbName"  rssTitle="blog Title" rssURL="http://tdl.domain.com/wt/blog" rssDescription="Description of rss feed"></domain>
-</domains>
