@@ -3,6 +3,9 @@
  * Copyright (C) 2011 Emweb bvba, Kessel-Lo, Belgium.
  *
  * See the LICENSE file for terms of use.
+ *
+ * Modified for Witty Wizard
+ *
  */
 #ifndef BLOG_USER_DATABASE_H_
 #define BLOG_USER_DATABASE_H_
@@ -62,10 +65,10 @@ class BlogUserDatabase : public Wt::Auth::AbstractUserDatabase
 
         struct WithUser
         {
-                WithUser(const BlogUserDatabase& self, const Wt::Auth::User& user);
-                ~WithUser();
+            WithUser(const BlogUserDatabase& self, const Wt::Auth::User& user);
+            ~WithUser();
 
-                Wt::Dbo::Transaction transaction;
+            Wt::Dbo::Transaction transaction;
         };
 
         void getUser(const std::string& id) const;

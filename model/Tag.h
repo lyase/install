@@ -3,6 +3,9 @@
  * Copyright (C) 2009 Emweb bvba, Kessel-Lo, Belgium.
  *
  * See the LICENSE file for terms of use.
+ *
+ * Modified for Witty Wizard
+ *
  */
 #ifndef TAG_H_
 #define TAG_H_

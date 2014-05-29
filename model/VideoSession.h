@@ -2,7 +2,7 @@
 #ifndef VIDEOSESSION_H
 #define VIDEOSESSION_H
 #include <Wt/Dbo/Dbo>
-#include <Wt/WComboBox>
+//#include <Wt/WComboBox>
 /* ****************************************************************************
  * The VideoSession
  */
@@ -15,8 +15,6 @@ class VideoSession : public Wt::Dbo::Session
         //
         std::string appPath_;
         Wt::Dbo::SqlConnectionPool& connectionPool_;
-        //
-        //pageLocation pagesLocation; //
 };
 #endif // VIDEOSESSION_H
 #endif // VIDEOMAN
