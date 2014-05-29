@@ -5,6 +5,7 @@
  * See the LICENSE file for terms of use.
  *
  * Modified for Witty Wizard
+ *
  */
 
 #include "FileItem.h"
