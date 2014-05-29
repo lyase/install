@@ -1,12 +1,7 @@
 /* ****************************************************************************
  * Witty Wizard
  */
-#include <Wt/WApplication>
-#include <Wt/WEnvironment>
-#include <Wt/WLogger>
 #include "WittyWizard.h"
-
-//WittyWizard::WittyWizard() { }
 /* ****************************************************************************
  * Set Cookie
  */
@@ -59,4 +54,15 @@ bool StringReplace(std::string& string2replace, const std::string& changefrom, c
     string2replace.replace(start_pos, changefrom.length(), changeTo);
     return true;
 } // end StringReplace
+/* ****************************************************************************
+ * FormatWithCommas
+ */
+//template<class T>
+std::string FormatWithCommas(long value, std::string myLocale) // T value
+{
+    std::stringstream ss;
+    ss.imbue(std::locale(myLocale.c_str()));
+    ss << std::fixed << value;
+    return ss.str();
+} // end FormatWithCommas
 // --- End Of File ------------------------------------------------------------
