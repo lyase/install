@@ -2,6 +2,9 @@
  * Copyright (C) 2008 Emweb bvba, Heverlee, Belgium.
  *
  * See the LICENSE file for terms of use.
+ *
+ * Modified for Witty Wizard
+ *
  */
 
 #include "SimpleChatWidget.h"
