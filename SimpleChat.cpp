@@ -1,4 +1,5 @@
 /*
+ * Modified for Witty Wizard
  *
  */
 #include <Wt/WApplication>
