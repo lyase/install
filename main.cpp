@@ -3,7 +3,7 @@
  *
  * See the LICENSE file for terms of use.
  *
- * Modified for Witty Wizzard
+ * Modified for Witty Wizard
  * Last Update: 22 May 2014
  * Version: 1.0.0
  *
@@ -286,7 +286,7 @@ int main(int argc, char **argv)
 
         if (server.start())
         {
-            WServer::waitForShutdown();
+            Wt::WServer::waitForShutdown();
             server.stop();
         }
 
