@@ -144,19 +144,6 @@
         </p>
     </message>
 
-    <message id="details">
-
-        <p>
-            The implementation uses server-initiated updates, a feature that is
-            not much different from regular client-server communication in Wt, and
-            allows updating a session from outside its regular event loop. When a
-            message is received, the user interface (i.e. widget tree) not only of
-            the current session, but also of all other sessions is updated and
-            "pushed" to these clients simultaneously.
-        </p>
-
-    </message>
-
     <message id="serverpushwarning">Note, you do not have JavaScript and this chat will have degraded functionality</message>
 
 
