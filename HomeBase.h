@@ -19,6 +19,10 @@
 #include "WittyWizard.h"
 /* ****************************************************************************
  * Lang
+ * name:
+ * code:
+ * short Description:
+ * long Description
  */
 struct Lang
 {
@@ -92,7 +96,7 @@ class Home : public Wt::WApplication
         Wt::Dbo::SqlConnectionPool *dbConnection_;
 
     private:
-        QString appPath_;
+        std::string appPath_;
         /* --------------------------------------------------------------------
          * homePage_ is the base page read from template
          */
@@ -100,7 +104,8 @@ class Home : public Wt::WApplication
         //
         Wt::WStackedWidget* contents_;
         //
-        QString domainName;
+        // QString domainName;
+        std::string domainName;
         //
         std::string myHost;
         std::string myUrlScheme;
