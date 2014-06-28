@@ -47,7 +47,7 @@ Wt::WWidget *WwHome::WrapView(Wt::WWidget *(WwHome::*createWidget)())
     return makeStaticModel(boost::bind(createWidget, this));
 } // end WWidget *WwHome::wrapView
 /* ****************************************************************************
- * create WW Home Application
+ * create WW Home Application called from main.cpp
  */
 Wt::WApplication *createWWHomeApplication(const Wt::WEnvironment& env)
 {
