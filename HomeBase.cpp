@@ -22,7 +22,7 @@
 //#include <Wt/WTableCell>
 //#include <Wt/WVBoxLayout>
 //#include <Wt/WFlashObject>
-
+#include <algorithm>
 #include <Wt/WApplication>
 #include <Wt/WEnvironment>
 #include <Wt/WLogger>
@@ -73,14 +73,44 @@
 const std::string defaultLanguage = "en";
 const int defaultLanguageIndex    = 0;
 /* ****************************************************************************
+ * Global Variable - Set in main.cpp
  * root Prefix: Used to set the URL Path: http:domain.tdl\prefix\root-path
+ * See Wt Documenation on: --deploy-path=
  */
 extern std::string rootPrefix;
 /* ****************************************************************************
- * Map
+ * Connection Pool Map
+ * Holds the Pointer to Wt::Dbo::SqlConnectionPool *
  */
 extern std::map <std::string, boost::any> myConnectionPool;
-extern std::map <std::string, std::string> myRssFeed;
+/* ****************************************************************************
+ * Global Variable - Set in main.cpp
+ * Full Path to Domain: /home/domain.tdl/
+ */
+extern std::map <std::string, std::string> myDomainPath;
+/* ****************************************************************************
+ * Global Variable - Set in main.cpp
+ * See domain.xml: gasAccount="pub-xxxxxxxxxxxx"
+ * http://www.google.com/adsense/
+ */
+extern std::map <std::string, std::string> myGasAccount;
+/* ****************************************************************************
+ * Global Variable - Set in main.cpp
+ * Google Analytic Account: See domain.xml: gaAccount="UA-xxxxxxxx-x"
+ * http://google.com/analytics/
+ */
+extern std::map <std::string, std::string> myGaAccount;
+/* ****************************************************************************
+ * Global Variable - Set in main.cpp
+ * myIncludes: Each Menu
+ * See domain.xml:includes="home|chat|blog|about|contact|video"
+ */
+extern std::map <std::string, std::string> myIncludes;
+/* ****************************************************************************
+ * Global Variable
+ * See domain.xml:defaultTheme="blue"
+ */
+extern std::map <std::string, std::string> myDefaultTheme;
 /* ************************************************************************* */
 /*! \class Home
  *  \brief Virtual Base Class
@@ -88,60 +118,54 @@ extern std::map <std::string, std::string> myRssFeed;
 Home::Home(const Wt::WEnvironment& env) : Wt::WApplication(env), homePage_(0)
 {
     Wt::log("start") << " *** Home::Home() env.hostName() = " << env.hostName().c_str() << " *** ";
-    myHost = env.hostName().c_str(); // localhost:8088
+    myHost = env.hostName().c_str();       // localhost:8088
     myUrlScheme = env.urlScheme().c_str(); // http or https
     myBaseUrl = myUrlScheme + "://" + myHost + "/"; // FIXIT
-    QString filePath = appRoot().c_str();
-    filePath.append("domains.xml");
     domainName = env.hostName().c_str();
-    unsigned pos = domainName.indexOf(":");
+    //unsigned pos = domainName.indexOf(":");
+    unsigned pos = domainName.find(":");
     if (pos > 0)
     {
-        domainName = domainName.mid(0, pos);
+        //domainName = domainName.mid(0, pos);
+        domainName = domainName.substr(0, pos);
     }
     // this is just for testing multiple sites in a localhost nated network
-    if (0) domainName = "beta.wittywizard.org";
-    if (0) domainName = "beta.lightwizzard.com";
-    if (0) domainName = "beta.vetshelpcenter.com";
-    if(myRssFeed.find(domainName.toStdString()) == myRssFeed.end())
+    if (0) domainName = "wittywizard.org";
+    if (0) domainName = "lightwizzard.com";
+    if (0) domainName = "vetshelpcenter.com";
+    //
+    if (!SetSqlConnectionPool(domainName))
     {
-        // element not found;
-        Wt::log("notice") << "(Home::Home: myRssFeed element not found " << domainName.toStdString() << ")";
+        Wt::log("error") << "(BlogRSSFeed::handleRequest: SetSqlConnectionPool failed for domain: " << domainName << ")";
+        // FIXIT make this a error page
         return;
     }
-    std::string theFeeder = myRssFeed[domainName.toStdString()];
-
-#ifdef REGX    
-    QString theRssFeed = theFeeder.c_str();
-    QRegExp rx("(\\t)"); // RegEx for ' ' or ',' or '.' or ':' or '\t'
-    QStringList query = theRssFeed.split(rx);
-    appPath_ = query[3]; // Fix enumerate
-#else
-    // I could do this with QString
-    std::vector <std::string> fields;
-    boost::split( fields, theFeeder, boost::is_any_of( "\t" ) );
-    std::string myFeeder = fields.at(3);
-    appPath_ = myFeeder.c_str(); // Fix enumerate
-#endif    
-    Wt::log("notice") << "Home::Home() appPath: " << appPath_.toStdString() << "";
+    appPath_ = myDomainPath[domainName]; // Path Checked in main.cpp
+    Wt::log("notice") << "Home::Home() appPath: " << appPath_ << "";
     // connect to Connection Pool
-    if(myConnectionPool.find(domainName.toStdString()) == myConnectionPool.end())
+//    if(myConnectionPool.find(domainName.toStdString()) == myConnectionPool.end())
+    if(myConnectionPool.find(domainName) == myConnectionPool.end())
     {
         // element not found;
-        Wt::log("error") << "Home::Home() myConnectionPool element not found " << domainName.toStdString() << "";
+        //Wt::log("error") << "Home::Home() myConnectionPool element not found " << domainName.toStdString() << "";
+        Wt::log("error") << "Home::Home() myConnectionPool element not found " << domainName << "";
         return;
     }
     try
     {
-        dbConnection_ = boost::any_cast<Wt::Dbo::SqlConnectionPool *>(myConnectionPool[domainName.toStdString()]);
+        //dbConnection_ = boost::any_cast<Wt::Dbo::SqlConnectionPool *>(myConnectionPool[domainName.toStdString()]);
+        dbConnection_ = boost::any_cast<Wt::Dbo::SqlConnectionPool *>(myConnectionPool[domainName]);
     }
     catch (...)
     {
-        Wt::log("error") << "->>> Home::Home() Failed Connection Pool " << domainName.toStdString() << "<<<-";
+        //Wt::log("error") << "->>> Home::Home() Failed Connection Pool " << domainName.toStdString() << "<<<-";
+        Wt::log("error") << "->>> Home::Home() Failed Connection Pool " << domainName << "<<<-";
         return;
     }
-    std::string mrPath(appPath_.toStdString() + "app_root/ww-home"); // Fix name
-    messageResourceBundle().use(mrPath, false);
+    //std::string mrPath(appPath_ + "app_root/ww-home"); // Fix name
+    //messageResourceBundle().use(mrPath, false);
+    // FIXIT appRoot() ./app_root/
+    messageResourceBundle().use(appPath_ + "app_root/ww-home", false);
     // Fix if it should use local copy of themes
     useStyleSheet(Wt::WApplication::resourcesUrl() + "css/wittywizard.css");
     useStyleSheet(Wt::WApplication::resourcesUrl() + "css/wittywizard_ie.css", "lt IE 7"); // "." +
@@ -251,7 +275,9 @@ void Home::CreateHome()
     navigation->addMenu(mainMenu_);
     // FIXIT
     Wt::WText *searchResult = new Wt::WText(Wt::WString::tr("search"));
-
+    // FIXIT
+    //QString includeThis = myIncludes[domainName];
+    //includeThis.split("|")
     mainMenu_->addItem(Wt::WString::tr("home"),  HomePage())->setPathComponent("");
     mainMenu_->addItem(Wt::WString::tr("blog"),  deferCreate(boost::bind(&Home::Blog, this))); // http://localhost:8088/?_=/blog or http://localhost:8088/blog
     mainMenu_->addItem(Wt::WString::tr("chat"),  deferCreate(boost::bind(&Home::Chat, this))); //
@@ -343,7 +369,7 @@ void Home::CreateHome()
     // Footer Menu
     Wt::WText* footermenu = new Wt::WText("<a href='" + myBaseUrl + "'>" + Wt::WString::tr("home") + "</a> | <a href='" + myBaseUrl + "contact'>" + Wt::WString::tr("contact") + "</a>", Wt::XHTMLUnsafeText);
     // Google Analytics
-    Wt::WText* ga = new Wt::WText("<script>/*<![CDATA[*/(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)})(window,document,'script','//www.google-analytics.com/analytics.js','ga');ga('create', '" + std::string("UA-48275805-1") + "', '" + myHost + "');ga('send', 'pageview');/* ]]> */</script>", Wt::XHTMLUnsafeText);
+    Wt::WText* ga = new Wt::WText("<script>/*<![CDATA[*/(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)})(window,document,'script','//www.google-analytics.com/analytics.js','ga');ga('create', '" + myGaAccount[domainName] + "', '" + myHost + "');ga('send', 'pageview');/* ]]> */</script>", Wt::XHTMLUnsafeText);
     //
     homeTemplate->bindWidget("banner", banner);
     homeTemplate->bindWidget("copyright", copyright);
@@ -420,6 +446,10 @@ void Home::SetWizardTheme(bool fromCookie, int index)
     if (fromCookie)
     {
         myTheme = GetCookie("theme");
+        if (myTheme.empty())
+        {
+            myTheme = myDefaultTheme[domainName];
+        }
     }
     else
     {
@@ -606,7 +636,8 @@ Wt::WWidget *Home::Blog()
 {
     const Lang& l = languages[language_];
     std::string langPath = l.name_;
-    BlogView *blog = new BlogView("/" + langPath + "/blog/", *dbConnection_, "/" + rootPrefix + "/blog/feed/");
+    std::string defaultTheme = myDefaultTheme[domainName];
+    BlogView* blog = new BlogView("/" + langPath + "/blog/", *dbConnection_, "/" + rootPrefix + "/blog/feed/", defaultTheme);
     blog->setObjectName("blog");
 
     if (!blog->user().empty())
@@ -619,6 +650,9 @@ Wt::WWidget *Home::Blog()
 } // end Wt::WWidget *Home::Blog
 /* ****************************************************************************
  * Video Manager
+ * myAppRoot: Path to video.xml
+ * Internal Path
+ * debase Connection
  */
 #ifdef VIDEOMAN
 Wt::WWidget *Home::VideoMan()
@@ -626,7 +660,8 @@ Wt::WWidget *Home::VideoMan()
     //
     const Lang& l = languages[language_];
     std::string langPath = l.name_;
-    std::string myAppRoot = appPath_.toStdString() + appRoot().substr(2).c_str();
+    //
+    std::string myAppRoot = appPath_ + docRoot().substr(2).c_str() + "/";
     VideoView* thisVideo = new VideoView(myAppRoot + "video/", "/" + langPath + "/video/", *dbConnection_);
     thisVideo->setObjectName("video");
 
