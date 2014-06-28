@@ -136,16 +136,40 @@
         </p>
     </message>
 
-    <message id="details">
+    <message id="serverpushwarning">Note, you do not have JavaScript and this chat will have degraded functionality</message>
 
-        <p>
-            该实现使用服务器启动的更新，这一特点是
-                    没有太大的重量普通客户端 - 服务器通信不同，
-                    允许来自其定期举行的活动外循环更新的会话。当
-                    被接收的消息时，用户界面​​不仅（即插件树）
-                    当前会话，而且其他所有会话的更新和
-                    “推”给这些客户端同时进行。
-        </p>
+    <message id="videoman-template">
+
+        <div id="videomanpagetop">
+            ${videomanpagetop}
+        </div>
+        <div id="catcombo-0">
+            ${catcombobinder-0}
+        </div>
+        <div id="catcombo-1">
+            ${catcombobinder-1}
+        </div>
+        <div id="catcombo-2">
+            ${catcombobinder-2}
+        </div>
+        <div id="catcombo-3">
+            ${catcombobinder-3}
+        </div>
+        <div id="catcombo-4">
+            ${catcombobinder-4}
+        </div>
+        <div id="catcombo-5">
+            ${catcombobinder-5}
+        </div>
+        <div id="videocombo">
+            ${videocombobinder}
+        </div>
+        <div id="videoman">
+            ${videoman}
+        </div>
+        <div id="videomanpagebottom">
+            ${videomanpagebottom}
+        </div>
 
     </message>
 
