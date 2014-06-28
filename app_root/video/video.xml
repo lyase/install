@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="ISO-8859-1" ?>
-<videos>
-    <category name="Series" scheme="series">
-        <!-- All Categories must be equal in number of categories -->
-        <video name="Video-1"  categories="Category-1"         title="Title-1" path="YewTube iframe Source or URL to video -ext, size, and quality" ism4v="0" isogv="0" isutube="1" poster="path to poster image"  width="640" height="360" isautoplay="0" sizes="1080,720" quality="hd,lq" pagetop="iframe source path" pagetopwidth="" pagetopheight="" pagebottom="iframe source path" pagebottomwidth="790" pagebottomheight="800"></video>
-        <video name="Video-2"  categories="Cat-1|Cat-2"        title="Title-2" path="YewTube iframe Source or URL to video -ext, size, and quality" ism4v="0" isogv="0" isutube="1" poster="path to poster image"  width="640" height="360" isautoplay="0" sizes="1080,720" quality="hd,lq" pagetop="iframe source path" pagetopwidth="" pagetopheight="" pagebottom="iframe source path" pagebottomwidth="790" pagebottomheight="800"></video>
-        <video name="Video-3"  categories="Cat-1|Cat-2|Cat-3"  title="Title-3" path="YewTube iframe Source or URL to video -ext, size, and quality" ism4v="0" isogv="0" isutube="1" poster="path to poster image"  width="640" height="360" isautoplay="0" sizes="1080,720" quality="hd,lq" pagetop="iframe source path" pagetopwidth="" pagetopheight="" pagebottom="iframe source path" pagebottomwidth="790" pagebottomheight="800"></video>
-    </category>
-</videos>
