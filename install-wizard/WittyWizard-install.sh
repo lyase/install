@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# LAST_UPDATE="12 Feb 2014 16:33"
+# LAST_UPDATE="25 Jun 2014 16:33"
 # Orignal Date: 14 Jan 2012
 #
 # wget https://github.com/WittyWizard/install/archive/master.zip; unzip master.zip; cd install-master; mv -v * ..; cd ..; rm -rf install-master; rm -f master.zip;
@@ -401,19 +401,20 @@ do_install()
         This_Version="$(string_split "${Server_OS[$CIndex]}" ":" 5)";        # 5,6
         load_packages "${Server_OS[$CIndex]}" "${Install_Arch[$CIndex]}" "$CIndex"; # Server | Architect 32/64 for this item | Index
         # Now lets start making our Script 
-        echo "# $(gettext -s "DO-INSTALL-INSTALL-BY") $DATE_TIME" > "${My_Install_Script_Name}";
-        echo "# Server:${Server_Names["$CIndex"]} | Name:${App_Names["$CIndex"]} | IP:${App_IPs["$CIndex"]}"  > "${My_Install_Script_Name}";
+        echo "#!/bin/bash" > "${My_Install_Script_Name}";
+        echo "# $(gettext -s "DO-INSTALL-INSTALL-BY") $DATE_TIME" >> "${My_Install_Script_Name}";
+        echo "# Server:${Server_Names["$CIndex"]} | Name:${App_Names["$CIndex"]} | IP:${App_IPs["$CIndex"]}"  >> "${My_Install_Script_Name}";
         if [[ "$DEBUGGING" -eq 1 ]]; then
             echo "# Debugging: CIndex=$CIndex | This_OS = $This_OS | This_Distro=$This_Distro | Server_Names=${Server_Names["$CIndex"]} | App_Names=${App_Names["$CIndex"]} | ..." >> "${My_Install_Script_Name}";
         fi
         #
-        echo "# 1->(MyPassword)"                                                                  >> "${My_Install_Script_Name}";
-        echo "if [[ \"\$#\" -eq 1 ]]; then MyPassword=\"\$1\"; else MyPassword='?'; fi"           >> "${My_Install_Script_Name}";
-        echo "if [[ \"\$MyPassword\" == '?' ]]; then"                                             >> "${My_Install_Script_Name}";
-        echo "    echo -e \"$(gettext -s "DO-INSTALL-INSTALL-PW")\";"                             >> "${My_Install_Script_Name}";
-        echo "    read -r -e OPTION;"                                                             >> "${My_Install_Script_Name}";
-        echo "    MyPassword=\"\$OPTION\";"                                                       >> "${My_Install_Script_Name}";
-        echo "fi"                                                                                 >> "${My_Install_Script_Name}";
+        echo "# 1->(MyPassword)"                                                              >> "${My_Install_Script_Name}";
+        echo "if [[ \"\$#\" -eq 1 ]]; then MyPassword=\"\$1\"; else MyPassword='?'; fi"       >> "${My_Install_Script_Name}";
+        echo "if [[ \"\$MyPassword\" == '?' ]]; then"                                         >> "${My_Install_Script_Name}";
+        echo "    echo -e \"$(gettext -s "DO-INSTALL-INSTALL-PW")\";"                         >> "${My_Install_Script_Name}";
+        echo "    read -r -e OPTION;"                                                         >> "${My_Install_Script_Name}";
+        echo "    MyPassword=\"\$OPTION\";"                                                   >> "${My_Install_Script_Name}";
+        echo "fi"                                                                             >> "${My_Install_Script_Name}";
         # 
         echo "# -------------------------------------"                                        >> "${My_Install_Script_Name}";
         echo "is_user()"                                                                      >> "${My_Install_Script_Name}";
@@ -796,6 +797,10 @@ do_install()
                 if [[ "${Install_Wt["$CIndex"]}" -eq 1 ]]; then
                     echo "$Repo_Extra"                                                            >> "${My_Install_Script_Name}";
                     echo "$Repo_Extra_Key"                                                        >> "${My_Install_Script_Name}";
+                    # System Upgrade
+                    echo "echo \" $(gettext -s "DO-INSTALL-LINE-9") \";"                              >> "${My_Install_Script_Name}";
+                    echo "$(package_type 9 "System-Upgrade" "${Server_OS[$CIndex]}" 0);"              >> "${My_Install_Script_Name}";
+                    #                    
                     echo "$Run_This"                                                              >> "${My_Install_Script_Name}";
                     # Install Dev Tools
                     echo "$(package_type 0 "$DEV_TOOLS_Install" "${Server_OS[$CIndex]}" 0);"      >> "${My_Install_Script_Name}";
