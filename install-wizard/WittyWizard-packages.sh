@@ -156,7 +156,7 @@ function load_packages()
         #        
     elif [[ "$This_Distro" == "archlinux" ]]; then # ----------------------------------- Archlinux: This_PSUEDONAME = Archlinux Distros
         #
-        DEV_TOOLS_Install='base-devel wget rsync nano gcc autoconf automake cmake clang qt4 net-tools inetutils';
+        DEV_TOOLS_Install='base-devel wget rsync nano gcc autoconf automake cmake clang qt4 net-tools inetutils lshw';
         Boost_Install='graphicsmagick';
         Graphics_Install='boost boost-libs';
         PDF_Install='libharu';
@@ -277,8 +277,9 @@ function load_packages()
                 Repo_Extra_Key='deb-src http://ppa.launchpad.net/pgquiles/wt/ubuntu quantal main';
                 Extra_Install='';
             elif [[ "$This_Distro_Version" == 'precise' ]]; then
-                Repo_Extra="deb http://ppa.launchpad.net/pgquiles/wt/ubuntu precise main";  
-                Repo_Extra_Key='deb-src http://ppa.launchpad.net/pgquiles/wt/ubuntu precise main';
+                # Wt and Qt and gcc
+                Repo_Extra="add-apt-repository ppa:pgquiles/wt; apt-add-repository ppa:ubuntu-sdk-team/ppa; add-apt-repository ppa:ubuntu-toolchain-r/test";  # deb http://ppa.launchpad.net/pgquiles/wt/ubuntu precise main
+                Repo_Extra_Key=''; # deb-src http://ppa.launchpad.net/pgquiles/wt/ubuntu precise main
                 Extra_Install='';
             elif [[ "$This_Distro_Version" == 'oneiric' ]]; then
                 Repo_Extra="deb http://ppa.launchpad.net/pgquiles/wt/ubuntu oneiric main";  
@@ -295,23 +296,23 @@ function load_packages()
             fi
             #
             Required_Wizard='sshpass rsync openssh-server openssh-client';
-            DEV_TOOLS_Install='build-essential aptitude gtkorphan rsync cmake gcc g++';
-            Boost_Install='libboost-all-dev libboost-dev libboost-test-dev libboost-program-options-dev libevent-dev automake libtool flex bison pkg-config g++ libssl-dev libboost-date-time-dev libboost-filesystem-dev libboost-regex-dev libboost-signals-dev libboost-system-dev libboost-thread-dev libboost-thread-dev libboost-random-dev libboost-test-dev';
+            DEV_TOOLS_Install='build-essential aptitude gtkorphan rsync cmake doxygen automake qtdeclarative5-dev qt5-default python-software-properties gcc-4.7 g++-4.7 nano';
+            Boost_Install='libevent-dev libtool flex bison pkg-config libboost-all-dev libboost-dev libboost-test-dev libboost-program-options-dev libssl-dev libboost-date-time-dev libboost-filesystem-dev libboost-regex-dev libboost-signals-dev libboost-system-dev libboost-thread-dev libboost-thread-dev libboost-random-dev libboost-test-dev';
             Graphics_Install='graphicsmagick libgraphicsmagick1-dev libgraphicsmagick3';
             PDF_Install='libhpdf libhpdf-dev';
-            APPS_REQUIRED_Install="gcc cmake doxygen openssh-server openssh-client dnsutils $Boost_Install $Graphics_Install";
-            WT_REQUIRED_Install='libwt* witty-dbg witty-examples libjasper-dev libjasper-runtime libjasper1 lcms libice libsm libsm-dev libwmf-bin';
-            POSTGRESQL_Install='wt-dbo-postgres postgresql postgresql-contrib libpq-dev';
+            APPS_REQUIRED_Install="openssh-server openssh-client dnsutils $Boost_Install $Graphics_Install";
+            WT_REQUIRED_Install='witty-dev witty-dbg witty-examples libjasper-dev libjasper-runtime libjasper1 libwmf-bin'; # libwt* lcms libice libsm libsm-dev
+            POSTGRESQL_Install='postgresql postgresql-contrib libpq-dev'; # wt-dbo-postgres
             Master_Install='pgadmin3'; 
             SQLITE_Install='sqlite'
             MYSQL_Install='mysql';
             HAPROXY_Requirements='socat';
             HAPROXY_Install="haproxy $HAPROXY_Requirements";
-            MONIT_Install='monit';
+            MONIT_Install='monit sysstat';
             APACHE_Install='httpd'; # Install or Remove
             #Moses_Install='automake libtool zlib1g-dev libssl-dev csh tcl tcl-dev libelf-dev';
             FTP_Install='proftpd';
-            Run_This='';
+            Run_This='update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.7 60;update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-4.7 50';
             BashRc_Path='';
             Repo_File='';
         fi
