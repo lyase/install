@@ -133,17 +133,40 @@
             Благодаря абстракции виджетов, можно прямиком включать клиент чата в Ваше собственное приложение, компонуя его с классами клиента и сервера.
         </p>
     </message>
+    <message id="serverpushwarning">Note, you do not have JavaScript and this chat will have degraded functionality</message>
 
-    <message id="details">
+    <message id="videoman-template">
 
-        <p>
-            Реализация использует инициируемые сервером обновления - особенность,
-            которая не во многом отличается от обычного клиент-серверного взаимодействия в
-            Wt, и позволяет обновлять сессию вне обычного цикла обработки событий. При
-            получении сообщения от того или иного пользователя, пользовательские интерфейсы
-            (т.е. деревья виджетов) текущей и всех остальных сессий обновляются и изменения
-            отсылаются ("pushed") соответствующим клиентам одновременно.
-        </p>
+        <div id="videomanpagetop">
+            ${videomanpagetop}
+        </div>
+        <div id="catcombo-0">
+            ${catcombobinder-0}
+        </div>
+        <div id="catcombo-1">
+            ${catcombobinder-1}
+        </div>
+        <div id="catcombo-2">
+            ${catcombobinder-2}
+        </div>
+        <div id="catcombo-3">
+            ${catcombobinder-3}
+        </div>
+        <div id="catcombo-4">
+            ${catcombobinder-4}
+        </div>
+        <div id="catcombo-5">
+            ${catcombobinder-5}
+        </div>
+        <div id="videocombo">
+            ${videocombobinder}
+        </div>
+        <div id="videoman">
+            ${videoman}
+        </div>
+        <div id="videomanpagebottom">
+            ${videomanpagebottom}
+        </div>
 
     </message>
 
