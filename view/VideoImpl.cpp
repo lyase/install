@@ -33,6 +33,7 @@
 #include "rapidxml/rapidxml_utils.hpp"
 //
 #include <QString>
+#include <QStringList>
 #include <QDebug>
 #ifdef REGX
     #include <QRegularExpression>

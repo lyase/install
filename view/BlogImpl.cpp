@@ -39,22 +39,28 @@
 #include "model/Token.h"
 #include "model/User.h"
 #include "WittyWizard.h"
-
 /* ****************************************************************************
  * Blog Implementation
  */
-BlogImpl::BlogImpl(const std::string& basePath, Wt::Dbo::SqlConnectionPool& connectionPool, const std::string& rssFeedUrl, BlogView* blogView) : basePath_(basePath), session_(connectionPool), rssFeedUrl_(rssFeedUrl), blogView_(blogView), panel_(0), authorPanel_(0), users_(0), userEditor_(0), mustLoginwarning_(0), mustBeAdministratorwarning_(0), invalidUser_(0)
+BlogImpl::BlogImpl(const std::string& basePath, Wt::Dbo::SqlConnectionPool& connectionPool, const std::string& rssFeedUrl, const std::string& defaultTheme, BlogView* blogView) : basePath_(basePath), session_(connectionPool), rssFeedUrl_(rssFeedUrl), defaultTheme_(defaultTheme), blogView_(blogView), panel_(0), authorPanel_(0), users_(0), userEditor_(0), mustLoginwarning_(0), mustBeAdministratorwarning_(0), invalidUser_(0)
 {
     Wt::WApplication *app = wApp;
     // Do we want to use our own Template or use a common Template?
     app->messageResourceBundle().use(Wt::WApplication::appRoot() + "blog"); // ./app_root/
     std::string myTheme = GetCookie("theme");
-    std::string themePath = "css/";
+    // /css/oauth-google.png HTTP/1.1" 404 85
+    std::string themePath = "css";
     if (myTheme.empty())
+    {
+        themePath = "themes/wittywizard/" + defaultTheme;
+    }
+    else
     {
         themePath = "themes/wittywizard/" + myTheme;
     }
+    Wt::log("start") << " *** BlogImpl::BlogImpl() defaultTheme=" << defaultTheme << " ***";
     // Do we want every Domain to have their own Resources? if so add path
+    // /resources/themes/wittywizard//blog.css
     app->useStyleSheet(Wt::WApplication::resourcesUrl() + themePath + "/blog.css");
     app->useStyleSheet(Wt::WApplication::resourcesUrl() + themePath + "/asciidoc.css");
 

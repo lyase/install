@@ -34,13 +34,13 @@ class BlogView;
 class BlogImpl : public Wt::WContainerWidget
 {
     public:
-        BlogImpl(const std::string& basePath, Wt::Dbo::SqlConnectionPool& connectionPool, const std::string& rssFeedUrl, BlogView* blogView);
+        BlogImpl(const std::string& basePath, Wt::Dbo::SqlConnectionPool& connectionPool, const std::string& rssFeedUrl, const std::string& defaultTheme, BlogView* blogView);
         void setInternalBasePath(const std::string& basePath);
         virtual ~BlogImpl();
         /* --------------------------------------------------------------------
          * session
          */
-        BlogSession& session()  { return session_;  }
+        BlogSession& session()  { return session_; }
 
     private:
         void onUserChanged();
@@ -70,6 +70,7 @@ class BlogImpl : public Wt::WContainerWidget
         std::string basePath_;
         BlogSession session_;
         std::string rssFeedUrl_;
+        std::string defaultTheme_;
         BlogView*   blogView_;
         //
         BlogLoginWidget* loginWidget_;

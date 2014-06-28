@@ -6,19 +6,6 @@
  * Modified for Witty Wizard
  *
  */
-
-#include "PostView.h"
-#include "BlogView.h"
-#include "EditUsers.h"
-#include "BlogLoginWidget.h"
-
-#include "model/BlogSession.h"
-#include "model/Comment.h"
-#include "model/Post.h"
-#include "model/Tag.h"
-#include "model/Token.h"
-#include "model/User.h"
-
 #include <Wt/WAnchor>
 #include <Wt/WApplication>
 #include <Wt/WCheckBox>
@@ -33,20 +20,28 @@
 #include <Wt/Auth/PasswordService>
 #include <Wt/Auth/PasswordVerifier>
 
-//#include <Wt/Dbo/backend/Sqlite3>
-
 #include <boost/algorithm/string/classification.hpp>
 #include <boost/algorithm/string/split.hpp>
 #include <boost/algorithm/string.hpp>
 
-#include "BlogImpl.h"
+#include "PostView.h"
+#include "BlogView.h"
+#include "EditUsers.h"
+#include "BlogLoginWidget.h"
 
+#include "model/BlogSession.h"
+#include "model/Comment.h"
+#include "model/Post.h"
+#include "model/Tag.h"
+#include "model/Token.h"
+#include "model/User.h"
+#include "BlogImpl.h"
 /* ****************************************************************************
  * Blog View Constructor
  */
-BlogView::BlogView(const std::string& basePath, Wt::Dbo::SqlConnectionPool& db, const std::string& rssFeedUrl, Wt::WContainerWidget* parent) : Wt::WCompositeWidget(parent), userChanged_(this)
+BlogView::BlogView(const std::string& basePath, Wt::Dbo::SqlConnectionPool& db, const std::string& rssFeedUrl, const std::string& defaultTheme, Wt::WContainerWidget* parent) : Wt::WCompositeWidget(parent), userChanged_(this)
 {
-    impl_ = new BlogImpl(basePath, db, rssFeedUrl, this);
+    impl_ = new BlogImpl(basePath, db, rssFeedUrl, defaultTheme, this);
     setImplementation(impl_);
 } // end
 /* ****************************************************************************
