@@ -67,7 +67,6 @@ class BlogUserDatabase : public Wt::Auth::AbstractUserDatabase
         {
             WithUser(const BlogUserDatabase& self, const Wt::Auth::User& user);
             ~WithUser();
-
             Wt::Dbo::Transaction transaction;
         };
 

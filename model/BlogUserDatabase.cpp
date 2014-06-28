@@ -350,7 +350,6 @@ void BlogUserDatabase::getUser(const std::string& id) const
 BlogUserDatabase::WithUser::WithUser(const BlogUserDatabase& self, const Wt::Auth::User& user) : transaction(self.session_)
 {
     self.getUser(user.id());
-
     if (!self.user_)
     {
         throw InvalidUser(user.id());

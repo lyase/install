@@ -3,6 +3,8 @@
 #define THEVIDEO_H
 
 #include <Wt/Dbo/Dbo>
+#include <Wt/Dbo/Types>
+#include <Wt/Dbo/WtSqlTraits>
 /* ****************************************************************************
  * pageLocation
  */
