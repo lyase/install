@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-declare LAST_UPDATE="21 Mar 2014 16:33";
+declare LAST_UPDATE="8 Jun 2014 16:33";
 declare SCRIPT_VERSION="1.0.1.A";
 if [ -z "${SCRIPT_NAME}" ]; then
     declare SCRIPT_NAME="wizard.sh";
@@ -81,14 +81,18 @@ declare -a LOCALIZE_MSG=();      # Localize MSG for po file
 declare -a LOCALIZE_COMMENT=();  # Localize Comment for po file
 # Help
 declare -a HELP_ARRAY=();
-# Configuration File Signatures 
+# Configuration File Signatures
 declare -r FILE_SIGNATURE="# ARCH WIZARD ID Signature"; # Copy this into file to test for changes made by this script
 # Helper Global Variables
 declare MyString='';          # Used in Testing
 # Network Detection
+declare PingHost1="google.com";
+declare PingHost2="wikipedia.org";
 declare check_eth0=" ";
 declare check_eth1=" ";
 declare check_eth2=" ";
+declare -i ActiveAdapter=0;   # Active Network Adapter Index for NIC
+declare ActiveNetAdapter="";  # Active Network Adapter Name: same as NIC
 declare -a NIC=();            # Nic Name: eth0, eth1...
 declare -a EthAddress=();     # Nic Address
 declare -a EthReverseDNS=();  # Nic Reverse DNS Address
@@ -96,12 +100,12 @@ declare -i ETH0_ACTIVE=0;     # Detect NIC 1
 declare -i ETH1_ACTIVE=0;     # Detect NIC 2
 declare -i ETH2_ACTIVE=0;     # Detect NIC 3
 # Note: Make sure to void these out on exit or reboot to clear them.
-declare USERNAME="$(whoami)"; # User Name 
+declare USERNAME="$(whoami)"; # User Name
 declare USERPASSWD='';        # User Password
 declare Root_Password='';     # Root Password
 #
 declare BTICK='`';            # Back Tick used in SQL
-declare TICK="'";             # Tick used in Bash 
+declare TICK="'";             # Tick used in Bash
 #
 declare -a USER_GROUPS=();
 # SSH
@@ -122,7 +126,7 @@ declare -a TASKMANAGER_NAME=( "" );
 declare -a AUR_HELPERS=("yaourt" "packer" "pacaur");
 declare AUR_HELPER="yaourt";
 #
-declare -a LOCALE_ARRAY=( "" ); 
+declare -a LOCALE_ARRAY=( "" );
 declare -a LIST_DEVICES=( "" );
 declare -i REFRESH_REPO=1;
 declare -i REFRESH_AUR=1;
@@ -171,8 +175,8 @@ declare EDITOR=nano;
 declare -a EDITORS=("nano" "emacs" "vi" "vim" "joe");
 # AUTOMATICALLY DETECTS THE SYSTEM LANGUAGE {{{
 # automatically detects the system language based on your locale
-declare LANGUAGE="$(locale | sed '1!d' | sed 's/LANG=//' | cut -c1-5)"; # en_US 
-declare LOCALE="$LANGUAGE"; # en_US 
+declare LANGUAGE="$(locale | sed '1!d' | sed 's/LANG=//' | cut -c1-5)"; # en_US
+declare LOCALE="$LANGUAGE"; # en_US
 declare -a COUNTRIES=("Australia" "Belarus" "Belgium" "Brazil" "Bulgaria" "Canada" "Chile" "China" "Colombia" "Czech Republic" "Denmark" "Estonia" "Finland" "France" "Germany" "Greece" "Hungary" "India" "Ireland" "Israel" "Italy" "Japan" "Kazakhstan" "Korea" "Macedonia" "Netherlands" "New Caledonia" "New Zealand" "Norway" "Poland" "Portugal" "Romania" "Russian Federation" "Serbia" "Singapore" "Slovakia" "South Africa" "Spain" "Sri Lanka" "Sweden" "Switzerland" "Taiwan" "Ukraine" "United Kingdom" "United States" "Uzbekistan" "Viet Nam");
 declare -a COUNTRY_CODES=("AU" "BY" "BE" "BR" "BG" "CA" "CL" "CN" "CO" "CZ" "DK" "EE" "FI" "FR" "DE" "GR" "HU" "IN" "IE" "IL" "IT" "JP" "KZ" "KR" "MK" "NL" "NC" "NZ" "NO" "PL" "PT" "RO" "RU" "RS" "SG" "SK" "ZA" "ES" "LK" "SE" "CH" "TW" "UA" "GB" "US" "UZ" "VN");
 declare COUNTRY_CODE=${LOCALE#*_}; # en_US = en-US = US
@@ -183,7 +187,7 @@ declare LANGUAGE_AS="en";
 declare LANGUAGE_KDE="en_gb";
 declare LANGUAGE_FF="en-us"; # af ak ar as ast be bg bn-bd bn-in br bs ca cs csb cy da de el en-gb en-us en-za eo es-ar es-cl es-es es-mx et eu fa ff fi fr fy-nl ga-ie gd gl gu-in he hi-in hr hu hy-am id is it ja kk km kn ko ku lg lij lt lv mai mk ml mr nb-no nl nn-no nso or pa-in pl pt-br pt-pt rm ro ru si sk sl son sq sr sv-se ta ta-lk te th tr uk vi zh-cn zh-tw zu
 declare LANGUAGE_CALLIGRA="en";
-declare KEYBOARD="us"; # used to drill down into more specific layouts for some; not the same as KEYMAP necessarily  
+declare KEYBOARD="us"; # used to drill down into more specific layouts for some; not the same as KEYMAP necessarily
 declare KEYMAP="us";
 declare ZONE="America";
 declare SUBZONE="Los_Angeles";
@@ -374,7 +378,7 @@ print_help()
         done
     else
         print_error "PRINT-HELP-ERROR";
-    fi        
+    fi
     echo "" >> "${FULL_SCRIPT_PATH}/help.html";
     echo "" >> "${FULL_SCRIPT_PATH}/help.html";
     echo "</body>" >> "${FULL_SCRIPT_PATH}/help.html";
@@ -410,12 +414,12 @@ localize_info()
     fi
     echo -en "\b${progress[$((progresion++))]}";
     [[ "$progresion" -ge 3 ]] && progresion=0;
-    #    
+    #
     if [[ "$#" -ne "3" ]]; then echo -e "${BRed}$(gettext -s "WRONG-NUMBER-ARGUMENTS-PASSED-TO")${BYellow} |$@| ${BWhite} -> ${BWhite} ${FUNCNAME[1]} @ $(basename ${BASH_SOURCE[1]}) : ${BASH_LINENO[0]}  -> $FUNCNAME @ $(basename $BASH_SOURCE) : $LINENO ${White}"; exit 1; fi
     [ -z "$1" ] && return 1;
     [ -z "$2" ] && return 1;
     #echo ">: $1"
-    # Check to see if its in Array    
+    # Check to see if its in Array
     if [[ "${#LOCALIZE_ID[*]}" -eq 0 ]]; then
         LOCALIZE_ID[0]="$1";
         LOCALIZE_MSG[0]="$2";
@@ -444,7 +448,7 @@ if [[ "$RUN_HELP" -eq 1 ]]; then
     create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
 fi
 # Help file Localization
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then 
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "LOCALIZE-DESC"  "Localize Text, look up ID and return Localized string." "Comment: localize @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "LOCALIZE-NOTES" "Localized. Used to Centralized the Localization Function, also to add more Functionality." "Comment: localize @ $(basename $BASH_SOURCE) : $LINENO";
 fi
@@ -471,16 +475,16 @@ if [[ "$RUN_HELP" -eq 1 ]]; then
     REVISION="5 Dec 2012";
     create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
 fi
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then 
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "PRINT-LINE-DESC"  "Prints a line of dashes --- across the screen." "Comment: print_line @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "PRINT-LINE-NOTES" "None." "Comment: print_line @ $(basename $BASH_SOURCE) : $LINENO";
 fi
 # -------------------------------------
 print_line()
-{ 
-    printf "%$(tput cols)s\n" | tr ' ' '-'; 
+{
+    printf "%$(tput cols)s\n" | tr ' ' '-';
     tput sgr0;
-} 
+}
 #}}}
 # -----------------------------------------------------------------------------
 # PAUSE FUNCTION {{{
@@ -500,13 +504,13 @@ pause_function()
 {
     print_line;
     tput sgr0;
-    if [[ "$#" -eq 1 ]]; then 
+    if [[ "$#" -eq 1 ]]; then
         read -e -sn 1 -p "$(gettext -s "PRESS-ANY-KEY-CONTINUE") [$1]...";
     else
         read -e -sn 1 -p "$(gettext -s "PRESS-ANY-KEY-CONTINUE") [$1] - [$2]...";
     fi
     tput sgr0;
-} 
+}
 #}}}
 # -----------------------------------------------------------------------------
 # IS STRING IN FILE {{{
@@ -546,7 +550,7 @@ if [[ "$RUN_TEST" -eq 1 ]]; then
         read -e -sn 1 -p "$(gettext -s "PRESS-ANY-KEY-CONTINUE")";
     fi
 fi
-# ----------------------------------------------------------------------------- 
+# -----------------------------------------------------------------------------
 # WRITE ERROR {{{
 if [[ "$RUN_HELP" -eq 1 ]]; then
     NAME="write_error";
@@ -594,8 +598,8 @@ if [[ "$RUN_HELP" -eq 1 ]]; then
     create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
 fi
 # -------------------------------------
-trim() 
-{ 
+trim()
+{
     echo "$(rtrim "$(ltrim "$1")")";
 }
 #}}}
@@ -679,7 +683,7 @@ fi
 # -------------------------------------
 is_needle_in_haystack()
 {
-    if [[ "$1" != *"$2"* ]]; then 
+    if [[ "$1" != *"$2"* ]]; then
         if [[ "$2" != *" "* ]]; then # Check to see if it has Spaces, then test it like an Array
             return 1;
         fi
@@ -707,7 +711,7 @@ is_needle_in_haystack()
                 local -i H_Counter=0;                       # H_Counter how many times we find it
                 local -a FoundIndex=();                     #
                 trak=0
-                if [[ "$3" -eq "5" ]]; then                 # Anywhere Exactly in String: Haystack=1ABS 2ABS 1POS 2POS and Needle=ABS POS, 
+                if [[ "$3" -eq "5" ]]; then                 # Anywhere Exactly in String: Haystack=1ABS 2ABS 1POS 2POS and Needle=ABS POS,
                     for HayStackIndex in "${!Haystack[@]}"; do
                         ((trak++));
                         for index in "${!MyNeedle[@]}"; do
@@ -721,12 +725,12 @@ is_needle_in_haystack()
                             if [[ "$SearchResults" -ne "0" ]]; then # SearchResults=0-4 - 0=No Found
                                 if [[ "${#FoundIndex[@]}" -eq 0 ]]; then
                                     if [[ "$RUN_TEST" -eq 3 ]]; then echo "5. Needle=${MyNeedle[$index]} | SearchResults=$SearchResults | index=$index"; fi
-                                    array_push "FoundIndex" "$index"; 
+                                    array_push "FoundIndex" "$index";
                                     ((H_Counter++));
                                 else
                                     if ! is_in_array "FoundIndex[@]" "$index" ; then
                                         if [[ "$RUN_TEST" -eq 3 ]]; then echo "5. Needle=${MyNeedle[$index]} | SearchResults=$SearchResults | index=$index"; fi
-                                        array_push "FoundIndex" "$index"; 
+                                        array_push "FoundIndex" "$index";
                                         ((H_Counter++));
                                     fi
                                 fi
@@ -738,12 +742,12 @@ is_needle_in_haystack()
                         return 0;
                     else
                         return 1;
-                    fi                
+                    fi
                 else
                     for index in "${!MyNeedle[@]}"; do
                         if is_in_array "Haystack[@]" "${MyNeedle[$index]}" ; then
                             if [[ "$RUN_TEST" -eq 3 ]]; then echo "Found ${MyNeedle[$index]}"; fi
-                            if [[ "$3" -eq "6" ]]; then        # Anywhere Exactly in String: Haystack=12 13 and Needle=1 3, 
+                            if [[ "$3" -eq "6" ]]; then        # Anywhere Exactly in String: Haystack=12 13 and Needle=1 3,
                                 if [[ "$RUN_TEST" -eq 3 ]]; then echo "6. Needle=${MyNeedle[$index]} | SearchResults=$SearchResults | ARR_INDEX=$ARR_INDEX"; fi
                                 ((H_Counter++));
                             fi
@@ -756,7 +760,7 @@ is_needle_in_haystack()
                         return 0;
                     else
                         return 1;
-                    fi                
+                    fi
                 fi
             fi
         else
@@ -783,7 +787,7 @@ fi
 # -------------------------------------
 string_len()
 {
-    echo "${#1}"; 
+    echo "${#1}";
     #echo "$(expr "$1" : '.*')"; # Use C Function
     # Fix in old code before removing
     #return $(expr "$1" : '.*'); # Use C Function
@@ -847,7 +851,7 @@ fi
 # -------------------------------------
 strip_trailing_char()
 {
-    echo "${1%${2}}";    #  The "1" refers to "$1" which is string and "2" is Char to remove    
+    echo "${1%${2}}";    #  The "1" refers to "$1" which is string and "2" is Char to remove
 }
 # -------------------------------------
 if [[ "$RUN_TEST" -eq 1 ]]; then
@@ -922,8 +926,8 @@ sub_string()
         MyString="${1:$ending}";
     elif [[ "$3" -eq 3 ]]; then # Remove: 'Beginning Search Ending'
         MyString="${1:0:$beginning}${1:$ending}";
-    fi   
-    echo "$MyString"; 
+    fi
+    echo "$MyString";
 }
 # -------------------------------------
 if [[ "$RUN_TEST" -eq 1 || "$RUN_TEST" -eq 2 || "$RUN_TEST" -eq 3 ]]; then
@@ -980,7 +984,7 @@ string_split()
         ((Counter++));
         if [[ "$Counter" -eq "$3" ]]; then echo "$MySection"; fi
     done
-    IFS="$OLD_IFS";    
+    IFS="$OLD_IFS";
 }
 # -------------------------------------
 if [[ "$RUN_TEST" -eq 1 ]]; then
@@ -1045,7 +1049,7 @@ load_2d_array()
         local lines=();
         local line="";
         local OLD_IFS="$IFS"; IFS=$' '; # You would think you need to use IFS=$'\n\t' since its a file, but what it needs to do is expand the spaces
-        while read line; do 
+        while read line; do
             lines=($line); # Stored Data - Do not quote
             echo -e "${lines[$2]}";
         done < "$1"; # Load Array from serialized disk file
@@ -1187,7 +1191,7 @@ localize_save()
         echo ""                                                                           >> "${LOCALIZED_PATH}/${DEFAULT_LOCALIZED_LANG}/${DEFAULT_LOCALIZED_LANG}.po"; # Empty Line
     done
     msgfmt -o "${LOCALIZED_PATH}/${DEFAULT_LOCALIZED_LANG}/LC_MESSAGES/${LOCALIZED_FILE}.mo" "${LOCALIZED_PATH}/${DEFAULT_LOCALIZED_LANG}/${DEFAULT_LOCALIZED_LANG}.po";
-    #        
+    #
     TRANSLATOR="simulate"; # moses google bing apertium
     local -a LanguagesTranslate=( "af" "ca" "de" "es" "fr" "ga" "gl" "hi" "it" "lt" "lv" "mt" "nl" "pl" "pt" "sq" );
     if [[ "$TRANSLATOR" == "simulate" ]]; then
@@ -1221,7 +1225,7 @@ localize_save()
         make_dir "${LOCALIZED_PATH}/${LanguagesTranslate[$LanguagesIndex]}/LC_MESSAGES/" "$FUNCNAME @ $(basename $BASH_SOURCE) : $LINENO";
         echo '';
         echo "${LanguagesTranslate[$LanguagesIndex]}";
-    
+
         for index in "${!LOCALIZE_ID[@]}"; do
             echo -en "\b${progress[$((progresion++))]}"; [[ "$progresion" -ge 3 ]] && progresion=0;
             if [ ! -f "$LocalePath" ]; then touch "$LocalePath"; fi # We do not want to overwrite it
@@ -1254,15 +1258,15 @@ localize_save()
                 echo "msgid \"${LOCALIZE_ID[index]}\""                          >> "$LocalePath"; # Message ID
                 echo "msgstr \"${RETURN_TRANS}\""                               >> "$LocalePath"; # Message
                 echo ""                                                         >> "$LocalePath"; # Empty Line
-            fi    
+            fi
         done
         msgfmt -o "${LOCALIZED_PATH}/${LanguagesTranslate[$LanguagesIndex]}/LC_MESSAGES/${LOCALIZED_FILE}.mo" "${LOCALIZED_PATH}/${LanguagesTranslate[$LanguagesIndex]}/${LanguagesTranslate[$LanguagesIndex]}.po";
     done
     echo '';
     print_info "LOCALIZER-COMPLETED";
-} 
+}
 #}}}
-# ----------------------------------------------------------------------------- 
+# -----------------------------------------------------------------------------
 # CLEAN LOGS {{{
 if [[ "$RUN_HELP" -eq 1 ]]; then
     NAME="clean_logs";
@@ -1275,7 +1279,7 @@ if [[ "$RUN_HELP" -eq 1 ]]; then
     REVISION="5 Dec 2012";
     create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
 fi
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then 
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "CLEAN-LOGS-USAGE" "clean_logs 1->(Log-Entry)" "Comment: clean_logs @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "CLEAN-LOGS-DESC"  "Clean Log Entry of USERNAME and Passwords." "Comment: clean_logs @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "CLEAN-LOGS-NOTES" "None." "Comment: clean_logs @ $(basename $BASH_SOURCE) : $LINENO";
@@ -1315,7 +1319,7 @@ if [[ "$RUN_TEST" -eq 1 ]]; then
     fi
 fi
 #}}}
-# ----------------------------------------------------------------------------- 
+# -----------------------------------------------------------------------------
 # WRITE LOG {{{
 if [[ "$RUN_HELP" -eq 1 ]]; then
     NAME="write_log";
@@ -1328,7 +1332,7 @@ if [[ "$RUN_HELP" -eq 1 ]]; then
     REVISION="5 Dec 2012";
     create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
 fi
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then 
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "WRITE-LOG-USAGE" "write_log 1->(Log) 2->(Debugging Information)" "Comment: write_log @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "WRITE-LOG-DESC"  "Write Log Entry." "Comment: write_log @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "WRITE-LOG-NOTES" "Localized." "Comment: write_log @ $(basename $BASH_SOURCE) : $LINENO";
@@ -1371,14 +1375,14 @@ if [[ "$RUN_HELP" -eq 1 ]]; then
     create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
 fi
 # Help file Localization
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then 
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "PRINT-TITLE-USAGE" "print_title 1->(Localized Text ID) 2->(Optional Text not Localized)" "Comment: print_title @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "PRINT-TITLE-DESC"  "This will print a Header and clear the screen" "Comment: print_title @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "PRINT-TITLE-NOTES" "Localized." "Comment: print_title @ $(basename $BASH_SOURCE) : $LINENO";
 fi
 # -------------------------------------
 print_title()
-{ 
+{
     clear;
     print_line;
     if [ "$#" -eq "1" ]; then
@@ -1388,7 +1392,7 @@ print_title()
     fi
     print_line;
     echo "";
-} 
+}
 #}}}
 # -----------------------------------------------------------------------------
 # PRINT INFO {{{
@@ -1403,14 +1407,14 @@ if [[ "$RUN_HELP" -eq 1 ]]; then
     REVISION="5 Dec 2012";
     create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
 fi
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then 
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "PRINT-INFO-USAGE" "print_info 1->(Localized Text ID) 2->(Optional Not Localized Text)" "Comment: print_info @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "PRINT-INFO-DESC"  "Prints information on screen for end users to read, in a Column that is as wide as display will allow." "Comment: print_info @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "PRINT-INFO-NOTES" "Localized." "Comment: print_info @ $(basename $BASH_SOURCE) : $LINENO";
 fi
 # -------------------------------------
 print_info()
-{ 
+{
     # Console width number
     T_COLS="$(tput cols)";
     tput sgr0;
@@ -1436,14 +1440,14 @@ if [[ "$RUN_HELP" -eq 1 ]]; then
     REVISION="5 Dec 2012";
     create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
 fi
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then 
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "PRINT-LIST-USAGE" "print_list 1->(Localized Text ID) 2->(Optional Not Localized Text)" "Comment: print_list @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "PRINT-LIST-DESC"  "Used to print Menu Descriptions, will change colors of text before and after a semi-colon" "Comment: print_list @ $(basename $BASH_SOURCE) : $LINENO"
     localize_info "PRINT-LIST-NOTES" "Localized." "Comment: print_list @ $(basename $BASH_SOURCE) : $LINENO";
 fi
 # -------------------------------------
 print_list()
-{ 
+{
     tput sgr0;
     local T_COLS="$(tput cols)";        # Console width number
     local MyString="$(localize "$1")";
@@ -1469,7 +1473,7 @@ print_list()
     fi
     echo '';
     tput sgr0;
-} 
+}
 #}}}
 # -----------------------------------------------------------------------------
 # PRINT THIS {{{
@@ -1484,14 +1488,14 @@ if [[ "$RUN_HELP" -eq 1 ]]; then
     REVISION="5 Dec 2012";
     create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
 fi
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then 
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "PRINT-THIS-USAGE" "print_this 1->(Localized Text ID) 2->(Optional Not Localized Text)" "Comment: print_this @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "PRINT-THIS-DESC"  "Like print_info, without a blank line." "Comment: print_this @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "PRINT-THIS-NOTES" "Localized." "Comment: print_this @ $(basename $BASH_SOURCE) : $LINENO";
 fi
 # -------------------------------------
 print_this()
-{ 
+{
     # Console width number
     T_COLS="$(tput cols)";
     tput sgr0;
@@ -1501,7 +1505,7 @@ print_this()
         echo -e "${BWhite}$(localize "$1") ${2}${White}" | fold -sw $(( $T_COLS - 18 )) | sed 's/^/\t/';
     fi
     tput sgr0;
-} 
+}
 #}}}
 # -----------------------------------------------------------------------------
 # PRINT THAT {{{
@@ -1516,14 +1520,14 @@ if [[ "$RUN_HELP" -eq 1 ]]; then
     REVISION="5 Dec 2012";
     create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
 fi
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then 
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "PRINT-THAT-USAGE" "print_that 1->(Localized Text ID) 2->(Optional Not Localized Text)" "Comment: print_that @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "PRINT-THAT-DESC"  "Like print_info, without a blank line and indented." "Comment: print_that @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "PRINT-THAT-NOTES" "Localized." "Comment: print_that @ $(basename $BASH_SOURCE) : $LINENO";
 fi
 # -------------------------------------
 print_that()
-{ 
+{
     # Console width number
     T_COLS="$(tput cols)";
     tput sgr0;
@@ -1533,7 +1537,7 @@ print_that()
         echo -e "\t\t${BWhite}$(localize "$1") ${2}${White}" | fold -sw $(( $T_COLS - 18 )) | sed 's/^/\t/';
     fi
     tput sgr0;
-} 
+}
 #}}}
 # -----------------------------------------------------------------------------
 # PRINT INFO {{{
@@ -1548,14 +1552,14 @@ if [[ "$RUN_HELP" -eq 1 ]]; then
     REVISION="5 Dec 2012";
     create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
 fi
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then 
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "PRINT-INFO-USAGE" "print_caution 1->(Localized Text ID) 2->(Optional Not Localized Text)" "Comment: print_caution @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "PRINT-INFO-DESC"  "Prints information on screen for end users to read, in a Column that is as wide as display will allow." "Comment: print_caution @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "PRINT-INFO-NOTES" "Localized." "Comment: print_caution @ $(basename $BASH_SOURCE) : $LINENO";
 fi
 # -------------------------------------
 print_caution()
-{ 
+{
     # Console width number
     T_COLS="$(tput cols)";
     tput sgr0;
@@ -1579,14 +1583,14 @@ if [[ "$RUN_HELP" -eq 1 ]]; then
     REVISION="5 Dec 2012";
     create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
 fi
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then 
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "PRINT-WARNING-USAGE" "print_warning 1->(Localized Text ID) 2->(Optional Not Localized Text)" "Comment: print_warning @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "PRINT-WARNING-DESC"  "Print Warning" "Comment: print_warning @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "PRINT-WARNING-NOTES" "Localized." "Comment: print_warning @ $(basename $BASH_SOURCE) : $LINENO";
 fi
 # -------------------------------------
 print_warning()
-{ 
+{
     # Console width number
     T_COLS="$(tput cols)";
     tput sgr0
@@ -1596,7 +1600,7 @@ print_warning()
         echo -e "\t${BPurple}$(localize "$1") ${2}${White}\n" | fold -sw $(( $T_COLS - 1 ));
     fi
     tput sgr0;
-} 
+}
 #}}}
 # -----------------------------------------------------------------------------
 # PRINT TEST {{{
@@ -1611,14 +1615,14 @@ if [[ "$RUN_HELP" -eq 1 ]]; then
     REVISION="5 Dec 2012";
     create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
 fi
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then 
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "PRINT-TEST-USAGE" "print_test 1->(Localized Text ID) 2->(Optional Not Localized Text)" "Comment: print_test @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "PRINT-TEST-DESC"  "Print Test" "Comment: print_test @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "PRINT-TEST-NOTES" "Localized." "Comment: print_test @ $(basename $BASH_SOURCE) : $LINENO";
 fi
 # -------------------------------------
 print_test()
-{ 
+{
     # Console width number
     T_COLS="$(tput cols)";
     tput sgr0;
@@ -1628,7 +1632,7 @@ print_test()
         echo -e "\t${BBlue}$(localize "$1")${White} ${2}" | fold -sw $(( $T_COLS - 1 ));
     fi
     tput sgr0;
-} 
+}
 #}}}
 # -----------------------------------------------------------------------------
 # PRINT ERROR {{{
@@ -1643,14 +1647,14 @@ if [[ "$RUN_HELP" -eq 1 ]]; then
     REVISION="5 Dec 2012";
     create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
 fi
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then 
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "PRINT-ERROR-USAGE" "print_error 1->(Localized Text ID) 2->(Optional Not Localized Text)" "Comment: print_error @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "PRINT-ERROR-DESC"  "Print error" "Comment: print_error @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "PRINT-ERROR-NOTES" "Localized." "Comment: print_error @ $(basename $BASH_SOURCE) : $LINENO";
 fi
 # -------------------------------------
 print_error()
-{ 
+{
     # Console width number
     T_COLS="$(tput cols)";
     tput sgr0
@@ -1660,7 +1664,7 @@ print_error()
         echo -e "\t${BRed}$(localize "$1") ${2}${White}\n" | fold -sw $(( $T_COLS - 1 ));
     fi
     tput sgr0;
-} 
+}
 #}}}
 # -----------------------------------------------------------------------------
 # CHECK BOX {{{
@@ -1675,22 +1679,22 @@ if [[ "$RUN_HELP" -eq 1 ]]; then
     REVISION="5 Dec 2012";
     create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
 fi
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then 
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "CHECK-BOX-USAGE" "checkbox 1->(0={ }, 1={X}, 2={U})" "Comment: checkbox @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "CHECK-BOX-DESC"  "Display {X} or { } or {U} in Menus." "Comment: checkbox @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "CHECK-BOX-NOTES" "Used in Menu System." "Comment: checkbox @ $(basename $BASH_SOURCE) : $LINENO";
 fi
 # -------------------------------------
 checkbox()
-{ 
-    if [[ "$1" -eq 0 ]]; then 
+{
+    if [[ "$1" -eq 0 ]]; then
         echo -e "${BBlue}[${White} ${BBlue}]${White}";
-    elif [[ "$1" -eq 1 ]]; then 
+    elif [[ "$1" -eq 1 ]]; then
         echo -e "${BBlue}[${BWhite}X${BBlue}]${White}";
-    elif [[ "$1" -eq 2 ]]; then 
+    elif [[ "$1" -eq 2 ]]; then
         echo -e "${BBlue}[${BWhite}U${BBlue}]${White}";
     fi
-} 
+}
 #}}}
 # -----------------------------------------------------------------------------
 # CHECKBOX PACKAGE {{{
@@ -1705,16 +1709,16 @@ if [[ "$RUN_HELP" -eq 1 ]]; then
     REVISION="5 Dec 2012";
     create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
 fi
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then 
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "CHECKBOX-PACKAGE-USAGE" "checkbox_package 1->(checkboxlist)" "Comment: checkbox_package @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "CHECKBOX-PACKAGE-DESC"  "check if {X} or { }" "Comment: checkbox_package @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "CHECKBOX-PACKAGE-NOTES" "None." "Comment: checkbox_package @ $(basename $BASH_SOURCE) : $LINENO";
 fi
 # -------------------------------------
 checkbox_package()
-{ 
+{
     check_package "$1" && checkbox 1 || checkbox 0;
-} 
+}
 # -----------------------------------------------------------------------------
 #}}}
 # CONTAINS ELEMENT {{{
@@ -1729,21 +1733,21 @@ if [[ "$RUN_HELP" -eq 1 ]]; then
     REVISION="5 Dec 2012";
     create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
 fi
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then 
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "CONTAINS-ELEMENT-USAGE"  "contains_element 1->(Search) 2->(&#36;{array[@]})" "Comment: contains_element @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "CONTAINS-ELEMENT-DESC"  "Array Contains Element" "Comment: contains_element @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "CONTAINS-ELEMENT-NOTES" "Used to Search Options in Select Statement for Valid Selections." "Comment: contains_element @ $(basename $BASH_SOURCE) : $LINENO";
 fi
 # -------------------------------------
 contains_element()
-{ 
+{
     # check if an element exist in a string
     for e in "${@:2}"; do [[ $e == $1 ]] && break; done;
-} 
+}
 #}}}
 # -------------------------------------
 if [[ "$RUN_TEST" -eq 1 ]]; then
-    MyArrary=( "1" "2" "3" );    
+    MyArrary=( "1" "2" "3" );
     if contains_element "2" "${MyArrary[@]}"; then
         echo -e "\t${BBlue}$(gettext -s "TEST-FUNCTION-PASSED")  contains_element ${White} @ $(basename $BASH_SOURCE) : $LINENO";
     else
@@ -1764,7 +1768,7 @@ if [[ "$RUN_HELP" -eq 1 ]]; then
     REVISION="5 Dec 2012";
     create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
 fi
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then 
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "INVALID-OPTION-USAGE" "invalid_option 1->(Invalid Option)" "Comment: invalid_option @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "INVALID-OPTION-DESC"  "Invalid option" "Comment: invalid_option @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "INVALID-OPTION-NOTES" "None." "Comment: invalid_option @ $(basename $BASH_SOURCE) : $LINENO";
@@ -1773,7 +1777,7 @@ if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
 fi
 # -------------------------------------
 invalid_option()
-{ 
+{
     print_line
     if [ "$#" -eq 0 ]; then
         print_this "INVALID-OPTION-TEXT-1";
@@ -1783,7 +1787,7 @@ invalid_option()
     if [[ "$INSTALL_WIZARD" -eq 0 && "$AUTOMAN" -eq 0 ]]; then
         pause_function "$FUNCNAME @ $(basename $BASH_SOURCE) : $LINENO";
     fi
-} 
+}
 # -----------------------------------------------------------------------------
 #}}}
 # INVALID OPTIONS {{{
@@ -1798,7 +1802,7 @@ if [[ "$RUN_HELP" -eq 1 ]]; then
     REVISION="5 Dec 2012";
     create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
 fi
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then 
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "INVALID-OPTIONS-USAGE" "invalid_options 1->(Invalid Options)" "Comment: invalid_options @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "INVALID-OPTIONS-DESC"  "Invalid options" "Comment: invalid_options @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "INVALID-OPTIONS-NOTES" "Idea was to show all valid options, still in work.." "Comment: invalid_options @ $(basename $BASH_SOURCE) : $LINENO";
@@ -1812,7 +1816,7 @@ invalid_options()
     else
         print_this "INVALID-OPTION-TEXT" ":$1";
     fi
-} 
+}
 #}}}
 # -----------------------------------------------------------------------------
 # IS BREAKABLE {{{
@@ -1827,18 +1831,18 @@ if [[ "$RUN_HELP" -eq 1 ]]; then
     REVISION="5 Dec 2012";
     create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
 fi
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then 
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "IS-BREAKABLE-USAGE" "is_breakable 1->(Breakable Key) 2->(Key)" "Comment: is_breakable @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "IS-BREAKABLE-DESC"  "is breakable checks to see if key input meets exit condition." "Comment: is_breakable @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "IS-BREAKABLE-NOTES" "Used to break out of Loops." "Comment: is_breakable @ $(basename $BASH_SOURCE) : $LINENO";
 fi
 # -------------------------------------
-is_breakable() 
-{ 
+is_breakable()
+{
     local Breakable_Key="$(to_lower_case "$1")";
     local Key="$(to_lower_case "$2")";
     [[ "$Breakable_Key" == "$Key" ]] && break;
-} 
+}
 #}}}
 # -----------------------------------------------------------------------------
 # TO LOWER CASE {{{
@@ -1853,17 +1857,17 @@ if [[ "$RUN_HELP" -eq 1 ]]; then
     REVISION="5 Dec 2012";
     create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
 fi
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then 
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "TO-LOWER-CASE-USAGE" "to_lower_case 1->(Word)" "Comment: to_lower_case @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "TO-LOWER-CASE-DESC"  "Make all Lower Case." "Comment: to_lower_case @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "TO-LOWER-CASE-NOTES" "None." "Comment: to_lower_case @ $(basename $BASH_SOURCE) : $LINENO";
 fi
 # -------------------------------------
 to_lower_case()
-{ 
-    echo "${1,,}"; 
+{
+    echo "${1,,}";
     # echo $1 | tr '[A-Z]' '[a-z]'; # Slow and unpredictable with Locale: tr '[:upper:]' '[:lower:]'
-} 
+}
 #}}}
 # -------------------------------------
 if [[ "$RUN_TEST" -eq 1 ]]; then
@@ -1887,17 +1891,17 @@ if [[ "$RUN_HELP" -eq 1 ]]; then
     REVISION="5 Dec 2012";
     create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
 fi
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then 
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "TO-UPPER-CASE-USAGE" "to_upper_case 1->(Word)" "Comment: to_upper_case @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "TO-UPPER-CASE-DESC"  "Make all Upper Case." "Comment: to_upper_case @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "TO-UPPER-CASE-NOTES" "None." "Comment: to_upper_case @ $(basename $BASH_SOURCE) : $LINENO";
 fi
 # -------------------------------------
 to_upper_case()
-{ 
-    echo "${1^^}"; 
-    # echo $1 | tr '[a-z]' '[A-Z]';  # Slow and unpredictable with Locale: tr '[:upper:]' '[:lower:]' 
-} 
+{
+    echo "${1^^}";
+    # echo $1 | tr '[a-z]' '[A-Z]';  # Slow and unpredictable with Locale: tr '[:upper:]' '[:lower:]'
+}
 #}}}
 # -------------------------------------
 if [[ "$RUN_TEST" -eq 1 ]]; then
@@ -1921,7 +1925,7 @@ if [[ "$RUN_HELP" -eq 1 ]]; then
     REVISION="21 Dec 2012";
     create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
 fi
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then 
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "PRINT-ARRAY-USAGE" "print_array 1->(array{@})" "Comment: print_array @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "PRINT-ARRAY-DESC"  "Print Array; normally for Troubleshooting; but could be used to print a list." "Comment: print_array @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "PRINT-ARRAY-NOTES" "None." "Comment: print_array @ $(basename $BASH_SOURCE) : $LINENO";
@@ -1934,14 +1938,14 @@ print_array()
         print_warning "PRINT-ARRAY-WARN" ": $2";
         exit 0;
     fi
-    local OLD_IFS="$IFS"; IFS=$' '; 
-    local -a myArray=("${!1}");     # Array 
+    local OLD_IFS="$IFS"; IFS=$' ';
+    local -a myArray=("${!1}");     # Array
     local -i total="${#myArray[@]}";
     echo -e "\t---------------------------------";
     echo -e "\t${BBlue}$1 total=$total ${White}";
     for (( i=0; i<total; i++ )); do
         echo -e "\t${BBlue}$1[$i]=|${myArray[$i]}| ${White}";
-    done    
+    done
     echo -e "\t---------------------------------";
     IFS="$OLD_IFS";
 }
@@ -1981,8 +1985,8 @@ assert()                  #  If condition false,
     else
         if [[ "$DEBUGGING" -eq 1 ]]; then echo "assert (Passed in [$1] - checking [$2] at line number: [$3])"; fi
         return 1; #  and continue executing script.
-    fi  
-} 
+    fi
+}
 #}}}
 # -----------------------------------------------------------------------------
 # OS INFO {{{
@@ -1997,7 +2001,7 @@ if [[ "$RUN_HELP" -eq 1 ]]; then
     REVISION="10 Apr 2013";
     create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
 fi
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then 
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "OS-INFO-DESC"  "OS Information." "Comment: os_info @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "OS-INFO-NOTES" "None." "Comment: os_info @ $(basename $BASH_SOURCE) : $LINENO";
 fi
@@ -2014,7 +2018,7 @@ os_info()
             4*)  My_OS='sunbsd';    ;;
             5*)  My_OS='solaris';   ;;
              *)  My_OS='solaris';   ;;
-        esac        
+        esac
         My_ARCH=$(uname -p);
         My_DIST="$My_OS";
     elif [[ "$My_OS" == "HP-UX" ]]; then         # HP-UX
@@ -2047,7 +2051,7 @@ os_info()
             My_Ver=$(sw_vers -productVersion);
             My_OS_Update="${My_Ver##*.}";
             My_Ver="${My_Ver%.*}";
-            
+
             if [[ "$My_Ver" =~ "10.8" ]]; then
                 My_PSUEDONAME="mountain lion";
             elif [[ "$My_Ver" =~ "10.7" ]]; then
@@ -2069,47 +2073,9 @@ os_info()
             else
                 My_PSUEDONAME="unknown";
             fi
-        fi        
+        fi
     elif [[ "$My_OS" == "linux" ]]; then                       # Linux
-        if [[ -x $(which lsb_release 2>/dev/null) ]]; then     # Debian
-            #My_PSUEDONAME=$(  lsb_release -i -s);             # LinuxMint
-            My_Ver=$( lsb_release -r -s );                     # LMDE=1
-            if $(is_needle_in_haystack "." "$My_Ver" 5) ; then # 5=Anywhere
-                My_Ver_Major=$(string_split "$My_Ver" "." 1);  # 1=First Half
-                My_Ver_Minor=$(string_split "$My_Ver" "." 2);  # 2=Second Half
-            else
-                My_Ver_Major="$My_Ver";
-                My_Ver_Minor='0';
-            fi
-            My_DIST=$(lsb_release -c -s);                      # debian            
-            My_OS_Package="rpm";
-            if [[ "$My_PSUEDONAME" =~ Debian,Ubuntu ]]; then
-                My_OS_Package="deb";
-            elif [[ "SUSE LINUX" =~ $My_PSUEDONAME ]]; then
-                lsb_release -d -s | grep -q openSUSE;
-                if [[ $? -eq 0 ]]; then
-                    My_PSUEDONAME="openSUSE";
-                fi
-            elif [[ $My_PSUEDONAME =~ Red.*Hat ]]; then
-                My_PSUEDONAME="Red Hat";
-            fi
-            if grep -Fxq "Debian" /etc/issue ; then
-                My_PSUEDONAME='Debian';
-                My_OS_Package="deb";
-            elif grep -Fxq "Ubuntu" /etc/issue ; then
-                My_PSUEDONAME='Ubuntu';
-                My_OS_Package="deb";
-            elif grep -Fxq "Linux Mint Debian Edition" /etc/issue ; then
-                My_PSUEDONAME='LMDE';
-                My_OS_Package="deb";
-            elif grep -Fq "LMDE" /etc/issue ; then
-                My_PSUEDONAME='LMDE';
-                My_OS_Package="deb";
-            else
-                My_PSUEDONAME='Debian';
-                My_OS_Package="deb";
-            fi
-        elif [ -f /etc/centos-release ] ; then                                                         # CentOS
+        if [ -f /etc/centos-release ] ; then                                                         # CentOS
             My_DIST='redhat';
             My_PSUEDONAME='CentOS';
             My_Ver_Major=$(cut -d ' ' -f 3 /etc/redhat-release | cut -d '.' -f 1);
@@ -2155,14 +2121,58 @@ os_info()
                 My_PSUEDONAME='Debian';
             fi
             My_Ver="$(cat /etc/lsb-release | grep '^DISTRIB_RELEASE' | awk -F=  '{ print $2 }')";
-        elif [ -f /etc/arch-release ] ; then                                                            # Arch Linux
+        elif [ -f /etc/arch-release ] ; then                                                            # ArchLinux They may drop this like Manjaro did
             My_DIST='archlinux';
             My_PSUEDONAME='Archlinux';
             My_OS_Package="pacman";
+            My_Ver_Major='0.8.10';
+        elif [ -f /etc/os-release ] ; then                                                              # Manjaro - ArchLinux
+            My_DIST='archlinux';
+            My_PSUEDONAME='Manjaro';
+            My_OS_Package="pacman";
+            My_Ver_Major='0.8.10'; # FIXIT read value, not that it matters
         elif [ -f /etc/UnitedLinux-release ] ; then                                                     # United Linux
             My_DIST='unitedlinux';
             My_PSUEDONAME='UnitedLinux';
             My_Ver="$(cat /etc/UnitedLinux-release | tr "\n" ' ' | sed s/VERSION.*//)";
+        elif [[ -x $(which lsb_release 2>/dev/null) ]]; then     # Debian
+            #My_PSUEDONAME=$(  lsb_release -i -s);             # LinuxMint
+            My_Ver=$( lsb_release -r -s );                     # LMDE=1
+            if $(is_needle_in_haystack "." "$My_Ver" 5) ; then # 5=Anywhere
+                My_Ver_Major=$(string_split "$My_Ver" "." 1);  # 1=First Half
+                My_Ver_Minor=$(string_split "$My_Ver" "." 2);  # 2=Second Half
+            else
+                My_Ver_Major="$My_Ver";
+                My_Ver_Minor='0';
+            fi
+            My_DIST=$(lsb_release -c -s);                      # debian
+            My_OS_Package="rpm";
+            if [[ "$My_PSUEDONAME" =~ Debian,Ubuntu ]]; then
+                My_OS_Package="deb";
+            elif [[ "SUSE LINUX" =~ $My_PSUEDONAME ]]; then
+                lsb_release -d -s | grep -q openSUSE;
+                if [[ $? -eq 0 ]]; then
+                    My_PSUEDONAME="openSUSE";
+                fi
+            elif [[ $My_PSUEDONAME =~ Red.*Hat ]]; then
+                My_PSUEDONAME="Red Hat";
+            fi
+            if grep -Fxq "Debian" /etc/issue ; then
+                My_PSUEDONAME='Debian';
+                My_OS_Package="deb";
+            elif grep -Fxq "Ubuntu" /etc/issue ; then
+                My_PSUEDONAME='Ubuntu';
+                My_OS_Package="deb";
+            elif grep -Fxq "Linux Mint Debian Edition" /etc/issue ; then
+                My_PSUEDONAME='LMDE';
+                My_OS_Package="deb";
+            elif grep -Fq "LMDE" /etc/issue ; then
+                My_PSUEDONAME='LMDE';
+                My_OS_Package="deb";
+            else
+                My_PSUEDONAME='Debian';
+                My_OS_Package="deb";
+            fi
         fi
     fi
 }
@@ -2204,7 +2214,7 @@ is_os()
         return 0;
     else
         return 1;
-    fi    
+    fi
 }
 # -------------------------------------
 if [[ "$RUN_TEST" -eq 1 ]]; then # @FIX
@@ -2233,7 +2243,7 @@ if [[ "$RUN_HELP" -eq 1 ]]; then
     REVISION="5 Dec 2012";
     create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
 fi
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then 
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "GET-NETWORK-DEVICE-DESC"  "Get Network Devices." "Comment: get_network_devices @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "GET-NETWORK-DEVICE-NOTES" "Holds IP Address if its an Active connection; no test of Internet Access are done." "Comment: get_network_devices @ $(basename $BASH_SOURCE) : $LINENO";
 fi
@@ -2243,62 +2253,59 @@ get_network_devices()
     # -----------------------------------
     function system_primary_ip
     {
-    	# returns the primary IP assigned to ethx
-    	echo $(/sbin/ifconfig "${1}" | awk -F: '/inet addr:/ {print $2}' | awk '{ print $1 }')
+        # returns the primary IP assigned to ethx
+        #echo -n $(hostname  -i | cut -f1 -d' ');
+
+        #echo $(ip route get 8.8.8.8 | awk -F: '/src / {print $2}' | awk '{ print $1 }');
+        #echo $(ip route get 8.8.8.8 | sed '1!d' | sed s/.*src\ // | sed s/\ .*//);
+        #echo $(ifconfig "${1}" | awk -F: '/inet addr:/ {print $2}' | awk '{ print $1 }')
+        echo $(ip route get 8.8.8.8 | awk '/src / {print $7}' | sed 's/\.$//')
     }
     # -----------------------------------
-    function get_rdns 
+    function network_adapter_names
     {
-    	# calls host on an IP address and returns its reverse dns
-    	echo $(host $1 | awk '/pointer/ {print $5}' | sed 's/\.$//')
+        # returns the primary IP assigned to ethx
+        local myNet=$(sudo lshw -class network | awk -F: '/logical name: / {print $2}' | awk '{ print $1 }');
+            for myNetName in ${myNet[@]}; do
+                echo "$myNetName";
+        done
     }
     # -----------------------------------
-    local -i MyIndex=0;
-    local MyEthAddress='';
-    for (( MyIndex=0; MyIndex<10; MyIndex++ )); do
-        if /sbin/ifconfig | grep "eth$MyIndex" >/dev/null ; then
-            MyEthAddress=( $(system_primary_ip "eth$MyIndex") );
-            EthAddress+=("$MyEthAddress");
-            NIC+=("eth$MyIndex");
-            if host "$MyEthAddress" >/dev/null ; then
-                EthReverseDNS+=( $(get_rdns "$MyEthAddress") );
-            else
-                EthReverseDNS+=("");
-            fi
-            eval "ETH${MyIndex}_ACTIVE=1";
-        elif /sbin/ifconfig | grep "venet$MyIndex" >/dev/null ; then
-            MyEthAddress=( $(system_primary_ip "venet$MyIndex") );
-            EthAddress+=("$MyEthAddress");
-            NIC+=("venet$MyIndex");
-            if host "$MyEthAddress" >/dev/null ; then
-                EthReverseDNS+=( $(get_rdns "$MyEthAddress") );
-            else
-                EthReverseDNS+=("");
-            fi
-            eval "ETH${MyIndex}_ACTIVE=1";
-            #
-            for (( i=0; i<10; i++ )); do
-                if /sbin/ifconfig | grep "venet${MyIndex}:${i}" >/dev/null ; then
-                    MyEthAddress=( $(system_primary_ip "venet${MyIndex}:${i}") );
-                    EthAddress+=("$MyEthAddress");
-                    NIC+=("venet${MyIndex}:${i}");
-                    if host "$MyEthAddress" >/dev/null ; then
-                        EthReverseDNS+=( $(get_rdns "$MyEthAddress") );
-                    else
-                        EthReverseDNS+=("");
-                    fi
-                fi
-                eval "ETH${MyIndex}_${i}_ACTIVE=1"; # @FIX left here for compatibility
-            done
-        fi        
+    function get_rdns
+    {
+        # calls host on an IP address and returns its reverse dns
+        if host $1 ; then
+                echo $(host $1 | awk '/pointer/ {print $5}' | sed 's/\.$//')
+        else
+                # not working if Host 13.1.168.192.in-addr.arpa. not found: 3(NXDOMAIN)
+                echo "FAIL";
+        fi
+    }
+    # -----------------------------------
+    # lspci | egrep -i --color 'network|ethernet'
+    OLD_IFS="$IFS"; IFS=$' ';
+    local MyEthAddress=$(hostname -i);
+    EthAddress=($MyEthAddress);
+    for MyIp in ${EthAddress[@]}; do
+        if host "$MyIp" >/dev/null ; then
+            echo "******************** HERE ******************";
+            EthReverseDNS+=( $(get_rdns "$MyIp") );
+        else
+            EthReverseDNS+=("");
+        fi
     done
+    ActiveNetAdapter=$(system_primary_ip);
+    IFS=$'\n';
+    NIC=( $(network_adapter_names) );
+    IFS=$' ';
+    IFS="$OLD_IFS";
 }
 # -------------------------------------
 if [[ "$RUN_TEST" -eq 1 ]]; then
     get_network_devices;
     total="${#EthAddress[@]}";
     for (( MyIndex=0; MyIndex<total; MyIndex++ )); do
-        echo -e "\t${BBlue}$(gettext -s "TEST-FUNCTION-PASSED")${BYellow} ${NIC[$MyIndex]}: ${EthAddress[$MyIndex]} [${EthReverseDNS[$MyIndex]}]  ${BWhite}get_network_devices ${White} @ $(basename $BASH_SOURCE) : $LINENO";
+        echo -e "\t${BBlue}$(gettext -s "TEST-FUNCTION-PASSED")${BYellow} ${NIC[$MyIndex]}: IP: ${EthAddress[$MyIndex]} | Reverse DNS: [${EthReverseDNS[$MyIndex]}] | Active IP: $ActiveNetAdapter | ${BWhite}get_network_devices ${White} @ $(basename $BASH_SOURCE) : $LINENO";
     done
 fi
 #}}}
@@ -2315,7 +2322,7 @@ if [[ "$RUN_HELP" -eq 1 ]]; then
     REVISION="5 Dec 2012";
     create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
 fi
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then 
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "SHOW-USERS-DESC"  "Show Users." "Comment: show_users @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "SHOW-USERS-NOTES" "Shows users in /etc/passwd." "Comment: show_users @ $(basename $BASH_SOURCE) : $LINENO";
 fi
@@ -2338,14 +2345,14 @@ if [[ "$RUN_HELP" -eq 1 ]]; then
     REVISION="5 Dec 2012";
     create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
 fi
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then 
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "DEVICE-LIST-DESC"  "Get Device List." "Comment: device_list @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "DEVICE-LIST-NOTES" "Used to get Hard Drive Letter, assumes you are running this from a Flash Drive." "Comment: device_list @ $(basename $BASH_SOURCE) : $LINENO";
 fi
 # -------------------------------------
 device_list()
 {
-    local OLD_IFS="$IFS"; 
+    local OLD_IFS="$IFS";
     # Get all SD devices
     IFS=$'\n';
     local -a LIST_ALL_DEVICES=( $( ls /dev/sd* ) );
@@ -2370,11 +2377,11 @@ device_list()
                 fi
             fi
         fi
-    done    
+    done
     IFS="$OLD_IFS";
 }
 #}}}
-# -----------------------------------------------------------------------------    
+# -----------------------------------------------------------------------------
 # UMOUNT PARTITION {{{
 if [[ "$RUN_HELP" -eq 1 ]]; then
     NAME="umount_partition";
@@ -2387,7 +2394,7 @@ if [[ "$RUN_HELP" -eq 1 ]]; then
     REVISION="5 Dec 2012";
     create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
 fi
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then 
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "UMOUNT-PARTITION-USAGE" "umount_partition 1->(Device Name)" "Comment: umount_partition @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "UMOUNT-PARTITION-DESC"  "Umount partition." "Comment: umount_partition @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "UMOUNT-PARTITION-NOTES" "None." "Comment: umount_partition @ $(basename $BASH_SOURCE) : $LINENO";
@@ -2414,21 +2421,21 @@ if [[ "$RUN_HELP" -eq 1 ]]; then
     REVISION="5 Dec 2012";
     create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
 fi
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then 
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "IS-VALID-EMAIL-USAGE" "is_valid_email 1->(value)" "Comment: is_valid_email @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "IS-VALID-EMAIL-DESC"  "Is Valid path." "Comment: is_valid_email @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "IS-VALID-EMAIL-NOTES" "None." "Comment: is_valid_email @ $(basename $BASH_SOURCE) : $LINENO";
 fi
 # -------------------------------------
 is_valid_email()
-{   
+{
     local compressed="$(echo $1 | grep -P '^[A-Za-z0-9._&#37;+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,4}$')"
     if [ "$compressed" != "$1" ] ; then
         return 1;
     else
         return 0;
     fi
-}    
+}
 #}}}
 # -----------------------------------------------------------------------------
 # IS VALID PATH {{{
@@ -2443,14 +2450,14 @@ if [[ "$RUN_HELP" -eq 1 ]]; then
     REVISION="5 Dec 2012";
     create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
 fi
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then 
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "IS-VALID-PATH-USAGE" "is_valid_path 1->(value)" "Comment: is_valid_path @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "IS-VALID-PATH-DESC"  "Is Valid path." "Comment: is_valid_path @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "IS-VALID-PATH-NOTES" "A-Z 0-9 - / (Fix for Windows Drive Letter : and backslash.)" "Comment: is_valid_path @ $(basename $BASH_SOURCE) : $LINENO";
 fi
 # -------------------------------------
 is_valid_path()
-{   
+{
     local compressed="$(echo $1 | grep -P '/[-_A-Za-z0-9]+(/[-_A-Za-z0-9]*)*')"
     # @FIX what about Windows
     if [ "$compressed" != "$1" ] ; then
@@ -2458,7 +2465,7 @@ is_valid_path()
     else
         return 0;
     fi
-}    
+}
 #}}}
 # -----------------------------------------------------------------------------
 # IS VALID DOMAIN {{{
@@ -2473,25 +2480,25 @@ if [[ "$RUN_HELP" -eq 1 ]]; then
     REVISION="5 Dec 2012";
     create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
 fi
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then 
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "IS-VALID-DOMAIN-USAGE" "is_valid_domain 1->(value)" "Comment: is_valid_domain @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "IS-VALID-DOMAIN-DESC"  "Is Valid Domain Name." "Comment: is_valid_domain @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "IS-VALID-DOMAIN-NOTES" "None." "Comment: is_valid_domain @ $(basename $BASH_SOURCE) : $LINENO";
 fi
 # -------------------------------------
 is_valid_domain()
-{   
+{
     local compressed="$(echo $1 | grep -P '(?=^.{5,254}$)(^(?:(?!\d+\.)[a-zA-Z0-9_\-]{1,63}\.?)+(?:[a-zA-Z]{2,})$)')"
     if [ "$compressed" != "$1" ] ; then
         if [[ "$OPTION" =~ ^[a-zA-Z0-9][-a-zA-Z0-9]{0,61}[a-zA-Z0-9]$ ]] ; then # it can be localhost or any name with the .tdl
             return 0;
-        else    
+        else
             return 1;
         fi
     else
         return 0;
     fi
-}    
+}
 #}}}
 # -----------------------------------------------------------------------------
 # IS VALID IP {{{
@@ -2506,14 +2513,14 @@ if [[ "$RUN_HELP" -eq 1 ]]; then
     REVISION="5 Dec 2012";
     create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
 fi
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then 
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "IS-VALID-IP-USAGE" "is_valid_ip 1->(value)" "Comment: is_valid_ip @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "IS-VALID-IP-DESC"  "Is Valid IP Address." "Comment: is_valid_ip @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "IS-VALID-IP-NOTES" "None." "Comment: is_valid_ip @ $(basename $BASH_SOURCE) : $LINENO";
 fi
 # -------------------------------------
 is_valid_ip()
-{   
+{
     local ip=$1;
     local OIFS=$IFS;
     if [[ $ip =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
@@ -2523,7 +2530,7 @@ is_valid_ip()
         [[ ${ip[0]} -le 255 && ${ip[1]} -le 255 && ${ip[2]} -le 255 && ${ip[3]} -le 255 ]]
     fi
     return "$?";
-}    
+}
 #}}}
 # -----------------------------------------------------------------------------
 # IS ALPHANUMERIC {{{
@@ -2538,21 +2545,21 @@ if [[ "$RUN_HELP" -eq 1 ]]; then
     REVISION="5 Dec 2012";
     create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
 fi
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then 
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "IS-ALPHANUMERIC-USAGE" "is_alphanumeric 1->(value)" "Comment: is_alphanumeric @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "IS-ALPHANUMERIC-DESC"  "Is Alphanumeric." "Comment: is_alphanumeric @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "IS-ALPHANUMERIC-NOTES" "None." "Comment: is_alphanumeric @ $(basename $BASH_SOURCE) : $LINENO";
 fi
 # -------------------------------------
 is_alphanumeric()
-{ 
+{
     local compressed="$(echo $1 | sed -e 's/[^[:alnum:]]//g')"
     if [ "$compressed" != "$1" ] ; then
         return 1;
     else
         return 0;
     fi
-} 
+}
 # -------------------------------------
 if [[ "$RUN_TEST" -eq 1 ]]; then
     if $(is_alphanumeric "1") && $(is_alphanumeric "A") && ! $(is_alphanumeric '!@#') ; then
@@ -2576,20 +2583,20 @@ if [[ "$RUN_HELP" -eq 1 ]]; then
     REVISION="5 Dec 2012";
     create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
 fi
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then 
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "IS-NUMBER-USAGE" "is_number 1->(value)" "Comment: is_number @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "IS-NUMBER-DESC"  "Is Number." "Comment: is_number @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "IS-NUMBER-NOTES" "None." "Comment: is_number @ $(basename $BASH_SOURCE) : $LINENO";
 fi
 # -------------------------------------
 is_number()
-{ 
+{
     if [[ "$1" =~ ^[0-9]+$ ]] ; then
         return 0;
     else
         return 1;
-    fi    
-} 
+    fi
+}
 # -------------------------------------
 if [[ "$RUN_TEST" -eq 1 ]]; then
     if $(is_number "1") && ! $(is_number "A") ; then
@@ -2613,17 +2620,17 @@ if [[ "$RUN_HELP" -eq 1 ]]; then
     REVISION="5 Dec 2012";
     create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
 fi
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then 
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     # READ INPUT {{{
     localize_info "READ-INPUT-DESC"  "read keyboard input." "Comment: read_input @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "READ-INPUT-NOTES" "Sets Variable OPTION as return; do not us in AUTOMAN or INSTALL_WIZARD Mode." "Comment: read_input @ $(basename $BASH_SOURCE) : $LINENO";
 fi
 # -------------------------------------
 read_input()
-{ 
+{
     echo -ne "\t${BWhite}$prompt1 ${White}";
     read -p "" OPTION;
-} 
+}
 #}}}
 # -----------------------------------------------------------------------------
 # GET INPUT OPTION {{{
@@ -2638,7 +2645,7 @@ if [[ "$RUN_HELP" -eq 1 ]]; then
     REVISION="5 Dec 2012";
     create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
 fi
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then 
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "GET-INPUT-OPTION-USAGE"    "get_input_option 1->(array[@] of options) 2->(default) 3->(Base: 0 or 1) <- return value OPTION" "Comment: get_input_option @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "GET-INPUT-OPTION-DESC"     "Get Keyboard Input Options between two numbers." "Comment: get_input_option @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "GET-INPUT-OPTION-NOTES"    "None." "Comment: get_input_option @ $(basename $BASH_SOURCE) : $LINENO";
@@ -2648,9 +2655,9 @@ if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
 fi
 # -------------------------------------
 get_input_option()
-{ 
+{
     # @FIX Make 0 based, or range based 3->(Base: 0 or 1)
-    # Choose a number between x and 
+    # Choose a number between x and
     if [[ "$AUTOMAN" -eq 1 || "$INSTALL_WIZARD" -eq 1 && "$BYPASS" -eq 1 ]]; then
         OPTION="$2";
         return 0;
@@ -2676,7 +2683,7 @@ get_input_option()
         else
             printf "\t${BYellow}%-${iPad}s${BWhite} %s\n" "$(( ++index ))." "${var}";
         fi
-    done    
+    done
     #
     if [[ "$StartBased" -eq 0 ]]; then
         print_warning "GET-INPUT-OPTION-CHOOSE-0" "$((total-1))";
@@ -2710,7 +2717,7 @@ get_input_option()
     done
     #if [[ "$StartBased" -eq 0 ]]; then OPTION=$((OPTION-1)); fi
     return 0;
-} 
+}
 # -------------------------------------
 if [[ "$RUN_TEST" -eq 3 ]]; then
     MyArray=('0' '1' '2' '3' '4' '5' '6' '7' '8' '9' '10' '11' '12');
@@ -2734,7 +2741,7 @@ if [[ "$RUN_HELP" -eq 1 ]]; then
     REVISION="26 Jan 2013";
     create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
 fi
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then 
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "CLEAN-INPUT-USAGE"   "clean_input 1->(Input String) <- return " "Comment: clean_input @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "CLEAN-INPUT-DESC"    "Clean Keyboard Input Options:  String of values: 1 2 3 or 1-3 or 1,2,3, replaces Commas with spaces, only allows Alphanumeric, - and space." "Comment: clean_input @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "CLEAN-INPUT-NOTES"   "Only Allows: Alphanumeric, 1 space between them, converts commas to spaces, converts all Alpha's to lower case." "Comment: clean_input @ $(basename $BASH_SOURCE) : $LINENO";
@@ -2759,7 +2766,7 @@ if [[ "$RUN_TEST" -eq 2 ]]; then
     else
         echo -e "\t${BRed} $(gettext -s "TEST-FUNCTION-FAILED")  clean_input |$MyString| ${White} @ $(basename $BASH_SOURCE) : $LINENO";
         read -e -sn 1 -p "$(gettext -s "PRESS-ANY-KEY-CONTINUE")";
-    fi    
+    fi
 fi
 #}}}
 # -----------------------------------------------------------------------------
@@ -2775,7 +2782,7 @@ if [[ "$RUN_HELP" -eq 1 ]]; then
     REVISION="5 Dec 2012";
     create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
 fi
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then 
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "READ-INPUT-OPTIONS-USAGE"          "read_input_options 1->(options) 2->(Breakable Key) <- return Array Values in OPTIONS, expanded, duplicates removed and lower case." "Comment: read_input_options @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "READ-INPUT-OPTIONS-DESC"           "Read Keyboard Input Options:  String of values: 1 2 3 or 1-3 or 1,2,3" "Comment: read_input_options @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "READ-INPUT-OPTIONS-NOTES"          "AUTOMAN, INSTALL_WIZARD and BYPASS to easily configure default values, hit 'r' to run Recommended Options." "Comment: read_input_options @ $(basename $BASH_SOURCE) : $LINENO";
@@ -2788,7 +2795,7 @@ if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
 fi
 # -------------------------------------
 read_input_options()
-{ 
+{
     if [[ "$#" -ne "2" ]]; then echo -e "${BRed}$(gettext -s "WRONG-NUMBER-ARGUMENTS-PASSED-TO")${BYellow} |$@| ${BWhite} -> ${BWhite} ${FUNCNAME[1]} @ $(basename ${BASH_SOURCE[1]}) : ${BASH_LINENO[0]}  -> $FUNCNAME @ $(basename $BASH_SOURCE) : $LINENO ${White}"; exit 1; fi
     # |1|
     # |1 2 3 4,5,6 7-9 Q D B R|
@@ -2801,7 +2808,7 @@ read_input_options()
     expand_options()
     {
         local OLD_IFS="$IFS"; IFS=$' ';
-        local -a arrayOptions=("${!1}");     # Array 
+        local -a arrayOptions=("${!1}");     # Array
         local -i total="${#arrayOptions[@]}";
         local line="";
         local -a optionsArray=();
@@ -2812,7 +2819,7 @@ read_input_options()
                 arrayOptions[$i]=${arrayOptions[$i]:1};
             fi
         done
-        #    
+        #
         IFS=$' ';
         for line in "${arrayOptions[@]/,/ }"; do
             if [[ ${line/-/} != $line ]]; then
@@ -2841,7 +2848,7 @@ read_input_options()
     # MyArray=( $(clean_it 1->('1-3,4,5 6 A B C ^!@*') 2->('Defaults') 2->('Breakable-Key') ))
     clean_it()
     {
-        local OLD_IFS="$IFS"; 
+        local OLD_IFS="$IFS";
         local MyOption="$(clean_input "$1")"; # Pass in a string '1-3,4,5 6 A B C ^!@*', return trimmed string '1-3 4 5 6 a b c' of legal characters
         local MyArray=();
         IFS=$' ';
@@ -2892,7 +2899,7 @@ read_input_options()
                             break;
                         fi
                     else                                     # If Alpha it should = breakable, we tested for r above
-                        if [[ "${OPTIONS[$index]}" != $( to_lower_case "$BREAKABLE_KEY" ) ]]; then 
+                        if [[ "${OPTIONS[$index]}" != $( to_lower_case "$BREAKABLE_KEY" ) ]]; then
                             print_warning "READ-INPUT-OPTIONS-INVALID-ALPHA" ": 1-$LAST_MENU_ITEM, $BREAKABLE_KEY, r (${OPTIONS[$index]})";
                             read_input_default "READ-INPUT-OPTIONS-VERIFY" "$OPTION";
                             OPTIONS=( $(clean_it "$OPTION" "$1" "$2" ) ); # Clean it, Trim, Replace Commas with Space, remove Illegal Characters.
@@ -2911,7 +2918,7 @@ read_input_options()
     IFS="$OLD_IFS";
     #debugger 0;
     write_log "read_input_options  $OPTION" "$FUNCNAME @ $(basename $BASH_SOURCE) : $LINENO";
-} 
+}
 #}}}
 # -----------------------------------------------------------------------------
 # READ INPUT YN {{{
@@ -2926,7 +2933,7 @@ if [[ "$RUN_HELP" -eq 1 ]]; then
     REVISION="12 Dec 2012";
     create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
 fi
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then 
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "READ-INPUT-YN-USAGE" "read_input_yn 1->(Question) 2->(None Localize) 3->(Default: 0=No, 1=Yes) <- return value YN_OPTION" "Comment: read_input_yn @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "READ-INPUT-YN-DESC"  "Read Keyboard Input for Yes and No." "Comment: read_input_yn @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "READ-INPUT-YN-NOTES" "Localized." "Comment: read_input_yn @ $(basename $BASH_SOURCE) : $LINENO";
@@ -2937,7 +2944,7 @@ if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
 fi
 # -------------------------------------
 read_input_yn()
-{ 
+{
     if [[ "$#" -ne "3" ]]; then echo -e "${BRed}$(gettext -s "WRONG-NUMBER-ARGUMENTS-PASSED-TO") ${FUNCNAME[1]} @ $(basename ${BASH_SOURCE[1]}) : ${BASH_LINENO[1]} ${White}"; exit 1; fi
     if [[ "$AUTOMAN" -eq 1 || "$INSTALL_WIZARD" -eq 1 && "$BYPASS" -eq 1 ]]; then
         YN_OPTION="$3";
@@ -2951,7 +2958,7 @@ read_input_yn()
         echo "";
         if [[ "$3" == "1" ]]; then
             echo -ne "\t${BWhite}$(localize $1) $2  ${White}[${BWhite}Y${White}/n]:";
-            read -n 1 -i "Y"; 
+            read -n 1 -i "Y";
         else
             echo -ne "\t${BWhite}$(localize $1) $2  ${White}[y/${BWhite}N${White}]:";
             read -n 1 -i "N";
@@ -2972,7 +2979,7 @@ read_input_yn()
         elif [[ "$YN_OPTION" == 'n' ]]; then
             MY_OPTION=1;
             YN_OPTION=0;
-        else 
+        else
             MY_OPTION=0;
             if [[ "$3" -eq 1 ]]; then
                 print_error "Wrong-Key-Yn";
@@ -2983,7 +2990,7 @@ read_input_yn()
         fi
     done
     write_log "read_input_yn [$3] answer $YN_OPTION" "$FUNCNAME @ $(basename $BASH_SOURCE) : $LINENO"; # Left out data, it could be a password or user name.
-} 
+}
 # -------------------------------------
 if [[ "$RUN_TEST" -eq 3 ]]; then
     do_read_input_yn_test()
@@ -3007,14 +3014,14 @@ if [[ "$RUN_HELP" -eq 1 ]]; then
     REVISION="15 Jan 2013";
     create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
 fi
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then 
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "READ-INPUT-DEFAULT-USAGE" "read_input_default 1->(Prompt) 2->(Default Value) <- returns string in OPTION" "Comment: read_input_default @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "READ-INPUT-DEFAULT-DESC"  "Read Keyboard Input and allow Edit of Default value." "Comment: read_input_default @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "READ-INPUT-DEFAULT-NOTES" "None." "Comment: read_input_default @ $(basename $BASH_SOURCE) : $LINENO";
 fi
 # -------------------------------------
 read_input_default()
-{ 
+{
     # read_input_default "Enter Data" "Default-Date"
     if [[ "$AUTOMAN" -eq 1 || "$INSTALL_WIZARD" -eq 1 && "$BYPASS" -eq 1 ]]; then
         OPTION="$2";
@@ -3022,7 +3029,7 @@ read_input_default()
     fi
     read -e -p "$(localize "$1") >" -i "$2" OPTION;
     echo "";
-} 
+}
 #}}}
 # -----------------------------------------------------------------------------
 # READ INPUT DATA {{{
@@ -3037,17 +3044,17 @@ if [[ "$RUN_HELP" -eq 1 ]]; then
     REVISION="5 Dec 2012";
     create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
 fi
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then 
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "READ-INPUT-DATA-USAGE" "read_input_data 1->(Localized Prompt) <- return value OPTION" "Comment: read_input_data @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "READ-INPUT-DATA-DESC"  "Read Data." "Comment: read_input_data @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "READ-INPUT-DATA-NOTES" "Return value in variable OPTION; not to be used in AUTOMAN or INSTALL_WIZARD Mode, since there is no default value." "Comment: read_input_data @ $(basename $BASH_SOURCE) : $LINENO";
 fi
 # -------------------------------------
 read_input_data()
-{ 
+{
     read -p "$(localize "$1") : " OPTION;
-    write_log "read_input_data  $1 = $OPTION" "$FUNCNAME @ $(basename $BASH_SOURCE) : $LINENO"; 
-} 
+    write_log "read_input_data  $1 = $OPTION" "$FUNCNAME @ $(basename $BASH_SOURCE) : $LINENO";
+}
 #}}}
 # -----------------------------------------------------------------------------
 # VERIFY INPUT DEFAULT DATA {{{
@@ -3062,7 +3069,7 @@ if [[ "$RUN_HELP" -eq 1 ]]; then
     REVISION="5 Dec 2012";
     create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
 fi
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then 
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "VERIFY-INPUT-DEFAULT-DATA-USAGE"     "verify_input_default_data 1->(Prompt) 2->(Default-Value) 3->(Default 1=Yes or 0=No) 4->(Data Type: 0=Numeric, 1=Alphanumeric, 2=IP Address, 3=Domain Name, 4=Path, 5=Folder, 6=Email, 7=Special, 8=Password, 9=Alpha, 10=Variable) <- return value in OPTION" "Comment: verify_input_default_data @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "VERIFY-INPUT-DEFAULT-DATA-DESC"      "Verify Keyboard Input of Default Editable Value." "Comment: verify_input_default_data @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "VERIFY-INPUT-DEFAULT-DATA-NOTES"     "None." "Comment: verify_input_default_data @ $(basename $BASH_SOURCE) : $LINENO";
@@ -3081,7 +3088,7 @@ if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
 fi
 # -------------------------------------
 verify_input_default_data()
-{ 
+{
     if [[ "$#" -ne "4" ]]; then echo -e "${BRed}$(gettext -s "WRONG-NUMBER-ARGUMENTS-PASSED-TO") ${FUNCNAME[1]} @ $(basename ${BASH_SOURCE[1]}) : ${BASH_LINENO[1]} ${White}"; exit 1; fi
     if [[ "$AUTOMAN" -eq 1 || "$INSTALL_WIZARD" -eq 1 && "$BYPASS" -eq 1 ]]; then
         write_log "$FUNCNAME $1 = $YN_OPTION" "${FUNCNAME[1]} @ $(basename ${BASH_SOURCE[1]}) : ${BASH_LINENO[1]}"; # Left out data, it could be a password or user name.
@@ -3149,12 +3156,12 @@ verify_input_default_data()
             else
                 invalid_option "$OPTION @ $(basename ${BASH_SOURCE[1]}) : ${FUNCNAME[1]} -> ${BASH_LINENO[1]} ";
             fi
-        elif [[ "$4" -eq 7 ]]; then # Special A-Z upper and lower, and -, but make sure the - is not leading or trailing 
+        elif [[ "$4" -eq 7 ]]; then # Special A-Z upper and lower, and -, but make sure the - is not leading or trailing
             if [[ "$OPTION" =~ ^[a-zA-Z0-9][-a-zA-Z0-9]{0,61}[a-zA-Z0-9]$ ]] ; then
                 Is_Valid=1;
             else
                 invalid_option "$OPTION @ $(basename ${BASH_SOURCE[1]}) : ${FUNCNAME[1]} -> ${BASH_LINENO[1]} ";
-            fi            
+            fi
         elif [[ "$4" -eq 8 ]]; then # Password - Replace * with |
             if [[ "$OPTION" =~ ^[__A-Za-z0-9]+|$ ]] ; then
                 Is_Valid=1;
@@ -3175,16 +3182,16 @@ verify_input_default_data()
                 Is_Valid=1;
             else
                 invalid_option "$OPTION @ $(basename ${BASH_SOURCE[1]}) : ${FUNCNAME[1]} -> ${BASH_LINENO[1]} ";
-            fi            
-        elif [[ "$4" -eq 10 ]]; then # Variable A-Z upper and lower, and _, but make sure the _ is not trailing 
+            fi
+        elif [[ "$4" -eq 10 ]]; then # Variable A-Z upper and lower, and _, but make sure the _ is not trailing
             if [[ "$OPTION" =~ ^[_a-zA-Z0-9][_a-zA-Z0-9]{0,61}[a-zA-Z0-9]$ ]] ; then
                 Is_Valid=1;
             else
                 invalid_option "$OPTION @ $(basename ${BASH_SOURCE[1]}) : ${FUNCNAME[1]} -> ${BASH_LINENO[1]} ";
-            fi            
+            fi
         fi
         # --------------------------------
-        if [[ "$Is_Valid" -eq 1 ]]; then # 
+        if [[ "$Is_Valid" -eq 1 ]]; then #
             read_input_yn "VERIFY-INPUT-DEFAULT-DATA-VERIFY" "$(localize "$1") : [$OPTION]" "$3";
             if [ -z "$YN_OPTION" ]; then
                 echo "$(localize "VERIFY-INPUT-DEFAULT-DATA-NOT-EMPTY")!";
@@ -3194,7 +3201,7 @@ verify_input_default_data()
     done
     write_log "$FUNCNAME $1 = $YN_OPTION" "$FUNCNAME @ $(basename ${BASH_SOURCE[1]}) : ${FUNCNAME[1]} -> ${BASH_LINENO[1]}"; # Left out data, it could be a password or user name.
     return 0;
-} 
+}
 # -------------------------------------
 if [[ "$RUN_TEST" -eq 3 ]]; then
     verify_input_default_data "VERIFY-INPUT-DEFAULT-DATA-TEST-0" "2" 1 0; # 0 = Numeric
@@ -3202,44 +3209,44 @@ if [[ "$RUN_TEST" -eq 3 ]]; then
         echo -e "\t${BBlue}$(gettext -s "TEST-FUNCTION-PASSED")  verify_input_default_data Numeric ${White} @ $(basename $BASH_SOURCE) : $LINENO";
     else
         echo -e "\t${BRed} $(gettext -s "TEST-FUNCTION-FAILED")  verify_input_default_data Numeric ${White} @ $(basename $BASH_SOURCE) : $LINENO";
-    fi    
+    fi
     verify_input_default_data "VERIFY-INPUT-DEFAULT-DATA-TEST-1" "A2" 1 1; # 1 = Alphanumeric
     if [[ "$YN_OPTION" -eq 1 ]] ; then
         echo -e "\t${BBlue}$(gettext -s "TEST-FUNCTION-PASSED")  verify_input_default_data Alphanumeric ${White} @ $(basename $BASH_SOURCE) : $LINENO";
     else
         echo -e "\t${BRed} $(gettext -s "TEST-FUNCTION-FAILED")  verify_input_default_data Alphanumeric ${White} @ $(basename $BASH_SOURCE) : $LINENO";
-    fi    
+    fi
     verify_input_default_data "VERIFY-INPUT-DEFAULT-DATA-TEST-2" "0.0.0.0" 1 2; # 2 = IP Address
     if [[ "$YN_OPTION" -eq 1 ]] ; then
         echo -e "\t${BBlue}$(gettext -s "TEST-FUNCTION-PASSED")  verify_input_default_data IP Address ${White} @ $(basename $BASH_SOURCE) : $LINENO";
     else
         echo -e "\t${BRed} $(gettext -s "TEST-FUNCTION-FAILED")  verify_input_default_data IP Address ${White} @ $(basename $BASH_SOURCE) : $LINENO";
-    fi    
+    fi
     verify_input_default_data "VERIFY-INPUT-DEFAULT-DATA-TEST-3" "domainname.com" 1 3; # 3 = Domain Name
     if [[ "$YN_OPTION" -eq 1 ]] ; then
         echo -e "\t${BBlue}$(gettext -s "TEST-FUNCTION-PASSED")  verify_input_default_data Domain Name ${White} @ $(basename $BASH_SOURCE) : $LINENO";
     else
         echo -e "\t${BRed} $(gettext -s "TEST-FUNCTION-FAILED")  verify_input_default_data Domain Name ${White} @ $(basename $BASH_SOURCE) : $LINENO";
-    fi    
+    fi
     verify_input_default_data "VERIFY-INPUT-DEFAULT-DATA-TEST-4" "/Full/Path" 1 4; # 4 = Path
     if [[ "$YN_OPTION" -eq 1 ]] ; then
         echo -e "\t${BBlue}$(gettext -s "TEST-FUNCTION-PASSED")  verify_input_default_data Path ${White} @ $(basename $BASH_SOURCE) : $LINENO";
     else
         echo -e "\t${BRed} $(gettext -s "TEST-FUNCTION-FAILED")  verify_input_default_data Path ${White} @ $(basename $BASH_SOURCE) : $LINENO";
-    fi    
+    fi
     verify_input_default_data "VERIFY-INPUT-DEFAULT-DATA-TEST-5" "/Full/Path" 1 5; # 5 = Folder
     if [[ "$YN_OPTION" -eq 1 ]] ; then
         echo -e "\t${BBlue}$(gettext -s "TEST-FUNCTION-PASSED")  verify_input_default_data Folder ${White} @ $(basename $BASH_SOURCE) : $LINENO";
     else
         echo -e "\t${BRed} $(gettext -s "TEST-FUNCTION-FAILED")  verify_input_default_data Folder ${White} @ $(basename $BASH_SOURCE) : $LINENO";
-    fi    
+    fi
     verify_input_default_data "VERIFY-INPUT-DEFAULT-DATA-TEST-6" "name@domain.com" 1 6; #6 = Email
     if [[ "$YN_OPTION" -eq 1 ]] ; then
         echo -e "\t${BBlue}$(gettext -s "TEST-FUNCTION-PASSED")  verify_input_default_data Email ${White} @ $(basename $BASH_SOURCE) : $LINENO";
     else
         echo -e "\t${BRed} $(gettext -s "TEST-FUNCTION-FAILED")  verify_input_default_data Email ${White} @ $(basename $BASH_SOURCE) : $LINENO";
-    fi    
-    pause_function "verify_input_default_data @ $(basename $BASH_SOURCE) : $LINENO"; 
+    fi
+    pause_function "verify_input_default_data @ $(basename $BASH_SOURCE) : $LINENO";
 fi
 #}}}
 # -----------------------------------------------------------------------------
@@ -3255,7 +3262,7 @@ if [[ "$RUN_HELP" -eq 1 ]]; then
     REVISION="5 Dec 2012";
     create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
 fi
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then 
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "VERIFY-INPUT-DATA-USAGE"  "verify_input_data 1->(Prompt) 2->(Data) <- return value OPTION" "Comment: verify_input_data @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "VERIFY-INPUT-DATA-DESC"   "verify input data." "Comment: verify_input_data @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "VERIFY-INPUT-DATA-NOTES"  "Localized." "Comment: verify_input_data @ $(basename $BASH_SOURCE) : $LINENO";
@@ -3266,7 +3273,7 @@ if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
 fi
 # -------------------------------------
 verify_input_data()
-{ 
+{
     if [[ "$#" -ne "2" ]]; then echo -e "${BRed}$(gettext -s "WRONG-NUMBER-ARGUMENTS-PASSED-TO")${BYellow} |$@| ${BWhite} -> ${BWhite} ${FUNCNAME[1]} @ $(basename ${BASH_SOURCE[1]}) : ${BASH_LINENO[0]}  -> $FUNCNAME @ $(basename $BASH_SOURCE) : $LINENO ${White}"; exit 1; fi
     if [[ "$AUTOMAN" -eq 1 || "$INSTALL_WIZARD" -eq 1 && "$BYPASS" -eq 1 ]]; then
         OPTION="$2";
@@ -3290,7 +3297,7 @@ verify_input_data()
     done
     write_log "$FUNCNAME $1 = $YN_OPTION" "$(basename $BASH_SOURCE) : $LINENO"; # Left out data, it could be a password or user name.
     return 0;
-} 
+}
 #}}}
 # -----------------------------------------------------------------------------
 # IS WILDCARD FILE {{{
@@ -3305,7 +3312,7 @@ if [[ "$RUN_HELP" -eq 1 ]]; then
     REVISION="12 Dec 2012";
     create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
 fi
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then 
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "IS-WILDCARD-FILE-USAGE" "is_wildcard_file 1->(/from/path/) 2->(filter)" "Comment: is_wildcard_file @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "IS-WILDCARD-FILE-DESC"  "Test for Files: is_wildcard_file '/from/path/' 'log' # if &lowast;.log exist." "Comment: is_wildcard_file @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "IS-WILDCARD-FILE-NOTES" "filter: if ' ' all, else use extension, do not pass 'Array' in &lowast; as wildcard. If looking for a '/path/.hidden' file, a /path/&lowast; fails, so use no wild card, i.e. /path/." "Comment: is_wildcard_file @ $(basename $BASH_SOURCE) : $LINENO";
@@ -3333,7 +3340,7 @@ is_wildcard_file()
         fi
     else
         FILTER="$(get_filter "$1" "$2")";
-        if [ -z "${FILTER}" ]; then    
+        if [ -z "${FILTER}" ]; then
             if [[ "$DEBUGGING" -eq 1 ]]; then pause_function "get_filter [$1] *.$2 Not Found : $FUNCNAME @ $(basename $BASH_SOURCE) : $LINENO"; fi
             return 1;  # EMPTY
         else
@@ -3344,13 +3351,13 @@ is_wildcard_file()
 # -------------------------------------
 if [[ "$RUN_TEST" -eq 1 ]]; then
     if [ -f "${FULL_SCRIPT_PATH}/gtranslate-cc.db" ]; then
-        if is_wildcard_file "${FULL_SCRIPT_PATH}/" "db" ; then # " " | "ext" 
+        if is_wildcard_file "${FULL_SCRIPT_PATH}/" "db" ; then # " " | "ext"
             echo -e "\t${BBlue}$(gettext -s "TEST-FUNCTION-PASSED")  is_wildcard_file ${White} @ $(basename $BASH_SOURCE) : $LINENO";
         else
             echo -e "\t${BRed} $(gettext -s "TEST-FUNCTION-FAILED")  is_wildcard_file ${White} @ $(basename $BASH_SOURCE) : $LINENO";
             read -e -sn 1 -p "$(gettext -s "PRESS-ANY-KEY-CONTINUE")";
         fi
-        if is_wildcard_file "${FULL_SCRIPT_PATH}/" " " ; then # " " | "ext" 
+        if is_wildcard_file "${FULL_SCRIPT_PATH}/" " " ; then # " " | "ext"
             echo -e "\t${BBlue}$(gettext -s "TEST-FUNCTION-PASSED")  is_wildcard_file ${White} @ $(basename $BASH_SOURCE) : $LINENO";
         else
             echo -e "\t${BRed} $(gettext -s "TEST-FUNCTION-FAILED")  is_wildcard_file ${White} @ $(basename $BASH_SOURCE) : $LINENO";
@@ -3372,7 +3379,7 @@ if [[ "$RUN_HELP" -eq 1 ]]; then
     REVISION="5 Dec 2012";
     create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
 fi
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then 
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "MAKE-DIR-USAGE" "make_dir 1->(/Full/Path) 2->(Debugging Information)" "Comment: make_dir @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "MAKE-DIR-DESC"  "Make Directory." "Comment: make_dir @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "MAKE-DIR-NOTES" "return 0 if dir created." "Comment: make_dir @ $(basename $BASH_SOURCE) : $LINENO";
@@ -3425,7 +3432,7 @@ if [[ "$RUN_HELP" -eq 1 ]]; then
     REVISION="24 Apr 2013";
     create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
 fi
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then 
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "COPY-FILE-USAGE" "copy_file 1->(/full-path/from.ext) 2->(/full-path/to_must_end_with_a_slash/) 3->(Debugging Information)" "Comment: copy_file @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "COPY-FILE-DESC"  "Copy File." "Comment: copy_file @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "COPY-FILE-NOTES" "Creates Destination Folder if not exist. LINENO is for Logging and Debugging." "Comment: copy_file @ $(basename $BASH_SOURCE) : $LINENO";
@@ -3439,7 +3446,7 @@ fi
 copy_file()
 {
     if [[ "$#" -ne "3" ]]; then echo -e "${BRed}$(gettext -s "WRONG-NUMBER-ARGUMENTS-PASSED-TO") ${FUNCNAME[1]} @ $(basename ${BASH_SOURCE[1]}) : ${BASH_LINENO[1]} ${White}"; exit 1; fi
-    # 
+    #
     if [ ! -f "$1" ]; then
         if [[ "${EXCLUDE_FILE_WARN[@]}" != *"$1"* ]]; then
             print_error "COPY-FILE-FNF" "copy_file $1 to $2 failed to copy file from $3 at $DATE_TIME. $FUNCNAME @ $(basename $BASH_SOURCE) : $LINENO";
@@ -3501,7 +3508,7 @@ if [[ "$RUN_HELP" -eq 1 ]]; then
     REVISION="5 Dec 2012";
     create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
 fi
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then 
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "COPY-FILES-USAGE" "copy_files 1->(/full-path/) 2->(ext or Blank for *) 3->(/full-path/to_must_end_with_a_slash/) 4->(Debugging Information)<br />${HELP_TAB}copy_files 1->(/full-path/) 2->( ) 3->(/full-path/to_must_end_with_a_slash/) 4->(Debugging Information)" "Comment: copy_files @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "COPY-FILES-DESC"  "Creates Destination Folder if not exist. LINENO is for Logging and Debugging." "Comment: copy_files @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "COPY-FILES-NOTES" "If looking for a '/path/.hidden' file, a /path/&lowast; fails, so use no wild card, i.e. /path/" "Comment: copy_files @ $(basename $BASH_SOURCE) : $LINENO";
@@ -3510,7 +3517,7 @@ fi
 copy_files()
 {
     if [[ "$#" -ne "4" ]]; then echo -e "${BRed}$(gettext -s "WRONG-NUMBER-ARGUMENTS-PASSED-TO") ${BWhite} ${FUNCNAME[1]} @ $(basename ${BASH_SOURCE[1]}) : ${BASH_LINENO[0]}  -> $FUNCNAME @ $(basename $BASH_SOURCE) : $LINENO ${White}"; exit 1; fi
-    if ! is_wildcard_file "$1" "$2" ; then # " " | "ext" 
+    if ! is_wildcard_file "$1" "$2" ; then # " " | "ext"
         if [[ "$2" == " " ]]; then
             write_error "Files Not Found! copy_files->is_wildcard_file [$1] to [$3] failed to copy file from $4 at $DATE_TIME." "$FUNCNAME @ $(basename $BASH_SOURCE) : $LINENO";
             if [[ "$DEBUGGING" -eq 1 ]]; then pause_function "Files Not Found! -rfv [$1] to [$3] from $4 (: $FUNCNAME @ $(basename $BASH_SOURCE) : $LINENO)"; fi
@@ -3593,7 +3600,7 @@ if [[ "$RUN_HELP" -eq 1 ]]; then
     REVISION="5 Dec 2012";
     create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
 fi
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then 
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "COPY-DIRECTORY-USAGE" "copy_dir 1->(/full-path/) 2->(/full-path/to_must_end_with_a_slash/) 3->(Debugging Information)" "Comment: copy_dir @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "COPY-DIRECTORY-DESC"  "Copy Directory." "Comment: copy_dir @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "COPY-DIRECTORY-NOTES" "None." "Comment: copy_dir @ $(basename $BASH_SOURCE) : $LINENO";
@@ -3670,7 +3677,7 @@ if [[ "$RUN_HELP" -eq 1 ]]; then
     REVISION="5 Dec 2012";
     create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
 fi
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then 
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "REMOVE-FILE-USAGE"     "remove_file 1->(/full-path/from.ext) 2->(Debugging Information)" "Comment: remove_file @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "REMOVE-FILE-DESC"      "Remove File if it exist." "Comment: remove_file @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "REMOVE-FILE-NOTES"     "if -f > rm -f." "Comment: remove_file @ $(basename $BASH_SOURCE) : $LINENO";
@@ -3690,7 +3697,7 @@ remove_file()
         write_error "REMOVE-FILE-NOT-FOUND" ": remove_file [$1] @ $2 -> $FUNCNAME @ $(basename $BASH_SOURCE) : $LINENO";
         return 1;
     fi
-} 
+}
 # -------------------------------------
 if [[ "$RUN_TEST" -eq 1 ]]; then
     remove_file "${FULL_SCRIPT_PATH}/Test/Target/Source/help.html" "remove_file @ $(basename $BASH_SOURCE) : $LINENO";
@@ -3715,7 +3722,7 @@ if [[ "$RUN_HELP" -eq 1 ]]; then
     REVISION="5 Dec 2012";
     create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
 fi
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then 
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "REMOVE-FILES-USAGE"      "remove_files 1->(/Full-Path/) 2->(ext or Blank for *) 3->(Debugging Information)" "Comment: remove_files @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "REMOVE-FILES-DESC"       "Remove Files if it exist." "Comment: remove_files @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "REMOVE-FILES-NOTES"      "if -f > rm -f." "Comment: remove_files @ $(basename $BASH_SOURCE) : $LINENO";
@@ -3727,7 +3734,7 @@ fi
 remove_files()
 {
     if [[ "$#" -ne "3" ]]; then echo -e "${BRed}$(gettext -s "WRONG-NUMBER-ARGUMENTS-PASSED-TO")${BYellow} |$@| ${BWhite} -> ${BWhite} ${FUNCNAME[1]} @ $(basename ${BASH_SOURCE[1]}) : ${BASH_LINENO[0]}  -> $FUNCNAME @ $(basename $BASH_SOURCE) : $LINENO ${White}"; exit 1; fi
-    if ! is_wildcard_file "$1" "$2" ; then # " " | "ext" 
+    if ! is_wildcard_file "$1" "$2" ; then # " " | "ext"
         if [[ "$2" == " " ]]; then
             write_error "REMOVE-FILES-FNF" "[$1] -> $FUNCNAME @ $(basename $BASH_SOURCE) : $LINENO -> $3";
             print_error "REMOVE-FILES-FNF" "[$1] -> $FUNCNAME @ $(basename $BASH_SOURCE) : $LINENO -> $3";
@@ -3751,8 +3758,8 @@ remove_files()
         else
             write_log "REMOVE-FILES-FAIL" " remove_file -rfv [$1*.$2] -> $FUNCNAME @ $(basename $BASH_SOURCE) : $LINENO -> $3";
         fi
-    fi    
-} 
+    fi
+}
 # -------------------------------------
 if [[ "$RUN_TEST" -eq 1 ]]; then
     copy_files "${FULL_SCRIPT_PATH}/Test/Target/Source/Extras/" " " "${FULL_SCRIPT_PATH}/Test/Target/Source/Destination/" "remove_files @ $(basename $BASH_SOURCE) : $LINENO";
@@ -3778,7 +3785,7 @@ if [[ "$RUN_HELP" -eq 1 ]]; then
     REVISION="5 Dec 2012";
     create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
 fi
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then 
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "REMOVE-FOLDER-USAGE"     "remove_folder 1->(/Full-Path/) 2->(Debugging Information)" "Comment: remove_folder @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "REMOVE-FOLDER-DESC"      "Remove Folder if it exist." "Comment: remove_folder @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "REMOVE-FOLDER-NOTES"     "if -d > rm -rf /Full-Path/" "Comment: remove_folder @ $(basename $BASH_SOURCE) : $LINENO";
@@ -3798,7 +3805,7 @@ remove_folder()
         write_error "REMOVE-FOLDER-NOT-FOUND" ": remove_folder [$1] @ $2 -> $FUNCNAME @ $(basename $BASH_SOURCE) : $LINENO";
         return 1;
     fi
-} 
+}
 # -------------------------------------
 if [[ "$RUN_TEST" -eq 1 ]]; then
     mkdir -p ${FULL_SCRIPT_PATH}/Test/Target/RemoveMe/;
@@ -3825,7 +3832,7 @@ if [[ "$RUN_HELP" -eq 1 ]]; then
     REVISION="5 Dec 2012";
     create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" " @ $(basename $BASH_SOURCE) : $LINENO";
 fi
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then 
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "DELETE-LINE-IN-FILE-USAGE" "delete_line_in_file 1->(Text on line to Delete) 2->(/FullPath/FileName.ext)" "Comment: delete_line_in_file @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "DELETE-LINE-IN-FILE-DESC"  "Given text of Line, Delete it in File" "Comment: delete_line_in_file @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "DELETE-LINE-IN-FILE-NOTES" "This function is not ready to use, I forgot to finish it, so its just a stub that needs to be finished" "Comment: delete_line_in_file @ $(basename $BASH_SOURCE) : $LINENO";
@@ -3873,7 +3880,7 @@ comment_file()
         MyReturn="$?";
         if [[ "$RUN_TEST" -eq 1 ]]; then
             if ! is_string_in_file "$2" "#$1" ; then
-                print_error "TEST-FUNCTION-FAILED" " comment_file @ $(basename $BASH_SOURCE) : $LINENO";                
+                print_error "TEST-FUNCTION-FAILED" " comment_file @ $(basename $BASH_SOURCE) : $LINENO";
             fi
         fi
     fi
@@ -3919,7 +3926,7 @@ un_comment_file()
         MyReturn="$?";
         if [[ "$RUN_TEST" -eq 1 ]]; then
             if is_string_in_file "$2" "#$1" ; then
-                print_error "TEST-FUNCTION-FAILED" " $FUNCNAME ($MyReturn) @ $(basename $BASH_SOURCE) : $LINENO";                
+                print_error "TEST-FUNCTION-FAILED" " $FUNCNAME ($MyReturn) @ $(basename $BASH_SOURCE) : $LINENO";
             fi
         fi
     fi
@@ -3949,7 +3956,7 @@ if [[ "$RUN_HELP" -eq 1 ]]; then
     REVISION="5 Dec 2012";
     create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
 fi
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then 
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "REPLACE-OPTION-USAGE" "replace_option 1->(/Config/FullPath/FileName.ext) 2->(Option-String) 3->(Text to Replace) 4->(Package Name)" "Comment: replace_option @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "REPLACE-OPTION-DESC"  "Replace Option: Given File Name, Option and Text, add option to end of line in file." "Comment: replace_option @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "REPLACE-OPTION-NOTES" "If you have a string in a file: i.e. '[Option]=', you can append Text to add to it: i.e. '[Option]=Text Added'" "Comment: replace_option @ $(basename $BASH_SOURCE) : $LINENO";
@@ -4021,7 +4028,7 @@ if [[ "$RUN_HELP" -eq 1 ]]; then
     REVISION="5 Dec 2012";
     create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
 fi
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then 
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "ADD-OPTION-USAGE" "add_option 1->(/Config/FullPath/FileName.ext) 2->(Option-String) 3->(Text to Add) 4->(Package Name)" "Comment: add_option @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "ADD-OPTION-DESC"  "Add Option: Given File Name, Option and Text, add option to end of line in file." "Comment: add_option @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "ADD-OPTION-NOTES" "If you have a string in a file: i.e. '[Option]=', you can append Text to add to it: i.e. '[Option]=Text Added'" "Comment: add_option @ $(basename $BASH_SOURCE) : $LINENO";
@@ -4084,7 +4091,7 @@ if [[ "$RUN_HELP" -eq 1 ]]; then
     REVISION="5 Dec 2012";
     create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
 fi
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then 
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "MAKE-FILE-USAGE"  "make_file 1->(FileName.ext) 2->(Debugging Information)" "Comment: make_file @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "MAKE-FILE-DESC"  "Make file." "Comment: make_file @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "MAKE-FILE-NOTES" "None." "Comment: make_file @ $(basename $BASH_SOURCE) : $LINENO";
@@ -4096,7 +4103,7 @@ make_file()
 {
     if [[ "$#" -ne "2" ]]; then echo -e "${BRed}$(gettext -s "WRONG-NUMBER-ARGUMENTS-PASSED-TO")${BYellow} |$@| ${BWhite} -> ${BWhite} ${FUNCNAME[1]} @ $(basename ${BASH_SOURCE[1]}) : ${BASH_LINENO[0]}  -> $FUNCNAME @ $(basename $BASH_SOURCE) : $LINENO ${White}"; exit 1; fi
     if [[ -n "$1" && -n "$2" ]]; then # Check for Empty
-        [[ ! -f "$1" ]] && touch "$1"; 
+        [[ ! -f "$1" ]] && touch "$1";
         if [ -f "$1" ]; then
             write_log "MAKE-FILE-PASSED" ": $1 # $2 : $FUNCNAME @ $(basename $BASH_SOURCE) : $LINENO";
             return 0;
@@ -4135,7 +4142,7 @@ if [[ "$RUN_HELP" -eq 1 ]]; then
     REVISION="5 Dec 2012";
     create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
 fi
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then 
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "SAVE-ARRAY-USAGE" "save_array 1->(Array(@)) 2->(/Path) 3->(MenuName.ext)" "Comment: save_array @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "SAVE-ARRAY-DESC"  "Save Array." "Comment: save_array @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "SAVE-ARRAY-NOTES" "None." "Comment: save_array @ $(basename $BASH_SOURCE) : $LINENO";
@@ -4187,7 +4194,7 @@ if [[ "$RUN_HELP" -eq 1 ]]; then
     REVISION="5 Dec 2012";
     create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
 fi
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then 
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "LOAD-ARRAY-USAGE" "Array=( &#36;(load_array 1->(/Path/ArrayName.ext) 2->(ArrarySize) 3->(Default Data) ) )" "Comment: load_array @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "LOAD-ARRAY-DESC"  "Load a saved Array from Disk." "Comment: load_array @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "LOAD-ARRAY-NOTES" "None." "Comment: load_array @ $(basename $BASH_SOURCE) : $LINENO";
@@ -4197,7 +4204,7 @@ load_array()
 {
     if [[ "$#" -ne "3" ]]; then echo -e "${BRed}$(gettext -s "WRONG-NUMBER-ARGUMENTS-PASSED-TO") ${FUNCNAME[1]} @ $(basename ${BASH_SOURCE[1]}) : ${BASH_LINENO[1]} ${White}"; exit 1; fi
     if [[ -f "$1" ]]; then
-        while read line; do 
+        while read line; do
             echo "$line"; # Stored Data
         done < "$1" # Load Array from serialized disk file
     else
@@ -4210,7 +4217,7 @@ load_array()
 # -------------------------------------
 if [[ "$RUN_TEST" -eq 1 ]]; then
     OLD_IFS="$IFS"; IFS=$'\n\t'; # Very Important when reading Arrays from files that end with a new line or tab
-    MyArray=( $(load_array "${FULL_SCRIPT_PATH}/Test/Target/Source/MyArray.db" 0 0 ) ); 
+    MyArray=( $(load_array "${FULL_SCRIPT_PATH}/Test/Target/Source/MyArray.db" 0 0 ) );
     totalnArr="${#MyArray[@]}";
     if [[ "$totalnArr" -eq 3 ]]; then
         echo -e "\t${BBlue}$(gettext -s "TEST-FUNCTION-PASSED")  load_array ${White} @ $(basename $BASH_SOURCE) : $LINENO";
@@ -4233,14 +4240,14 @@ if [[ "$RUN_HELP" -eq 1 ]]; then
     REVISION="5 Dec 2012";
     create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
 fi
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then 
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "CREATE-DATA-ARRAY-USAGE" "create_data_array 1->(ArrarySize) 2->(Default Data)" "Comment: create_data_array @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "CREATE-DATA-ARRAY-DESC"  "Create Data Array." "Comment: create_data_array @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "CREATE-DATA-ARRAY-NOTES" "None." "Comment: create_data_array @ $(basename $BASH_SOURCE) : $LINENO";
 fi
 # -------------------------------------
 create_data_array()
-{ 
+{
     if [[ "$#" -ne "2" ]]; then echo -e "${BRed}$(gettext -s "WRONG-NUMBER-ARGUMENTS-PASSED-TO")${BYellow} |$@| ${BWhite} -> ${BWhite} ${FUNCNAME[1]} @ $(basename ${BASH_SOURCE[1]}) : ${BASH_LINENO[0]}  -> $FUNCNAME @ $(basename $BASH_SOURCE) : $LINENO ${White}"; exit 1; fi
     [[ "$1" -eq 0 ]] && return 0;
     MyTotal="$1";
@@ -4251,7 +4258,7 @@ create_data_array()
 # -------------------------------------
 if [[ "$RUN_TEST" -eq 1 ]]; then
     OLD_IFS="$IFS"; IFS=$'\n\t'; # Very Important when reading Arrays from files that end with a new line or tab
-    MyArray=( $(create_data_array 3 0 ) ); 
+    MyArray=( $(create_data_array 3 0 ) );
     IFS="$OLD_IFS";
     totalnArr="${#MyArray[@]}";
     if [[ "$totalnArr" -eq 3 ]]; then
@@ -4274,7 +4281,7 @@ if [[ "$RUN_HELP" -eq 1 ]]; then
     REVISION="5 Dec 2012";
     create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
 fi
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then 
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "PRINT-MENU-USAGE" "print_menu 1->(MenuArray[@]) 2->(Menu_InfoArray[@]) 3->(Letter to Exit)" "Comment: print_menu @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "PRINT-MENU-DESC"  "Print Menu." "Comment: print_menu @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "PRINT-MENU-NOTES" "Localized." "Comment: print_menu @ $(basename $BASH_SOURCE) : $LINENO";
@@ -4285,12 +4292,12 @@ if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
 fi
 # -------------------------------------
 print_menu()
-{ 
+{
     if [[ "$#" -ne "3" ]]; then echo -e "${BRed}$(gettext -s "WRONG-NUMBER-ARGUMENTS-PASSED-TO") ${FUNCNAME[1]} @ $(basename ${BASH_SOURCE[1]}) : ${BASH_LINENO[1]} ${White}"; exit 1; fi
-    local -a arrayMenu=("${!1}");     # Array 
+    local -a arrayMenu=("${!1}");     # Array
     local -i total="${#arrayMenu[@]}";
     #
-    local -a arrayInfo=("${!2}");     # Array 
+    local -a arrayInfo=("${!2}");     # Array
     local -i totalInfo="${#arrayInfo[@]}";
     #
     local -i index=0;
@@ -4333,12 +4340,12 @@ print_menu()
     echo "";
     # Print Menu Breakable Key
     if [[ "$index" -le 8 ]]; then
-        echo -e "${SPACE}${SPACE}${SPACE}${SPACE}${SPACE}${SPACE}${SPACE}${SPACE}${SPACE}${SPACE}${3}) $MY_ACTION"; tput sgr0; 
+        echo -e "${SPACE}${SPACE}${SPACE}${SPACE}${SPACE}${SPACE}${SPACE}${SPACE}${SPACE}${SPACE}${3}) $MY_ACTION"; tput sgr0;
     else
-        echo -e "${SPACE}${SPACE}${SPACE}${SPACE}${SPACE}${SPACE}${SPACE}${SPACE}${SPACE}${3}) $MY_ACTION"; tput sgr0; 
+        echo -e "${SPACE}${SPACE}${SPACE}${SPACE}${SPACE}${SPACE}${SPACE}${SPACE}${SPACE}${3}) $MY_ACTION"; tput sgr0;
     fi
     echo "";
-} 
+}
 #}}}
 # -----------------------------------------------------------------------------
 # ADD MENU ITEM {{{
@@ -4353,14 +4360,14 @@ if [[ "$RUN_HELP" -eq 1 ]]; then
     REVISION="5 Dec 2012";
     create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
 fi
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then 
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "ADD-MENU-ITEM-USAGE" "add_menu_item 1->(Checkbox_List_Array) 2->(Menu_Array) 3->(Info_Array) 4->(Menu Description in White) 5->(In Yellow) 6->(In Red) 7->(Information Printed Above Menu) 8->(MenuTheme_Array[@])" "Comment: add_menu_item @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "ADD-MENU-ITEM-DESC"  "Add Menu Item." "Comment: add_menu_item @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "ADD-MENU-ITEM-NOTES" "Text should be Localize ID." "Comment: add_menu_item @ $(basename $BASH_SOURCE) : $LINENO";
 fi
 # -------------------------------------
 add_menu_item()
-{ 
+{
     if [[ "$#" -ne "8" ]]; then echo -e "${BRed}$(gettext -s "WRONG-NUMBER-ARGUMENTS-PASSED-TO") ${BWhite} ${FUNCNAME[1]} @ $(basename ${BASH_SOURCE[1]}) : ${BASH_LINENO[0]}  -> $FUNCNAME @ $(basename $BASH_SOURCE) : $LINENO ${White}"; exit 1; fi
     local -i total=0;
     # 1. Checkbox List Array -> 0 based Array
@@ -4373,8 +4380,8 @@ add_menu_item()
     # 8. Theme
     # @FIX pass in Checkbox-List-Array
     # RESET_MENU Unused; but lets function knows its a new menu
-    
-    #local -a checkbox_array=("${!1}")  # Checkbox List Array 
+
+    #local -a checkbox_array=("${!1}")  # Checkbox List Array
     #echo "checkbox_array=${checkbox_array[@]}"
     eval "total_checkbox=\${#$1[@]}"; # Checkbox_List_Array = 0 First Time
     if [[ "$total_checkbox" -eq 0 ]]; then
@@ -4383,7 +4390,7 @@ add_menu_item()
         LAST_MENU_ITEM=0;    # Reset this to 0, so we can count all menus and get total
     fi
     eval "total=\${#$2[@]}"; # Menu_Array = 0 First Time; we push results into it
-    #    
+    #
     if [[ "$total" -ge "$total_checkbox" ]]; then # First time total=0 and total_checkbox=1, Second time total=1 and total_checkbox=1, so we need to push a new chechbox, since we will push another menu item
         array_push "$1" "0";
         ((total_checkbox++));
@@ -4406,7 +4413,7 @@ add_menu_item()
         cba=0;
     fi
     #
-    local -a arrayTheme=("${!8}");     # Theme Array 
+    local -a arrayTheme=("${!8}");     # Theme Array
     local -i total_theme="${#arrayTheme[@]}";
     if [[ "$total_theme" -ne 3 ]]; then
         write_error "add_menu_item MenuTheme_Array should have 3 elements: total=$total Menu Description: $4 " "$FUNCNAME @ $(basename $BASH_SOURCE) : $LINENO";
@@ -4418,7 +4425,404 @@ add_menu_item()
     array_push "$2" "${arrayTheme[0]}$(( total + 1 ))${arrayTheme[2]}${arrayTheme[1]} $(checkbox ${cba}) ${BWhite}$(localize "$4") ${BYellow}$(localize "$5") ${BRed}$(localize "$6")${White}";
     array_push "$3" "$(localize "$7")";
     return 0;
-} 
+}
+#}}}
+# -----------------------------------------------------------------------------
+# RESTART INTERNET {{{
+if [[ "$RUN_HELP" -eq 1 ]]; then
+    NAME="restart_internet";
+    USAGE="restart_internet";
+    DESCRIPTION="$(localize "RESTART-INTERNET-DESC")";
+    NOTES="$(localize "RESTART-INTERNET-NOTES")";
+    AUTHOR="Flesher";
+    VERSION="1.0";
+    CREATED="11 Sep 2012";
+    REVISION="5 Dec 2012";
+    create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
+fi
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
+    localize_info "RESTART-INTERNET-DESC"  "Restart Internet." "Comment: restart_internet @ $(basename $BASH_SOURCE) : $LINENO";
+    localize_info "RESTART-INTERNET-NOTES" "Assumes system.d; uses systemctl restart; needs generic functions for other then Arch Linux calls." "Comment: restart_internet @ $(basename $BASH_SOURCE) : $LINENO";
+fi
+# -------------------------------------
+restart_internet()
+{
+    # FIXIT make OS dependent
+    if [[ "$My_OS" == "solaris" ]]; then
+            network restart;
+    elif [[ "$My_OS" == "aix" ]]; then
+            network restart;
+    elif [[ "$My_OS" == "freebsd" ]]; then
+            network restart;
+    elif [[ "$My_OS" == "windowsnt" ]]; then
+            network restart;
+    elif [[ "$My_OS" == "mac" ]]; then
+            network restart;
+    elif [[ "$My_OS" == "linux" ]]; then
+        # if there is a need to know which Distro; i.e. CentOS for Redhat, or Ubuntu for Debian, then use My_PSUEDONAME
+        # See wizard.sh os_info to see if OS test exist or works
+        if [[ "$My_DIST" == "redhat" ]]; then # -------------------------------- Redhat, Centos, Fedora
+            /etc/init.d/network restart;
+        elif [[ "$My_DIST" == "archlinux" ]]; then # --------------------------- My_PSUEDONAME = Archlinux Distros
+            if [[ "$NETWORK_MANAGER" == "networkmanager" ]]; then
+                sudo systemctl restart NetworkManager.service;
+            elif [[ "$NETWORK_MANAGER" == "wicd" ]]; then
+                sudo systemctl restart wicd.service;
+                wicd-client;
+            fi
+        elif [[ "$My_DIST" == "debian" ]]; then # ------------------------------ Debian: My_PSUEDONAME = Ubuntu, LMDE - Distros
+             if [[ "$My_PSUEDONAME" == "Ubuntu" ]]; then
+                service networking restart;
+             else
+                /etc/init.d/networking restart;
+             fi
+        elif [[ "$My_DIST" == "unitedlinux" ]]; then # ------------------------- My_PSUEDONAME = unitedlinux Distros
+                network restart;
+        elif [[ "$My_DIST" == "mandrake" ]]; then # ---------------------------- My_PSUEDONAME = Mandrake Distros
+               network restart;
+        elif [[ "$My_DIST" == "suse" ]]; then # -------------------------------- My_PSUEDONAME = Suse Distros
+                network restart;
+        elif [[ "$My_DIST" == "slackware" ]]; then # -------------------------------- My_PSUEDONAME = Slackware Linux Distros
+                /etc/rc.d/rc.inet1 restart;
+        fi
+    fi
+}
+#}}}
+# -----------------------------------------------------------------------------
+# FIX NETWORK {{{
+if [[ "$RUN_HELP" -eq 1 ]]; then
+    NAME="fix_network";
+    USAGE="fix_network";
+    DESCRIPTION="$(localize "FIX-NETWORK-DESC")";
+    NOTES="$(localize "FIX-NETWORK-NOTES")";
+    AUTHOR="Flesher";
+    VERSION="1.0";
+    CREATED="11 Sep 2012";
+    REVISION="5 Dec 2012";
+    create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
+fi
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
+    localize_info "FIX-NETWORK-DESC"  "Fix Network." "Comment: fix_network @ $(basename $BASH_SOURCE) : $LINENO";
+    localize_info "FIX-NETWORK-NOTES" "None." "Comment: fix_network @ $(basename $BASH_SOURCE) : $LINENO";
+    #
+    localize_info "FIX-NETWORK-NETWORKMANAGER" "Restarting networkmanager via systemctl..." "Comment: fix_network @ $(basename $BASH_SOURCE) : $LINENO";
+    localize_info "FIX-NETWORK-WICD"           "Restarting wicd via systemctl..." "Comment: fix_network @ $(basename $BASH_SOURCE) : $LINENO";
+    localize_info "FIX-NETWORK-TRIED-TO-FIX"   "Tried to fix network connection; you may have to run this script again." "Comment: fix_network @ $(basename $BASH_SOURCE) : $LINENO";
+fi
+# -------------------------------------
+fix_network()
+{
+        # FIXIT make OS dependent
+    if [[ "$My_OS" == "solaris" ]]; then
+            network restart;
+    elif [[ "$My_OS" == "aix" ]]; then
+            network restart;
+    elif [[ "$My_OS" == "freebsd" ]]; then
+            network restart;
+    elif [[ "$My_OS" == "windowsnt" ]]; then
+            network restart;
+    elif [[ "$My_OS" == "mac" ]]; then
+            network restart;
+    elif [[ "$My_OS" == "linux" ]]; then
+        # if there is a need to know which Distro; i.e. CentOS for Redhat, or Ubuntu for Debian, then use My_PSUEDONAME
+        # See wizard.sh os_info to see if OS test exist or works
+        if [[ "$My_DIST" == "redhat" ]]; then # -------------------------------- Redhat, Centos, Fedora
+            /etc/init.d/network restart;
+        elif [[ "$My_DIST" == "archlinux" ]]; then # --------------------------- My_PSUEDONAME = Archlinux Distros
+            if [[ "$NETWORK_MANAGER" == "networkmanager" ]]; then
+                # networkmanager
+                # Internet is down; no use trying to install software
+                #if ! check_package networkmanager ; then
+                #    if [[ "$KDE_INSTALLED" -eq 1 ]]; then
+                #        package_install "networkmanager kdeplasma-applets-networkmanagement" "INSTALL-NETWORKMANAGER-KDE"
+                #        if [[ "$MATE_INSTALLED" -eq 1 ]]; then
+                #            package_install "network-manager-applet" "INSTALL-NETWORKMANAGER-MATE"
+                #        fi
+                #    else
+                #        package_install "networkmanager network-manager-applet" "INSTALL-NETWORKMANAGER-OTHER"
+                #    fi
+                #    package_install "networkmanager-dispatcher-ntpd" "INSTALL-NETWORKMANAGER"
+                #fi
+                #add_group "networkmanager"
+                #add_user_2_group "networkmanager"
+                print_info "FIX-NETWORK-NETWORKMANAGER";
+                sudo systemctl enable NetworkManager.service;
+                sudo systemctl start NetworkManager.service;
+            elif [[ "$NETWORK_MANAGER" == "wicd" ]]; then
+                #if ! check_package networkmanager ; then
+                #    if [[ "$KDE" -eq 1 ]]; then
+                #        aur_package_install "wicd wicd-kde" "AUR-INSTALL-NETWORKMANAGER-KDE"
+                #    else
+                #        package_install "wicd wicd-gtk" "INSTALL-NETWORKMANAGER-GTK"
+                #    fi
+                #fi
+                print_info "FIX-NETWORK-WICD";
+                sudo systemctl enable wicd.service;
+                sudo systemctl start wicd.service;
+                wicd-client;
+            fi
+        elif [[ "$My_DIST" == "debian" ]]; then # ------------------------------ Debian: My_PSUEDONAME = Ubuntu, LMDE - Distros
+             if [[ "$My_PSUEDONAME" == "Ubuntu" ]]; then
+                service networking restart;
+             else
+                /etc/init.d/networking restart;
+             fi
+        elif [[ "$My_DIST" == "unitedlinux" ]]; then # ------------------------- My_PSUEDONAME = unitedlinux Distros
+                network restart;
+        elif [[ "$My_DIST" == "mandrake" ]]; then # ---------------------------- My_PSUEDONAME = Mandrake Distros
+               network restart;
+        elif [[ "$My_DIST" == "suse" ]]; then # -------------------------------- My_PSUEDONAME = Suse Distros
+                network restart;
+        elif [[ "$My_DIST" == "slackware" ]]; then # -------------------------------- My_PSUEDONAME = Slackware Linux Distros
+                /etc/rc.d/rc.inet1 restart;
+        fi
+    fi
+    # @FIX More testing and repairing
+    sleep 20;
+    if [[ "$INSTALL_NO_INTERNET" -eq 0 ]]; then
+        if ! is_internet ; then
+            sleep 10;
+            if ! is_internet ; then
+                print_error "FIX-NETWORK-TRIED-TO-FIX"; # if you see this; 20 seconds wasn't long enough, add another 10 for a full half minute
+                return 1;
+            fi
+        fi
+    fi
+    return 0;
+}
+#}}}
+# -----------------------------------------------------------------------------
+# NETWORK TROUBLESHOOTING {{{
+if [[ "$RUN_HELP" -eq 1 ]]; then
+    NAME="network_troubleshooting";
+    USAGE="network_troubleshooting";
+    DESCRIPTION="$(localize "NETWORK-TROUBLESHOOTING-DESC")";
+    NOTES="$(localize "NETWORK-TROUBLESHOOTING-NOTES")";
+    AUTHOR="Flesher";
+    VERSION="1.0";
+    CREATED="11 Sep 2012";
+    REVISION="5 Dec 2012";
+    create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
+fi
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
+    localize_info "NETWORK-TROUBLESHOOTING-DESC"    "Network Troubleshooting." "Comment: network_troubleshooting @ $(basename $BASH_SOURCE) : $LINENO";
+    localize_info "NETWORK-TROUBLESHOOTING-NOTES"   "None." "Comment: network_troubleshooting @ $(basename $BASH_SOURCE) : $LINENO";
+    #
+    localize_info "NETWORK-TROUBLESHOOTING-TITLE"   "Network Troubleshooting" "Comment: network_troubleshooting @ $(basename $BASH_SOURCE) : $LINENO";
+    localize_info "NETWORK-TROUBLESHOOTING-INFO-0"  "Network Debugging" "Comment: network_troubleshooting @ $(basename $BASH_SOURCE) : $LINENO";
+    localize_info "NETWORK-TROUBLESHOOTING-INFO-1"  "1: Networkmanager: install and start, this is always the best way to start troubleshooting." "Comment: network_troubleshooting @ $(basename $BASH_SOURCE) : $LINENO";
+    localize_info "NETWORK-TROUBLESHOOTING-INFO-2"  "2: Disk Resolv: Edit/Review namerservers.txt on disk, then copy it to local disk." "Comment: network_troubleshooting @ $(basename $BASH_SOURCE) : $LINENO";
+    localize_info "NETWORK-TROUBLESHOOTING-INFO-3"  "3: Local Resolv:Edit/Review local /etc/resolv.conf" "Comment: network_troubleshooting @ $(basename $BASH_SOURCE) : $LINENO";
+    localize_info "NETWORK-TROUBLESHOOTING-INFO-4"  "4: Identify which network interfaces" "Comment: network_troubleshooting @ $(basename $BASH_SOURCE) : $LINENO";
+    localize_info "NETWORK-TROUBLESHOOTING-INFO-5"  "5: Link status: " "Comment: network_troubleshooting @ $(basename $BASH_SOURCE) : $LINENO";
+    localize_info "NETWORK-TROUBLESHOOTING-INFO-6"  "6: IP Address: " "Comment: network_troubleshooting @ $(basename $BASH_SOURCE) : $LINENO";
+    localize_info "NETWORK-TROUBLESHOOTING-INFO-7"  "7: Ping: " "Comment: network_troubleshooting @ $(basename $BASH_SOURCE) : $LINENO";
+    localize_info "NETWORK-TROUBLESHOOTING-INFO-8"  "8: Devices: Show all ethx that are active" "Comment: network_troubleshooting @ $(basename $BASH_SOURCE) : $LINENO";
+    localize_info "NETWORK-TROUBLESHOOTING-INFO-9"  "9: Show Users: " "Comment: network_troubleshooting @ $(basename $BASH_SOURCE) : $LINENO";
+    localize_info "NETWORK-TROUBLESHOOTING-INFO-10" "10: Static IP: " "Comment: network_troubleshooting @ $(basename $BASH_SOURCE) : $LINENO";
+    localize_info "NETWORK-TROUBLESHOOTING-INFO-11" "11: Gateway: " "Comment: network_troubleshooting @ $(basename $BASH_SOURCE) : $LINENO";
+    localize_info "NETWORK-TROUBLESHOOTING-INFO-12" "12: Quit" "Comment: network_troubleshooting @ $(basename $BASH_SOURCE) : $LINENO";
+    localize_info "NETWORK-TROUBLESHOOTING-INFO-13" "Identify" "Comment: network_troubleshooting @ $(basename $BASH_SOURCE) : $LINENO";
+    localize_info "NETWORK-TROUBLESHOOTING-INFO-14" "Link status" "Comment: network_troubleshooting @ $(basename $BASH_SOURCE) : $LINENO";
+    localize_info "NETWORK-TROUBLESHOOTING-INFO-15" "Network Debugging" "Comment: network_troubleshooting @ $(basename $BASH_SOURCE) : $LINENO";
+    localize_info "NETWORK-TROUBLESHOOTING-RD-1"    "Enter IP address (192.168.1.2) " "Comment: network_troubleshooting @ $(basename $BASH_SOURCE) : $LINENO";
+    localize_info "NETWORK-TROUBLESHOOTING-RD-2"    "Enter IP Mask (255.255.255.0 = 24) " "Comment: network_troubleshooting @ $(basename $BASH_SOURCE) : $LINENO";
+    localize_info "NETWORK-TROUBLESHOOTING-RD-3"    "Enter IP address for Gateway (192.168.1.1) " "Comment: network_troubleshooting @ $(basename $BASH_SOURCE) : $LINENO";
+    localize_info "NETWORK-TROUBLESHOOTING-SELECT"  "Select an Option:" "Comment: network_troubleshooting @ $(basename $BASH_SOURCE) : $LINENO";
+    localize_info "NETWORK-TROUBLESHOOTING-NIC"     "Select a NIC:" "Comment: network_troubleshooting @ $(basename $BASH_SOURCE) : $LINENO";
+fi
+# -------------------------------------
+network_troubleshooting()
+{
+    get_network_devices;
+    load_software;
+    while [[ 1 ]]; do
+        print_title "NETWORK-TROUBLESHOOTING-TITLE" " ";
+        print_info  "NETWORK-TROUBLESHOOTING-INFO-0";
+        print_info  "NETWORK-TROUBLESHOOTING-INFO-1";
+        print_info  "NETWORK-TROUBLESHOOTING-INFO-2";
+        print_info  "NETWORK-TROUBLESHOOTING-INFO-3";
+        print_info  "NETWORK-TROUBLESHOOTING-INFO-4";
+        print_info  "NETWORK-TROUBLESHOOTING-INFO-5";
+        print_info  "NETWORK-TROUBLESHOOTING-INFO-6";
+        print_info  "NETWORK-TROUBLESHOOTING-INFO-7";
+        print_info  "NETWORK-TROUBLESHOOTING-INFO-8";
+        print_info  "NETWORK-TROUBLESHOOTING-INFO-9";
+        print_info  "NETWORK-TROUBLESHOOTING-INFO-10";
+        print_info  "NETWORK-TROUBLESHOOTING-INFO-11";
+        echo "";
+        print_info  "NETWORK-TROUBLESHOOTING-INFO-12";
+        #                   1              2              3             4          5         6         7          8         9         10           11        12
+        NETWORK_TROUBLE=("Networkmanager" "Disk Resolv" "Local Resolv" "Identify" "Link" "IP address" "Ping"  "Devices" "Show Users" "Static IP" "Gateway" "Quit");
+        PS3="$prompt1";
+        print_this "NETWORK-TROUBLESHOOTING-SELECT";
+        echo "";
+        select OPT in "${NETWORK_TROUBLE[@]}"; do
+            case "$REPLY" in
+                1)  # Networkmanager
+                    fix_network;
+                    pause_function "network_troubleshooting $LINENO";
+                    break;
+                    ;;
+                2)  # Disk Resolv
+                    custom_nameservers;
+                    if [[ "$My_OS" == "solaris" ]]; then
+                            cat /etc/resolv.conf ;
+                    elif [[ "$My_OS" == "aix" ]]; then
+                            cat /etc/resolv.conf ;
+                    elif [[ "$My_OS" == "freebsd" ]]; then
+                            cat /etc/resolv.conf ;
+                    elif [[ "$My_OS" == "windowsnt" ]]; then
+                            cat /etc/resolv.conf ;
+                    elif [[ "$My_OS" == "mac" ]]; then
+                            cat /etc/resolv.conf ;
+                    elif [[ "$My_OS" == "linux" ]]; then
+                        # if there is a need to know which Distro; i.e. CentOS for Redhat, or Ubuntu for Debian, then use My_PSUEDONAME
+                        # See wizard.sh os_info to see if OS test exist or works
+                        if [[ "$My_DIST" == "redhat" ]]; then # -------------------------------- Redhat, Centos, Fedora
+                            cat /etc/resolv.conf ;
+                        elif [[ "$My_DIST" == "archlinux" ]]; then # --------------------------- My_PSUEDONAME = Archlinux Distros
+                            cat /etc/resolv.conf ;
+                        elif [[ "$My_DIST" == "debian" ]]; then # ------------------------------ Debian: My_PSUEDONAME = Ubuntu, LMDE - Distros
+                            cat /etc/resolv.conf ;
+                        elif [[ "$My_DIST" == "unitedlinux" ]]; then # ------------------------- My_PSUEDONAME = unitedlinux Distros
+                            cat /etc/resolv.conf ;
+                        elif [[ "$My_DIST" == "mandrake" ]]; then # ---------------------------- My_PSUEDONAME = Mandrake Distros
+                            cat /etc/resolv.conf ;
+                        elif [[ "$My_DIST" == "suse" ]]; then # -------------------------------- My_PSUEDONAME = Suse Distros
+                            cat /etc/resolv.conf ;
+                        fi
+                    fi
+                    pause_function "network_troubleshooting $LINENO";
+                    break;
+                    ;;
+                3)  # Local Resolv
+                    if [[ "$My_OS" == "solaris" ]]; then
+                            $EDITOR /etc/resolv.conf;
+                    elif [[ "$My_OS" == "aix" ]]; then
+                            $EDITOR /etc/resolv.conf;
+                    elif [[ "$My_OS" == "freebsd" ]]; then
+                            $EDITOR /etc/resolv.conf;
+                    elif [[ "$My_OS" == "windowsnt" ]]; then
+                            $EDITOR /etc/resolv.conf;
+                    elif [[ "$My_OS" == "mac" ]]; then
+                            $EDITOR /etc/resolv.conf;
+                    elif [[ "$My_OS" == "linux" ]]; then
+                        # if there is a need to know which Distro; i.e. CentOS for Redhat, or Ubuntu for Debian, then use My_PSUEDONAME
+                        # See wizard.sh os_info to see if OS test exist or works
+                        if [[ "$My_DIST" == "redhat" ]]; then # -------------------------------- Redhat, Centos, Fedora
+                            $EDITOR /etc/resolv.conf;
+                        elif [[ "$My_DIST" == "archlinux" ]]; then # --------------------------- My_PSUEDONAME = Archlinux Distros
+                            $EDITOR /etc/resolv.conf;
+                        elif [[ "$My_DIST" == "debian" ]]; then # ------------------------------ Debian: My_PSUEDONAME = Ubuntu, LMDE - Distros
+                            $EDITOR /etc/resolv.conf;
+                        elif [[ "$My_DIST" == "unitedlinux" ]]; then # ------------------------- My_PSUEDONAME = unitedlinux Distros
+                            $EDITOR /etc/resolv.conf;
+                        elif [[ "$My_DIST" == "mandrake" ]]; then # ---------------------------- My_PSUEDONAME = Mandrake Distros
+                            $EDITOR /etc/resolv.conf;
+                        elif [[ "$My_DIST" == "suse" ]]; then # -------------------------------- My_PSUEDONAME = Suse Distros
+                            $EDITOR /etc/resolv.conf;
+                        fi
+                    fi
+                    break;
+                    ;;
+                4)  # Identify
+                    print_info "NETWORK-TROUBLESHOOTING-INFO-15" ": ip a ";
+                    ip a;
+                    pause_function "network_troubleshooting $LINENO";
+                    break;
+                    ;;
+                5)  # Link
+                    print_info "NETWORK-TROUBLESHOOTING-INFO-16" ": ip link show dev eth0";
+                    for MyNIC in ${NIC[@]}; do
+                        ip link show dev "$MyNIC";
+                    done
+                    pause_function "network_troubleshooting $LINENO";
+                    break;
+                    ;;
+                6)  # IP address
+                    print_info "NETWORK-TROUBLESHOOTING-INFO-16" ": ip addr show dev eth0";
+                    for MyNIC in ${NIC[@]}; do
+                        ip addr show dev "$MyNIC";
+                    done
+                    pause_function "network_troubleshooting $LINENO";
+                    break;
+                    ;;
+                7)  # Ping
+                    ping -c 3 "$PingHost1";
+                    pause_function "network_troubleshooting $LINENO";
+                    break;
+                    ;;
+                8)  # Devices
+                    get_network_devices;
+                    pause_function "network_troubleshooting $LINENO";
+                    break;
+                    ;;
+                9)  # Show Users
+                    show_users;
+                    pause_function "network_troubleshooting $LINENO";
+                    break;
+                    ;;
+               10)  # Add Static IP address
+                    print_title "NETWORK-TROUBLESHOOTING-TITLE" " ";
+                    print_info  "NETWORK-TROUBLESHOOTING-INFO-17";
+                    # Add Static IP address
+                    PS3="$prompt1";
+                    print_this "NETWORK-TROUBLESHOOTING-NIC";
+                    echo "";
+                    select OPT in "${NIC[@]}"; do
+                        case "$REPLY" in
+                            1)
+                                NIC_DEV="$NIC[0]";
+                                break;
+                                ;;
+                            2)
+                                NIC_DEV="$NIC[0]";
+                                break;
+                                ;;
+                            3)
+                                NIC_DEV="$NIC[0]";
+                                break;
+                                ;;
+                            *)
+                                invalid_option "$REPLY";
+                                ;;
+                        esac
+                    done
+                    Old_BYPASS="$BYPASS"; BYPASS=0; # Do Not Allow Bypass
+                    read_input_data "NETWORK-TROUBLESHOOTING-RD-1"; # Enter IP Address
+                    IP_ADDRESS="$OPTION";
+                    read_input_data "NETWORK-TROUBLESHOOTING-RD-2";
+                    BYPASS="$Old_BYPASS"; # Restore Bypass
+                    IP_MASK="$OPTION";
+                    ip addr add "${IP_ADDRESS}/${IP_MASK}" dev "$NIC_DEV";
+                    pause_function "network_troubleshooting $LINENO";
+                    break;
+                    ;;
+
+               11)  # Add Static Gateway
+                    Old_BYPASS="$BYPASS"; BYPASS=0; # Do Not Allow Bypass
+                    read_input_data "NETWORK-TROUBLESHOOTING-RD-3";
+                    BYPASS="$Old_BYPASS"; # Restore Bypass
+                    IP_ADDRESS="$OPTION";
+                    ip route add default via "$IP_ADDRESS";
+                    pause_function "network_troubleshooting $LINENO";
+                    break;
+                    ;;
+               12)  # Quit
+                    exit 1;
+                    ;;
+              'q')
+                    break;
+                    ;;
+                *)
+                    invalid_option "$REPLY";
+                    ;;
+            esac
+       done
+       is_breakable "$REPLY" "q";
+   done
+}
 #}}}
 # -----------------------------------------------------------------------------
 # IS INTERNET {{{
@@ -4433,7 +4837,7 @@ if [[ "$RUN_HELP" -eq 1 ]]; then
     REVISION="5 Dec 2012";
     create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
 fi
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then 
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "IS-INTERNET-DESC"  "Check if Internet is up by Pinging two Major DNS servers." "Comment: is_internet @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "IS-INTERNET-NOTES" "This pings google.com and wikipedia.org; they are good to ping to see if the Internet is up." "Comment: is_internet @ $(basename $BASH_SOURCE) : $LINENO";
     #
@@ -4442,10 +4846,8 @@ fi
 # -------------------------------------
 is_internet()
 {
-    local host1="google.com";
-    local host2="wikipedia.org";
-    print_this "IS-INTERNET-INFO" "$host1 or $host2";
-    ((ping -w5 -c3 "$host1" || ping -w5 -c3 "$host2") > /dev/null 2>&1) && return 0 || return 1;
+    print_this "IS-INTERNET-INFO" "$PingHost1 or $PingHost2";
+    ((ping -w5 -c3 "$PingHost1" || ping -w5 -c3 "$PingHost2") > /dev/null 2>&1) && return 0 || return 1;
 }
 # -------------------------------------
 if [[ "$RUN_TEST" -eq 1 ]]; then
@@ -4475,7 +4877,7 @@ if [[ "$RUN_HELP" -eq 1 ]]; then
     REVISION="5 Dec 2012";
     create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
 fi
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then 
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "IS-ONLINE-USAGE" "is_online 1->(url)" "Comment: is_online @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "IS-ONLINE-DESC"  "Check if URL can be Pinged through the Internet." "Comment: is_online @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "IS-ONLINE-NOTES" "This pings URL passed in." "Comment: is_online @ $(basename $BASH_SOURCE) : $LINENO";
@@ -4494,7 +4896,7 @@ is_online()
 }
 # -------------------------------------
 if [[ "$RUN_TEST" -eq 1 ]]; then
-    if is_online "google.com" ; then
+    if is_online "$PingHost1" ; then
         echo -e "\t${BBlue}$(gettext -s "TEST-FUNCTION-PASSED")  is_online ${White} @ $(basename $BASH_SOURCE) : $LINENO";
     else
         echo -e "\t${BRed} $(gettext -s "TEST-FUNCTION-FAILED")  is_online ${White} @ $(basename $BASH_SOURCE) : $LINENO";
@@ -4515,7 +4917,7 @@ if [[ "$RUN_HELP" -eq 1 ]]; then
     REVISION="5 Dec 2012";
     create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
 fi
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then 
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "GET-IP-FROM-URL-USAGE" "get_ip_from_url 1->(url)" "Comment: get_ip_from_url @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "GET-IP-FROM-URL-DESC"  "Get IP Address from URL." "Comment: get_ip_from_url @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "GET-IP-FROM-URL-NOTES" "Uses Host." "Comment: get_ip_from_url @ $(basename $BASH_SOURCE) : $LINENO";
@@ -4548,7 +4950,7 @@ if [[ "$RUN_HELP" -eq 1 ]]; then
     REVISION="17 Jun 2013";
     create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
 fi
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then 
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "RUN-DB-SQL-FILE-SSH-USAGE" "run_db_sql_file_ssh 1->(IP or URL Address) 2->(User Name) 3->(/Full-Path/File-Name.sql or SQL Statement) 4->(DB User Name) 5->(DB Password) 6->(0=SQL File,1=SQL Statement) 7->(Database Type: 0=None,1=SQlite,2=PostgreSql,3=MySql)" "Comment: run_db_sql_file_ssh @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "RUN-DB-SQL-FILE-SSH-DESC"  "Run Dabase Command." "Comment: run_db_sql_file_ssh @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "RUN-DB-SQL-FILE-SSH-NOTES" "None." "Comment: run_db_sql_file_ssh @ $(basename $BASH_SOURCE) : $LINENO";
@@ -4585,7 +4987,7 @@ if [[ "$RUN_HELP" -eq 1 ]]; then
     REVISION="5 Dec 2012";
     create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
 fi
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then 
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "ARRAY-PUSH-USAGE" "array_push 1->(array) 2->(Element)" "Comment: array_push @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "ARRAY-PUSH-DESC"  "Push Element into an Array." "Comment: array_push @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "ARRAY-PUSH-NOTES" "None." "Comment: array_push @ $(basename $BASH_SOURCE) : $LINENO";
@@ -4621,7 +5023,7 @@ if [[ "$RUN_HELP" -eq 1 ]]; then
     REVISION="5 Dec 2012";
     create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
 fi
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then 
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "REMOVE-FROM-ARRAY-USAGE" "remove_from_array 1->(array) 2->(Element)" "Comment: remove_from_array @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "REMOVE-FROM-ARRAY-DESC"  "Remove Element from an Array." "Comment: remove_from_array @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "REMOVE-FROM-ARRAY-NOTES" "Pass in Array by name 'array'." "Comment: remove_from_array @ $(basename $BASH_SOURCE) : $LINENO";
@@ -4667,13 +5069,13 @@ if [[ "$RUN_HELP" -eq 1 ]]; then
     REVISION="5 Dec 2012";
     create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
 fi
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then 
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "GET-INDEX-USAGE" "get_index 1->(array[@]) 2->(Search)" "Comment: get_index @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "GET-INDEX-DESC"  "Get Index into an Array." "Comment: get_index @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "GET-INDEX-NOTES" "Bombs if not found; but finds errors in data; you could ask for data; but if its not in Array; this is a bug in Data not logic." "Comment: get_index @ $(basename $BASH_SOURCE) : $LINENO";
 fi
 # -------------------------------------
-get_index() 
+get_index()
 {
     if [[ "$#" -ne "2" ]]; then echo -e "${BRed}$(gettext -s "WRONG-NUMBER-ARGUMENTS-PASSED-TO")${BYellow} |$@| ${BWhite} ${FUNCNAME[1]} @ $(basename ${BASH_SOURCE[1]}) : ${BASH_LINENO[0]}  -> ${White} -> $FUNCNAME @ $(basename $BASH_SOURCE) : $LINENO ${White}"; exit 1; fi
     local -a i_array=("${!1}");
@@ -4685,9 +5087,9 @@ get_index()
         fi
     done
     write_error "FAILED:only use this if you know the record exist in get_index [$1] [$2]; check  " "$FUNCNAME @ $(basename $BASH_SOURCE) : $LINENO";
-    pause_function "FAILED:only use this if you know the record exist in get_index [$1] [$2] at line $LINENO"; 
+    pause_function "FAILED:only use this if you know the record exist in get_index [$1] [$2] at line $LINENO";
     exit 1;
-}    
+}
 # -------------------------------------
 if [[ "$RUN_TEST" -eq 1 ]]; then
     MyArray=( "1" "2" "3" );
@@ -4700,7 +5102,7 @@ if [[ "$RUN_TEST" -eq 1 ]]; then
 fi
 #}}}
 # -----------------------------------------------------------------------------
-declare -a REMOVED_INDEXES=() 
+declare -a REMOVED_INDEXES=()
 #
 # REMOVE ARRAY DUPLICATES {{{
 if [[ "$RUN_HELP" -eq 1 ]]; then
@@ -4714,7 +5116,7 @@ if [[ "$RUN_HELP" -eq 1 ]]; then
     REVISION="5 Dec 2012";
     create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
 fi
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then 
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "REMOVE-ARRAY-DUPLICATES-USAGE" "MyArray=( \$( remove_array_duplicates '1->(Array[@])' ) )" "Comment: remove_array_duplicates @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "REMOVE-ARRAY-DUPLICATES-DESC"  "Removes Duplicates in Array." "Comment: remove_array_duplicates @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "REMOVE-ARRAY-DUPLICATES-NOTES" "set IFS=\$'\n\t'; before call" "Comment: remove_array_duplicates @ $(basename $BASH_SOURCE) : $LINENO";
@@ -4770,7 +5172,7 @@ if [[ "$RUN_TEST" -eq 1 ]]; then
     fi
 fi
 #}}}
-# ----------------------------------------------------------------------------- 
+# -----------------------------------------------------------------------------
 # IS LAST ITEM {{{
 if [[ "$RUN_HELP" -eq 1 ]]; then
     NAME="is_last_item";
@@ -4783,13 +5185,13 @@ if [[ "$RUN_HELP" -eq 1 ]]; then
     REVISION="5 Dec 2012";
     create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
 fi
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then 
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "IS-LAST-ITEM-USAGE" "is_last_item 1->(array[@]) 2->(search)" "Comment: is_last_item @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "IS-LAST-ITEM-DESC"  "is last item in array." "Comment: is_last_item @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "IS-LAST-ITEM-NOTES" "None." "Comment: is_last_item @ $(basename $BASH_SOURCE) : $LINENO";
 fi
 # -------------------------------------
-is_last_item() 
+is_last_item()
 {
     local -a i_array=("${!1}");
     local -i total="${#i_array[@]}";
@@ -4804,7 +5206,7 @@ is_last_item()
         fi
     done
     return 1;
-}    
+}
 # -------------------------------------
 if [[ "$RUN_TEST" -eq 1 ]]; then
     MyArray=( "1" "2" "3" "4" "5" "6" );
@@ -4816,7 +5218,7 @@ if [[ "$RUN_TEST" -eq 1 ]]; then
     fi
 fi
 #}}}
-# ----------------------------------------------------------------------------- 
+# -----------------------------------------------------------------------------
 # DATE2STAMP {{{
 if [[ "$RUN_HELP" -eq 1 ]]; then
     NAME="date2stamp";
@@ -4829,7 +5231,7 @@ if [[ "$RUN_HELP" -eq 1 ]]; then
     REVISION="5 Dec 2012";
     create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
 fi
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then 
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "DATE2STAMP-USAGE" "date2stamp 1->(date)" "Comment: date2stamp @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "DATE2STAMP-DESC"  "Convert Date to Datetime stamp." "Comment: date2stamp @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "DATE2STAMP-NOTES" "None." "Comment: date2stamp @ $(basename $BASH_SOURCE) : $LINENO";
@@ -4840,7 +5242,7 @@ date2stamp()
     date --utc --date "$1" +%s;
 }
 #}}}
-# ----------------------------------------------------------------------------- 
+# -----------------------------------------------------------------------------
 # DETECTED VIDEO CARD {{{
 if [[ "$RUN_HELP" -eq 1 ]]; then
     NAME="detected_video_card";
@@ -4853,7 +5255,7 @@ if [[ "$RUN_HELP" -eq 1 ]]; then
     REVISION="19 Jan 2013";
     create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
 fi
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then 
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "DETECTED-VIDEO-CARD-DESC"  "Detect Video Card." "Comment: detected_video_card @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "DETECTED-VIDEO-CARD-NOTES" "Need to add more support for Video Cards, currently it supports: nVidia, Intel, ATI and Vesa." "Comment: detected_video_card @ $(basename $BASH_SOURCE) : $LINENO";
 fi
@@ -4863,13 +5265,13 @@ detected_video_card()
     # @FIX Add more Video cards and Options
     #  1        2         3       4     5      6            7
     # "nVidia" "Nouveau" "Intel" "ATI" "Vesa" "Virtualbox" "Skip"
-    if (lspci | grep -q 'VGA compatible controller: NVIDIA'); then 
+    if (lspci | grep -q 'VGA compatible controller: NVIDIA'); then
         VIDEO_CARD=1;
     elif (lspci | grep -q 'VGA compatible controller: NVIDIA'); then # This will never get set
         VIDEO_CARD=2;
-    elif (lspci | grep -q 'VGA compatible controller: Intel'); then 
+    elif (lspci | grep -q 'VGA compatible controller: Intel'); then
         VIDEO_CARD=3;
-    elif (lspci | grep -q 'VGA compatible controller: ATI'); then 
+    elif (lspci | grep -q 'VGA compatible controller: ATI'); then
         VIDEO_CARD=4;
     elif (lspci | grep -q 'VGA compatible controller: Vesa'); then # Don't know if this works
         VIDEO_CARD=5;
@@ -4880,7 +5282,7 @@ detected_video_card()
     fi
 }
 #}}}
-# ----------------------------------------------------------------------------- 
+# -----------------------------------------------------------------------------
 # CLEAR LOGS {{{
 if [[ "$RUN_HELP" -eq 1 ]]; then
     NAME="clear_logs";
@@ -4893,7 +5295,7 @@ if [[ "$RUN_HELP" -eq 1 ]]; then
     REVISION="5 Dec 2012";
     create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
 fi
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then 
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "CLEAR-LOGS-DESC"    "Clear all Log Entries." "Comment: clear_logs @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "CLEAR-LOGS-NOTES"   "None." "Comment: clear_logs @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "CLEAR-LOGS-CLEAR-1" "Clearing Log Files" "Comment: clear_logs @ $(basename $BASH_SOURCE) : $LINENO";
@@ -4926,7 +5328,7 @@ if [[ "$RUN_HELP" -eq 1 ]]; then
     REVISION="5 Dec 2012";
     create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
 fi
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then 
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "IS-USER-USAGE"  "is_user 1->(USERNAME)" "Comment: is_user @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "IS-USER-DESC"  "Checks if USERNAME exist." "Comment: is_user @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "IS-USER-NOTES" "None." "Comment: is_user @ $(basename $BASH_SOURCE) : $LINENO";
@@ -4960,7 +5362,7 @@ if [[ "$RUN_HELP" -eq 1 ]]; then
     REVISION="5 Dec 2012";
     create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
 fi
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then 
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "ADD-USER-GROUP-DESC"  "Add User group." "Comment: add_user_group @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "ADD-USER-GROUP-NOTES" "None." "Comment: add_user_group @ $(basename $BASH_SOURCE) : $LINENO";
 fi
@@ -4996,7 +5398,7 @@ if [[ "$RUN_HELP" -eq 1 ]]; then
     REVISION="5 Dec 2012";
     create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
 fi
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then 
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "REMOVE-USER-GROUP-USAGE" "remove_user_group 1->(Group Name)" "Comment: remove_user_group @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "REMOVE-USER-GROUP-DESC"  "Remove User group." "Comment: remove_user_group @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "REMOVE-USER-GROUP-NOTES" "None." "Comment: remove_user_group @ $(basename $BASH_SOURCE) : $LINENO";
@@ -5033,7 +5435,7 @@ if [[ "$RUN_HELP" -eq 1 ]]; then
     REVISION="5 Dec 2012";
     create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
 fi
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then 
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "IS-USER-IN-GROUP-DESC"  "is user in group." "Comment: is_user_in_group @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "IS-USER-IN-GROUP-NOTES" "None." "Comment: is_user_in_group @ $(basename $BASH_SOURCE) : $LINENO";
 fi
@@ -5066,7 +5468,7 @@ if [[ "$RUN_HELP" -eq 1 ]]; then
     REVISION="5 Dec 2012";
     create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
 fi
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then 
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "IS-GROUP-USAGE"  "is_group 1->(GROUPNAME)" "Comment: is_group @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "IS-GROUP-DESC"  "Is Group." "Comment: is_group @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "IS-GROUP-NOTES" "None." "Comment: is_group @ $(basename $BASH_SOURCE) : $LINENO";
@@ -5100,7 +5502,7 @@ if [[ "$RUN_HELP" -eq 1 ]]; then
     REVISION="5 Dec 2012";
     create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
 fi
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then 
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "ADD-GROUP-USAGE" "add_group 1->(GroupName)" "Comment: add_group @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "ADD-GROUP-DESC"  "Add Group."               "Comment: add_group @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "ADD-GROUP-NOTES" "None."                    "Comment: add_group @ $(basename $BASH_SOURCE) : $LINENO";
@@ -5112,11 +5514,11 @@ add_group()
 {
     if ! is_group "$1" ; then
         if sudo groupadd "$1" ; then
-            write_log "ADD-GROUP-OK" ": $1 -> $FUNCNAME @ $(basename $BASH_SOURCE) : $LINENO";   
+            write_log "ADD-GROUP-OK" ": $1 -> $FUNCNAME @ $(basename $BASH_SOURCE) : $LINENO";
             return 0;
         else
             print_error "ADD-GROUP-FAIL" ": $1 -> $FUNCNAME @ $(basename $BASH_SOURCE) : $LINENO";
-            write_error "ADD-GROUP-FAIL" ": $1 -> $FUNCNAME @ $(basename $BASH_SOURCE) : $LINENO";    
+            write_error "ADD-GROUP-FAIL" ": $1 -> $FUNCNAME @ $(basename $BASH_SOURCE) : $LINENO";
             return 1;
         fi
     fi
@@ -5153,7 +5555,7 @@ if [[ "$RUN_HELP" -eq 1 ]]; then
     REVISION="5 Dec 2012";
     create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
 fi
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then 
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "ADD-USER-2-GROUP-USAGE" "add_user_2_group 1->(GroupName)" "Comment: add_user_2_group @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "ADD-USER-2-GROUP-DESC"  "Add User to Group." "Comment: add_user_2_group @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "ADD-USER-2-GROUP-NOTES" "None." "Comment: add_user_2_group @ $(basename $BASH_SOURCE) : $LINENO";
@@ -5165,15 +5567,15 @@ add_user_2_group()
 {
     if ! is_group "testgroup" ; then
         if add_group "testgroup" ; then
-            write_log "add_user_2_group $1" "$FUNCNAME @ $(basename $BASH_SOURCE) : $LINENO";  
+            write_log "add_user_2_group $1" "$FUNCNAME @ $(basename $BASH_SOURCE) : $LINENO";
         fi
     fi
     if ! is_user_in_group "$1" ; then
         if sudo gpasswd -a "${USERNAME}" "$1" ; then
-            write_log "add_user_2_group $1" "$FUNCNAME @ $(basename $BASH_SOURCE) : $LINENO";  
+            write_log "add_user_2_group $1" "$FUNCNAME @ $(basename $BASH_SOURCE) : $LINENO";
             return 0;
         else
-            write_error "ADD-USER-2-GROUP-ERROR" ": gpasswd -a ${USERNAME} $1 -> $FUNCNAME @ $(basename $BASH_SOURCE) : $LINENO";    
+            write_error "ADD-USER-2-GROUP-ERROR" ": gpasswd -a ${USERNAME} $1 -> $FUNCNAME @ $(basename $BASH_SOURCE) : $LINENO";
             return 1;
         fi
     fi
@@ -5189,7 +5591,7 @@ if [[ "$RUN_TEST" -eq 1 ]]; then
     fi
     # remove them
     if is_user_in_group "testgroup" ; then
-        sudo gpasswd -d "${USERNAME}" testgroup; 
+        sudo gpasswd -d "${USERNAME}" testgroup;
     fi
 fi
 #}}}
@@ -5207,8 +5609,8 @@ if [[ "$RUN_HELP" -eq 1 ]]; then
     REVISION="5 Dec 2012";
     create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
 fi
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then 
-    localize_info "SET-DEBUGGING-MODE-USAGE" "set_debugging_mode 1->(1=Boot, 2=Live) 2->(Debugging Information)" "Comment: set_debugging_mode @ $(basename $BASH_SOURCE) : $LINENO";
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
+    localize_info "SET-DEBUGGING-MODE-USAGE" "set_debugging_mode" "Comment: set_debugging_mode @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "SET-DEBUGGING-MODE-DESC"  "Set Debugging Mode: also checks for Internet Connection." "Comment: set_debugging_mode @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "SET-DEBUGGING-MODE-NOTES" "Fill try to Repair Internet Connection. Only sets Debugging switch if DEBUGGING is set to 1." "Comment: set_debugging_mode @ $(basename $BASH_SOURCE) : $LINENO";
     #
@@ -5229,8 +5631,9 @@ set_debugging_mode()
     if [[ "$SET_DEBUGGING" -eq 0 ]]; then
         SET_DEBUGGING=1; # So we only run this once.
     else
-        return 0;        
+        return 0; # True
     fi
+    IsOK=0;  # True
     print_title "SET-DEBUGGING-MODE-TITLE";
     print_info "$TEXT_SCRIPT_ID";
     if is_internet ; then
@@ -5247,16 +5650,84 @@ set_debugging_mode()
                 INSTALL_NO_INTERNET=1;
                 print_error "SET-DEBUGGING-MODE-NO-INTERNET";
             fi
-            pause_function "set_debugging_mode $1 : $FUNCNAME @ $(basename $BASH_SOURCE) : $LINENO";
+            pause_function "set_debugging_mode : $FUNCNAME @ $(basename $BASH_SOURCE) : $LINENO";
+            IsOK=0;
         fi
     fi
     if [[ "$DEBUGGING" -eq 1 ]]; then
         #set -u
-        set -o nounset; 
+        set -o nounset;
         print_error "SET-DEBUGGING-MODE-WARN-1";
         print_error "SET-DEBUGGING-MODE-WARN-2";
-        pause_function "set_debugging_mode $1 : $FUNCNAME @ $(basename $BASH_SOURCE) : $LINENO";
+        pause_function "set_debugging_mode : $FUNCNAME @ $(basename $BASH_SOURCE) : $LINENO";
     fi
+    return "$IsOK";
+}
+#}}}
+# -----------------------------------------------------------------------------
+# TEST INTERNET {{{
+if [[ "$RUN_HELP" -eq 1 ]]; then
+    NAME="test_internet";
+    USAGE="$(localize "TEST-INTERNET-USAGE")";
+    DESCRIPTION="$(localize "TEST-INTERNET-DESC")";
+    NOTES="$(localize "TEST-INTERNET-NOTES")";
+    AUTHOR="Flesher";
+    VERSION="1.0";
+    CREATED="11 Sep 2012";
+    REVISION="5 Dec 2012";
+    create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
+fi
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
+    localize_info "TEST-INTERNET-USAGE" "test_internet" "Comment: test_internet @ $(basename $BASH_SOURCE) : $LINENO";
+    localize_info "TEST-INTERNET-DESC"  "Set Debugging Mode: also checks for Internet Connection." "Comment: test_internet @ $(basename $BASH_SOURCE) : $LINENO";
+    localize_info "TEST-INTERNET-NOTES" "Fill try to Repair Internet Connection. Only sets Debugging switch if DEBUGGING is set to 1." "Comment: test_internet @ $(basename $BASH_SOURCE) : $LINENO";
+    #
+    localize_info "TEST-INTERNET-TITLE"         "Starting setup..." "Comment: test_internet @ $(basename $BASH_SOURCE) : $LINENO";
+    localize_info "TEST-INTERNET-INTERNET-UP"   "Internet is Up!"   "Comment: test_internet @ $(basename $BASH_SOURCE) : $LINENO";
+    localize_info "TEST-INTERNET-TRIED-TO-FIX"  "I tried to fix Network, I will test it again, if it fails, first try to re-run this script over, if that fails, try Network Troubleshooting." "Comment: test_internet @ $(basename $BASH_SOURCE) : $LINENO";
+    localize_info "TEST-INTERNET-TRY-AGAIN"     "trying again in 13 seconds..." "Comment: test_internet @ $(basename $BASH_SOURCE) : $LINENO";
+    localize_info "TEST-INTERNET-INTERNET-DOWN" "Internet is Down: Internet is Down, this script requires an Internet Connection, fix and retry; try Network Troubleshooting; first try to rerun this script, I did try to fix this. Select Install with No Internet Connection option." "Comment: test_internet @ $(basename $BASH_SOURCE) : $LINENO";
+    localize_info "TEST-INTERNET-NO-INTERNET"   "No Internet Install Set; if it fails; you must establish an Internet connection first; try Network Troubleshooting." "Comment: test_internet @ $(basename $BASH_SOURCE) : $LINENO";
+    localize_info "TEST-INTERNET-WARN-1"        "Debug Mode will insert a Pause Function at critical functions and give you some information about how the script is running, it also may set other variables and run more test." "Comment: test_internet @ $(basename $BASH_SOURCE) : $LINENO";
+    localize_info "TEST-INTERNET-WARN-2"        "Debugging is set on, if set -o nounset or set -u, you may get unbound errors that need to be fixed." "Comment: test_internet @ $(basename $BASH_SOURCE) : $LINENO";
+fi
+# -------------------------------------
+test_internet()
+{
+    if [[ "$SET_DEBUGGING" -eq 0 ]]; then
+        SET_DEBUGGING=1; # So we only run this once.
+    else
+        return 0; # True
+    fi
+    IsOK=0;  # True
+    print_title "TEST-INTERNET-TITLE";
+    print_info "$TEXT_SCRIPT_ID";
+    if is_internet ; then
+        print_info "TEST-INTERNET-INTERNET-UP";
+    else
+        fix_network;
+        print_error "TEST-INTERNET-TRIED-TO-FIX";
+        print_this "TEST-INTERNET-TRY-AGAIN";
+        sleep 13;
+        if ! is_internet ; then
+            write_error "TEST-INTERNET-INTERNET-DOWN" "$FUNCNAME @ $(basename $BASH_SOURCE) : $LINENO";
+            print_error "TEST-INTERNET-INTERNET-DOWN" ;
+            if [[ "$INSTALL_NO_INTERNET" -eq 0 ]]; then
+                INSTALL_NO_INTERNET=1;
+                print_error "TEST-INTERNET-NO-INTERNET";
+            fi
+            pause_function "set_debugging_mode : $FUNCNAME @ $(basename $BASH_SOURCE) : $LINENO";
+            IsOK=0;
+        fi
+    fi
+    if [[ "$DEBUGGING" -eq 1 ]]; then
+        #set -u
+        set -o nounset;
+        print_error "TEST-INTERNET-WARN-1";
+        print_error "TEST-INTERNET-WARN-2";
+        pause_function "set_debugging_mode : $FUNCNAME @ $(basename $BASH_SOURCE) : $LINENO";
+    fi
+    return "$IsOK";
 }
 #}}}
 # -----------------------------------------------------------------------------
@@ -5272,7 +5743,7 @@ if [[ "$RUN_HELP" -eq 1 ]]; then
     REVISION="5 Dec 2012";
     create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
 fi
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then 
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "GET-COUNTRY-CODES-DESC"  "country list." "Comment: country_list @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "GET-COUNTRY-CODES-NOTES" "Sets COUNTRY." "Comment: country_list @ $(basename $BASH_SOURCE) : $LINENO";
     #
@@ -5306,7 +5777,7 @@ if [[ "$RUN_HELP" -eq 1 ]]; then
     REVISION="5 Dec 2012";
     create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
 fi
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then 
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "GET-COUNTRY-CODES-DESC"    "Get Country Code and set Counter." "Comment: get_country_codes @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "GET-COUNTRY-CODES-NOTES"   "None." "Comment: get_country_codes @ $(basename $BASH_SOURCE) : $LINENO";
     #
@@ -5332,7 +5803,7 @@ if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "GET-COUNTRY-CODES-INFO-16" "Uzbekistan    = UZ | Viet Nam = VN" "Comment: get_country_codes @ $(basename $BASH_SOURCE) : $LINENO";
 fi
 # -------------------------------------
-get_country_codes() 
+get_country_codes()
 {
     # I pull the code from Locale, so it should always be right, so no need for a menu; default should work.
     print_title "GET-COUNTRY-CODES-TITLE" " - https://www.archlinux.org/mirrorlist/";
@@ -5375,7 +5846,7 @@ get_country_codes()
     BYPASS="$Old_BYPASS"; # Restore Bypass
     COUNTRY_CODE="$(to_upper_case "$OPTION")"; # `echo "$OPTION" | tr '[:lower:]' '[:upper:]'`;  # Upper case only
     COUNTRY="${COUNTRIES[$(get_index "COUNTRY_CODES[@]" "$COUNTRY_CODE")]}";
-}   
+}
 #}}}
 # -----------------------------------------------------------------------------
 # GET COUNTRY CODE {{{
@@ -5390,14 +5861,14 @@ if [[ "$RUN_HELP" -eq 1 ]]; then
     REVISION="5 Dec 2012";
     create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
 fi
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then 
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "GET-COUNTRY-CODE-DESC"    "Get Country and Country Code." "Comment: get_country_code @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "GET-COUNTRY-CODE-NOTES"   "Localized." "Comment: get_country_code @ $(basename $BASH_SOURCE) : $LINENO";
     #
     localize_info "GET-COUNTRY-CODE-CONFIRM" "Confirm Country Code" "Comment: get_country_code @ $(basename $BASH_SOURCE) : $LINENO";
 fi
 # -------------------------------------
-get_country_code() 
+get_country_code()
 {
     YN_OPTION=0;
     Old_BYPASS="$BYPASS"; BYPASS=0; # Do Not Allow Bypass
@@ -5407,7 +5878,7 @@ get_country_code()
     done
     BYPASS="$Old_BYPASS"; # Restore Bypass
     OPTION="$COUNTRY_CODE";
-}   
+}
 #}}}
 # -----------------------------------------------------------------------------
 # GET ROOT PASSWORD {{{
@@ -5422,7 +5893,7 @@ if [[ "$RUN_HELP" -eq 1 ]]; then
     REVISION="5 Dec 2012";
     create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
 fi
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then 
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "GET-ROOT-PASSWORD-DESC"   "Get root password." "Comment: get_root_password @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "GET-ROOT-PASSWORD-NOTES"  "This shows the password on screen; not very secure, but its used so you can see the password, you do not want a mistake putting in Passwords." "Comment: get_root_password @ $(basename $BASH_SOURCE) : $LINENO";
     #
@@ -5461,7 +5932,7 @@ if [[ "$RUN_HELP" -eq 1 ]]; then
     REVISION="5 Dec 2012";
     create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
 fi
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then 
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "GET-USER-NAME-USAGE"  "get_user_name 1->(Optional Translated String for Title)"  "Comment: get_user_name @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "GET-USER-NAME-DESC"   "Get User Name."  "Comment: get_user_name @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "GET-USER-NAME-NOTES"  "Sets USERNAME." "Comment: get_user_name @ $(basename $BASH_SOURCE) : $LINENO";
@@ -5476,14 +5947,14 @@ get_user_name()
 {
     # @FIX Special Characters: How to embed ! $ into a variable, then to disk so a pipe can echo it; tried single tic '!' and escape \!, get error ! processes not found
     if [ -n "$1" ] ; then
-        print_title "GET-USER-NAME-TITLE" "$1"; 
+        print_title "GET-USER-NAME-TITLE" "$1";
     else
-        print_title "GET-USER-NAME-TITLE"; 
+        print_title "GET-USER-NAME-TITLE";
     fi
     print_info  "GET-USER-NAME-INFO-1";
     print_info  "GET-USER-NAME-INFO-2";
     Old_BYPASS="$BYPASS"; BYPASS=0;
-    verify_input_default_data "GET-USER-NAME-VD" "${USERNAME}" 1 1; # 1 = Alphanumeric 
+    verify_input_default_data "GET-USER-NAME-VD" "${USERNAME}" 1 1; # 1 = Alphanumeric
     USERNAME="$OPTION";
     BYPASS="$Old_BYPASS";
     return 0;
@@ -5502,7 +5973,7 @@ if [[ "$RUN_HELP" -eq 1 ]]; then
     REVISION="5 Dec 2012";
     create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
 fi
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then 
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "GET-USER-PASSWORD-DESC"   "get user password." "Comment: get_user_password @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "GET-USER-PASSWORD-NOTES"  "Password in clear text." "Comment: get_user_password @ $(basename $BASH_SOURCE) : $LINENO";
     #
@@ -5541,7 +6012,7 @@ if [[ "$RUN_HELP" -eq 1 ]]; then
     REVISION="5 Dec 2012";
     create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
 fi
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then 
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "GET-LOCALE-DESC"     "Get Locale." "Comment: get_locale @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "GET-LOCALE-NOTES"    "Used to get a Locale." "Comment: get_locale @ $(basename $BASH_SOURCE) : $LINENO";
     #
@@ -5596,12 +6067,12 @@ get_locale()
             fi
         done
     }
-    #}}}    
+    #}}}
     # -------------------------------------
     #LANGUAGE SELECTOR {{{
     language_selector()
     {
-        #       
+        #
         print_title "GET-LOCALE-TITLE-2" " - https://wiki.archlinux.org/index.php/Locale";
         print_info  "GET-LOCALE-INFO-4";
         print_info  "GET-LOCALE-INFO-5";
@@ -5648,7 +6119,7 @@ get_locale()
         fi
     done
     BYPASS="$Old_BYPASS"; # Restore Bypass
-}    
+}
 #}}}
 # -----------------------------------------------------------------------------
 # YES NO {{{
@@ -5663,7 +6134,7 @@ if [[ "$RUN_HELP" -eq 1 ]]; then
     REVISION="5 Dec 2012";
     create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
 fi
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then 
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "YES-NO-USAGE" "yes_no 1->(0=no, 1=yes)" "Comment: yes_no @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "YES-NO-DESC"  "Convert Digital to Analog." "Comment: yes_no @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "YES-NO-NOTES" "Localized. Used to Show simple settings." "Comment: yes_no @ $(basename $BASH_SOURCE) : $LINENO";
@@ -5694,7 +6165,7 @@ if [[ "$RUN_HELP" -eq 1 ]]; then
     REVISION="5 Dec 2012";
     create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
 fi
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then 
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "SELECT-CREATE-USER-DESC"  "select user." "Comment: select_create_user @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "SELECT-CREATE-USER-NOTES" "None." "Comment: select_create_user @ $(basename $BASH_SOURCE) : $LINENO";
     #
@@ -5742,7 +6213,7 @@ if [[ "$RUN_HELP" -eq 1 ]]; then
     REVISION="5 Dec 2012";
     create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
 fi
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then 
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "START-INTERNET-USAGE" "apache 1->(0=stop, 1=start, 2=restart)" "Comment: apache @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "START-INTERNET-DESC"  "Apache Control." "Comment: apache @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "START-INTERNET-NOTES" "OS Independent way of Controlling Apache." "Comment: apache @ $(basename $BASH_SOURCE) : $LINENO";
@@ -5787,308 +6258,7 @@ apache()
         elif [[ "$My_DIST" == "suse" ]]; then # -------------------------------- My_PSUEDONAME = Suse Distros
             service httpd "$MyCommand";
         fi
-    fi    
-}
-#}}}
-# -----------------------------------------------------------------------------
-# RESTART INTERNET {{{
-if [[ "$RUN_HELP" -eq 1 ]]; then
-    NAME="restart_internet";
-    USAGE="restart_internet";
-    DESCRIPTION="$(localize "RESTART-INTERNET-DESC")";
-    NOTES="$(localize "RESTART-INTERNET-NOTES")";
-    AUTHOR="Flesher";
-    VERSION="1.0";
-    CREATED="11 Sep 2012";
-    REVISION="5 Dec 2012";
-    create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
-fi
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then 
-    localize_info "RESTART-INTERNET-DESC"  "Restart Internet." "Comment: restart_internet @ $(basename $BASH_SOURCE) : $LINENO";
-    localize_info "RESTART-INTERNET-NOTES" "Assumes system.d; uses systemctl restart; needs generic functions for other then Arch Linux calls." "Comment: restart_internet @ $(basename $BASH_SOURCE) : $LINENO";
-fi
-# -------------------------------------
-restart_internet()
-{
-    # @FIX Works in Arch Linux; if you make this Generic; make a case for it
-    if [[ "$NETWORK_MANAGER" == "networkmanager" ]]; then
-        systemctl restart NetworkManager.service;
-    elif [[ "$NETWORK_MANAGER" == "wicd" ]]; then
-        systemctl restart wicd.service;
     fi
-}
-#}}}
-# -----------------------------------------------------------------------------
-# FIX NETWORK {{{
-if [[ "$RUN_HELP" -eq 1 ]]; then
-    NAME="fix_network";
-    USAGE="fix_network";
-    DESCRIPTION="$(localize "FIX-NETWORK-DESC")";
-    NOTES="$(localize "FIX-NETWORK-NOTES")";
-    AUTHOR="Flesher";
-    VERSION="1.0";
-    CREATED="11 Sep 2012";
-    REVISION="5 Dec 2012";
-    create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
-fi
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then 
-    localize_info "FIX-NETWORK-DESC"  "Fix Network." "Comment: fix_network @ $(basename $BASH_SOURCE) : $LINENO";
-    localize_info "FIX-NETWORK-NOTES" "None." "Comment: fix_network @ $(basename $BASH_SOURCE) : $LINENO";
-    #
-    localize_info "FIX-NETWORK-NETWORKMANAGER" "Restarting networkmanager via systemctl..." "Comment: fix_network @ $(basename $BASH_SOURCE) : $LINENO";
-    localize_info "FIX-NETWORK-WICD"           "Restarting wicd via systemctl..." "Comment: fix_network @ $(basename $BASH_SOURCE) : $LINENO";
-    localize_info "FIX-NETWORK-TRIED-TO-FIX"   "Tried to fix network connection; you may have to run this script again." "Comment: fix_network @ $(basename $BASH_SOURCE) : $LINENO";
-fi
-# -------------------------------------
-fix_network()
-{
-    if [[ "$NETWORK_MANAGER" == "networkmanager" ]]; then
-        # networkmanager
-        # Internet is down; no use trying to install software
-        #if ! check_package networkmanager ; then
-        #    if [[ "$KDE_INSTALLED" -eq 1 ]]; then
-        #        package_install "networkmanager kdeplasma-applets-networkmanagement" "INSTALL-NETWORKMANAGER-KDE"
-        #        if [[ "$MATE_INSTALLED" -eq 1 ]]; then
-        #            package_install "network-manager-applet" "INSTALL-NETWORKMANAGER-MATE"
-        #        fi
-        #    else
-        #        package_install "networkmanager network-manager-applet" "INSTALL-NETWORKMANAGER-OTHER"
-        #    fi
-        #    package_install "networkmanager-dispatcher-ntpd" "INSTALL-NETWORKMANAGER"
-        #fi
-        #add_group "networkmanager"
-        #add_user_2_group "networkmanager" 
-        print_info "FIX-NETWORK-NETWORKMANAGER";
-        systemctl enable NetworkManager.service;
-        systemctl start NetworkManager.service;
-    elif [[ "$NETWORK_MANAGER" == "wicd" ]]; then
-        #if ! check_package networkmanager ; then
-        #    if [[ "$KDE" -eq 1 ]]; then
-        #        aur_package_install "wicd wicd-kde" "AUR-INSTALL-NETWORKMANAGER-KDE"
-        #    else
-        #        package_install "wicd wicd-gtk" "INSTALL-NETWORKMANAGER-GTK"
-        #    fi
-        #fi                    
-        print_info "FIX-NETWORK-WICD";
-        systemctl enable wicd.service;
-        systemctl start wicd.service;
-        wicd-client;
-    fi
-    # @FIX More testing and repairing
-    sleep 20;
-    if [[ "$INSTALL_NO_INTERNET" -eq 0 ]]; then
-        if ! is_internet ; then
-            sleep 10;
-            if ! is_internet ; then
-                print_error "FIX-NETWORK-TRIED-TO-FIX"; # if you see this; 20 seconds wasn't long enough, add another 10 for a full half minute
-                return 1;
-            fi
-        fi
-    fi
-    return 0;
-}
-#}}}
-# -----------------------------------------------------------------------------
-# NETWORK TROUBLESHOOTING {{{
-if [[ "$RUN_HELP" -eq 1 ]]; then
-    NAME="network_troubleshooting";
-    USAGE="network_troubleshooting";
-    DESCRIPTION="$(localize "NETWORK-TROUBLESHOOTING-DESC")";
-    NOTES="$(localize "NETWORK-TROUBLESHOOTING-NOTES")";
-    AUTHOR="Flesher";
-    VERSION="1.0";
-    CREATED="11 Sep 2012";
-    REVISION="5 Dec 2012";
-    create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
-fi
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then 
-    localize_info "NETWORK-TROUBLESHOOTING-DESC"    "Network Troubleshooting." "Comment: network_troubleshooting @ $(basename $BASH_SOURCE) : $LINENO";
-    localize_info "NETWORK-TROUBLESHOOTING-NOTES"   "None." "Comment: network_troubleshooting @ $(basename $BASH_SOURCE) : $LINENO";
-    #
-    localize_info "NETWORK-TROUBLESHOOTING-TITLE"   "Network Troubleshooting" "Comment: network_troubleshooting @ $(basename $BASH_SOURCE) : $LINENO";
-    localize_info "NETWORK-TROUBLESHOOTING-INFO-1"  "Network Debugging" "Comment: network_troubleshooting @ $(basename $BASH_SOURCE) : $LINENO";
-    localize_info "NETWORK-TROUBLESHOOTING-INFO-2"  "Networkmanager: install and start, this is always the best way to start troubleshooting." "Comment: network_troubleshooting @ $(basename $BASH_SOURCE) : $LINENO";
-    localize_info "NETWORK-TROUBLESHOOTING-INFO-3"  "Disk Resolv: Edit/Review namerservers.txt on disk, then copy it to local disk." "Comment: network_troubleshooting @ $(basename $BASH_SOURCE) : $LINENO";
-    localize_info "NETWORK-TROUBLESHOOTING-INFO-4"  "Local Resolv:Edit/Review local /etc/resolv.conf" "Comment: network_troubleshooting @ $(basename $BASH_SOURCE) : $LINENO";
-    localize_info "NETWORK-TROUBLESHOOTING-INFO-5"  "Identify which network interfaces" "Comment: network_troubleshooting @ $(basename $BASH_SOURCE) : $LINENO";
-    localize_info "NETWORK-TROUBLESHOOTING-INFO-6"  "Link status: " "Comment: network_troubleshooting @ $(basename $BASH_SOURCE) : $LINENO";
-    localize_info "NETWORK-TROUBLESHOOTING-INFO-7"  "IP Address: " "Comment: network_troubleshooting @ $(basename $BASH_SOURCE) : $LINENO";
-    localize_info "NETWORK-TROUBLESHOOTING-INFO-8"  "Ping: " "Comment: network_troubleshooting @ $(basename $BASH_SOURCE) : $LINENO";
-    localize_info "NETWORK-TROUBLESHOOTING-INFO-9"  "Devices: Show all ethx that are active" "Comment: network_troubleshooting @ $(basename $BASH_SOURCE) : $LINENO";
-    localize_info "NETWORK-TROUBLESHOOTING-INFO-10" "Show Users: " "Comment: network_troubleshooting @ $(basename $BASH_SOURCE) : $LINENO";
-    localize_info "NETWORK-TROUBLESHOOTING-INFO-11" "Static IP: " "Comment: network_troubleshooting @ $(basename $BASH_SOURCE) : $LINENO";
-    localize_info "NETWORK-TROUBLESHOOTING-INFO-12" "Gateway: " "Comment: network_troubleshooting @ $(basename $BASH_SOURCE) : $LINENO";
-    localize_info "NETWORK-TROUBLESHOOTING-INFO-13" "Quit" "Comment: network_troubleshooting @ $(basename $BASH_SOURCE) : $LINENO";
-    localize_info "NETWORK-TROUBLESHOOTING-INFO-14" "Identify" "Comment: network_troubleshooting @ $(basename $BASH_SOURCE) : $LINENO";
-    localize_info "NETWORK-TROUBLESHOOTING-INFO-15" "Link status" "Comment: network_troubleshooting @ $(basename $BASH_SOURCE) : $LINENO";
-    localize_info "NETWORK-TROUBLESHOOTING-INFO-16" "Network Debugging" "Comment: network_troubleshooting @ $(basename $BASH_SOURCE) : $LINENO";
-    localize_info "NETWORK-TROUBLESHOOTING-RD-1"    "Enter IP address (192.168.1.2) " "Comment: network_troubleshooting @ $(basename $BASH_SOURCE) : $LINENO";
-    localize_info "NETWORK-TROUBLESHOOTING-RD-2"    "Enter IP Mask (255.255.255.0 = 24) " "Comment: network_troubleshooting @ $(basename $BASH_SOURCE) : $LINENO";
-    localize_info "NETWORK-TROUBLESHOOTING-RD-3"    "Enter IP address for Gateway (192.168.1.1) " "Comment: network_troubleshooting @ $(basename $BASH_SOURCE) : $LINENO";
-    localize_info "NETWORK-TROUBLESHOOTING-SELECT"  "Select an Option:" "Comment: network_troubleshooting @ $(basename $BASH_SOURCE) : $LINENO";
-    localize_info "NETWORK-TROUBLESHOOTING-NIC"     "Select a NIC:" "Comment: network_troubleshooting @ $(basename $BASH_SOURCE) : $LINENO";
-fi
-# -------------------------------------
-network_troubleshooting()
-{
-    get_network_devices;
-    load_software;
-    while [[ 1 ]]; do
-        print_title "NETWORK-TROUBLESHOOTING-TITLE" " - https://wiki.archlinux.org/index.php/Network_Debugging";
-        print_info  "NETWORK-TROUBLESHOOTING-INFO-1";
-        print_info  "NETWORK-TROUBLESHOOTING-INFO-2";
-        print_info  "NETWORK-TROUBLESHOOTING-INFO-3";
-        print_info  "NETWORK-TROUBLESHOOTING-INFO-4";
-        print_info  "NETWORK-TROUBLESHOOTING-INFO-5";
-        print_info  "NETWORK-TROUBLESHOOTING-INFO-6";
-        print_info  "NETWORK-TROUBLESHOOTING-INFO-7";
-        print_info  "NETWORK-TROUBLESHOOTING-INFO-8";
-        print_info  "NETWORK-TROUBLESHOOTING-INFO-9";
-        print_info  "NETWORK-TROUBLESHOOTING-INFO-10";
-        print_info  "NETWORK-TROUBLESHOOTING-INFO-11";
-        print_info  "NETWORK-TROUBLESHOOTING-INFO-12";
-        echo "";
-        print_info  "NETWORK-TROUBLESHOOTING-INFO-13";
-        #                   1              2              3             4          5         6         7          8         9         10           11        12
-        NETWORK_TROUBLE=("Networkmanager" "Disk Resolv" "Local Resolv" "Identify" "Link" "IP address" "Ping"  "Devices" "Show Users" "Static IP" "Gateway" "Quit");
-        PS3="$prompt1";
-        print_this "NETWORK-TROUBLESHOOTING-SELECT";
-        echo "";
-        select OPT in "${NETWORK_TROUBLE[@]}"; do
-            case "$REPLY" in
-                1)
-                    fix_network;
-                    pause_function "network_troubleshooting $LINENO";
-                    break;
-                    ;;
-                2)
-                    # Disk Resolv
-                    custom_nameservers;  
-                    cat /etc/resolv.conf ;     
-                    pause_function "network_troubleshooting $LINENO";
-                    break;
-                    ;;
-                3)
-                    # Local Resolv
-                    $EDITOR /etc/resolv.conf;     
-                    break;
-                    ;;
-                4)
-                    # Identify
-                    print_info "NETWORK-TROUBLESHOOTING-INFO-14" ": ip a ";
-                    ip a;
-                    pause_function "network_troubleshooting $LINENO";
-                    break;
-                    ;;
-                5)
-                    # Link
-                    print_info "NETWORK-TROUBLESHOOTING-INFO-15" ": ip link show dev eth0";
-                    if [[ "$ETH0_ACTIVE" -eq 1 ]]; then
-                        ip link show dev eth0;
-                    fi
-                    if [[ "$ETH1_ACTIVE" -eq 1 ]]; then
-                        ip link show dev eth1;
-                    fi
-                    if [[ "$ETH2_ACTIVE" -eq 1 ]]; then
-                        ip link show dev eth2;
-                    fi
-                    pause_function "network_troubleshooting $LINENO";
-                    break;
-                    ;;
-                6)
-                    # IP address
-                    print_info "NETWORK-TROUBLESHOOTING-INFO-15" ": ip addr show dev eth0";
-                    if [[ "$ETH0_ACTIVE" -eq 1 ]]; then
-                        ip addr show dev eth0;
-                    fi
-                    if [[ "$ETH1_ACTIVE" -eq 1 ]]; then
-                        ip addr show dev eth1;
-                    fi
-                    if [[ "$ETH2_ACTIVE" -eq 1 ]]; then
-                        ip addr show dev eth2;
-                    fi
-                    pause_function "network_troubleshooting $LINENO";
-                    break;
-                    ;;
-                7)
-                    # Ping
-                    ping -c 3 www.google.com;
-                    pause_function "network_troubleshooting $LINENO";
-                    break;
-                    ;;
-                8)
-                    # Devices
-                    get_network_devices;
-                    pause_function "network_troubleshooting $LINENO";
-                    break;
-                    ;;
-                9)
-                    # Show Users
-                    show_users;
-                    pause_function "network_troubleshooting $LINENO";
-                    break;
-                    ;;
-               10)
-                    print_title "NETWORK-TROUBLESHOOTING-TITLE" " - https://wiki.archlinux.org/index.php/Network_Debugging";
-                    print_info  "NETWORK-TROUBLESHOOTING-INFO-16";
-                    # Add Static IP address
-                    PS3="$prompt1";
-                    print_this "NETWORK-TROUBLESHOOTING-NIC";
-                    echo "";
-                    select OPT in "${NIC[@]}"; do
-                        case "$REPLY" in
-                            1)
-                                NIC_DEV="eth0";
-                                break;
-                                ;;
-                            2)
-                                NIC_DEV="eth1";
-                                break;
-                                ;;
-                            3)
-                                NIC_DEV="eth2";
-                                break;
-                                ;;
-                            *)
-                                invalid_option "$REPLY";
-                                ;;
-                        esac
-                    done
-                    Old_BYPASS="$BYPASS"; BYPASS=0; # Do Not Allow Bypass
-                    read_input_data "NETWORK-TROUBLESHOOTING-RD-1"; # Enter IP Address
-                    IP_ADDRESS="$OPTION";
-                    read_input_data "NETWORK-TROUBLESHOOTING-RD-2";
-                    BYPASS="$Old_BYPASS"; # Restore Bypass
-                    IP_MASK="$OPTION";
-                    ip addr add "${IP_ADDRESS}/${IP_MASK}" dev "$NIC_DEV";
-                    pause_function "network_troubleshooting $LINENO";
-                    break;
-                    ;;
-                    
-               11)
-                    # Add Static Gateway
-                    Old_BYPASS="$BYPASS"; BYPASS=0; # Do Not Allow Bypass
-                    read_input_data "NETWORK-TROUBLESHOOTING-RD-3";
-                    BYPASS="$Old_BYPASS"; # Restore Bypass
-                    IP_ADDRESS="$OPTION";
-                    ip route add default via "$IP_ADDRESS";
-                    pause_function "network_troubleshooting $LINENO";
-                    break;
-                    ;;
-               12)
-                    # Quit
-                    exit 1;
-                    ;;
-              'q')
-                    break;
-                    ;;
-                *)
-                    invalid_option "$REPLY";
-                    ;;
-            esac
-       done
-       is_breakable "$REPLY" "q";
-   done            
 }
 #}}}
 # -----------------------------------------------------------------------------
@@ -6104,7 +6274,7 @@ if [[ "$RUN_HELP" -eq 1 ]]; then
     REVISION="5 Dec 2012";
     create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
 fi
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then 
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "GET-KEYBOARD-LAYOUT-DESC"   "Get Keyboard Layout, makes changes for some variants." "Comment: get_keyboard_layout @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "GET-KEYBOARD-LAYOUT-NOTES"  "None." "Comment: get_keyboard_layout @ $(basename $BASH_SOURCE) : $LINENO";
     #
@@ -6122,7 +6292,7 @@ get_keyboard_layout()
         select KBRD in "${KBLAYOUT[@]}"; do
             KEYBOARD="$KBRD";
         done
-    fi    
+    fi
 }
 #}}}
 # -----------------------------------------------------------------------------
@@ -6138,7 +6308,7 @@ if [[ "$RUN_HELP" -eq 1 ]]; then
     REVISION="5 Dec 2012";
     create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
 fi
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then 
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "CONFIGURE-KEYMAP-DESC"    "Allows user to decide if they wish to change the Default Keymap." "Comment: configure_keymap @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "CONFIGURE-KEYMAP-NOTES"   "None." "Comment: configure_keymap @ $(basename $BASH_SOURCE) : $LINENO";
     #
@@ -6232,7 +6402,7 @@ if [[ "$RUN_HELP" -eq 1 ]]; then
     REVISION="5 Dec 2012";
     create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
 fi
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then 
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "GET-EDITOR-DESC"  "This gets called from Boot mode and Live mode; it does not add software, only ask if you wish to change the default editor, called from the create_config function." "Comment: get_editor @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "GET-EDITOR-NOTES" "None." "Comment: get_editor @ $(basename $BASH_SOURCE) : $LINENO";
     #
@@ -6301,7 +6471,7 @@ if [[ "$RUN_HELP" -eq 1 ]]; then
     REVISION="5 Dec 2012";
     create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
 fi
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then 
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "SELECT-EDITOR-DESC"  "select_editor: Select Editor." "Comment: select_editor @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "SELECT-EDITOR-NOTES" "None." "Comment: select_editor @ $(basename $BASH_SOURCE) : $LINENO";
 fi
@@ -6339,7 +6509,7 @@ if [[ "$RUN_HELP" -eq 1 ]]; then
     REVISION="5 Dec 2012";
     create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
 fi
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then 
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "CONFIGURE-TIMEZONE-DESC"     "Configure Timezone." "Comment: configure_timezone @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "CONFIGURE-TIMEZONE-NOTES"    "None." "Comment: configure_timezone @ $(basename $BASH_SOURCE) : $LINENO";
     #
@@ -6546,7 +6716,7 @@ package_type()
                 echo "sudo service httpd restart";
                 return 0;
             elif [[ "$1" -eq 6 ]]; then # haproxy
-                echo "sudo service haproxy start; chkconfig haproxy on";                
+                echo "sudo service haproxy start; chkconfig haproxy on";
                 return 0;
             elif [[ "$1" -eq 7 ]]; then # monit
                 echo "sudo service monit start; chkconfig --levels 235 monit on";
@@ -6561,7 +6731,7 @@ package_type()
                 echo "sudo yum update -y";
                 return 0;
             elif [[ "$1" -eq 11 ]]; then # mysql
-                echo "sudo service mysqld start; chkconfig --levels 235 mysqld on";                
+                echo "sudo service mysqld start; chkconfig --levels 235 mysqld on";
                 return 0;
             fi
         elif [[ "$This_Distro" == "archlinux" ]]; then # --------------------------- My_PSUEDONAME = Archlinux Distros
@@ -6597,7 +6767,7 @@ package_type()
                 echo "sudo systemctl $FTP_Install start; sudo systemctl enable $FTP_Install";
                 return 0;
             elif [[ "$1" -eq 9 ]]; then # system-upgrade
-                echo "sudo pacman -Syy --noconfirm; pacman -Su --noconfirm";
+                echo "sudo pacman -Syyu --noconfirm;";
                 return 0;
             elif [[ "$1" -eq 10 ]]; then # refresh-repo
                 echo "sudo pacman -Syy --noconfirm";
@@ -6646,7 +6816,7 @@ package_type()
                 echo "sudo apt-get update";
                 return 0;
             elif [[ "$1" -eq 11 ]]; then # mysql
-                echo "sudo service mysqld start; chkconfig --levels 235 mysqld on";                
+                echo "sudo service mysqld start; chkconfig --levels 235 mysqld on";
                 return 0;
           fi
         elif [[ "$This_Distro" == "unitedlinux" ]]; then # ------------------------- My_PSUEDONAME = unitedlinux Distros
@@ -6660,7 +6830,7 @@ package_type()
             return 0;
         fi
     fi
-} 
+}
 #}}}
 # -----------------------------------------------------------------------------
 # DB BACKUP {{{
@@ -6753,20 +6923,20 @@ create_database()
             # /usr/bin/mysqladmin -u root password 'new-password'
             # /usr/bin/mysqladmin -u root -h vps-1135159-16955.manage.myhosting.com password 'new-password'
             # "UPDATE user SET password=PASSWORD("<YOUR_PASSWORD>") WHERE User="root";"
-            
+
             # mysql --host=localhost --user=user --password=password << END
             # CREATE USER ${TICK}${5}${TICK}@${TICK}localhost${TICK} IDENTIFIED BY ${TICK}${6}${TICK};
             # CREATE DATABASE IF NOT EXISTS ${TICK}${4}${TICK} DEFAULT CHARACTER SET utf8 COLLATE utf8_bin;
             # GRANT ALL PRIVILEGES ON ${TICK}${4}${TICK} . * TO ${TICK}${5}${TICK}@${TICK}localhost${TICK};
-            # END            
-            
+            # END
+
             # @FIX I don't think we want to do this on Shared Host
-            #ssh "root@${3}" "mysqladmin -u root password ${TICK}$7${TICK}"; 
+            #ssh "root@${3}" "mysqladmin -u root password ${TICK}$7${TICK}";
             #if [[ "$?" -eq 1 ]]; then  echo "Failed to set password"; fi
-        
+
             # ${BTICK} or ${TICK}
             # "CREATE USER '$username'@'localhost' IDENTIFIED BY  '$password';"
-            # "CREATE DATABASE \`$domainname\`;" 
+            # "CREATE DATABASE \`$domainname\`;"
             # "GRANT ALL PRIVILEGES ON  \`$domainname\`.* TO $username@localhost WITH GRANT OPTION;"
             local SQL="CREATE USER ${TICK}${5}${TICK}@${TICK}localhost${TICK} IDENTIFIED BY ${TICK}${6}${TICK};CREATE DATABASE IF NOT EXISTS ${TICK}${4}${TICK} DEFAULT CHARACTER SET utf8 COLLATE utf8_bin;GRANT ALL PRIVILEGES ON ${TICK}${4}${TICK}.* TO ${TICK}${5}${TICK}@${TICK}localhost${TICK} IDENTIFIED BY ${TICK}${6}${TICK};FLUSH PRIVILEGES;";
             #echo "mysql -uroot -p$7 -e \"$SQL\"";
@@ -6789,7 +6959,7 @@ create_database()
     fi
 }
 # -----------------------------------------------------------------------------
-# 
+#
 # ADD PACKAGE {{{
 if [[ "$RUN_HELP" -eq 1 ]]; then
     NAME="add_package";
@@ -6811,7 +6981,7 @@ if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
 fi
 # -------------------------------------
 add_package()
-{ 
+{
     if [[ "$#" -ne "1" ]]; then echo -e "${BRed}$(gettext -s "WRONG-NUMBER-ARGUMENTS-PASSED-TO") ${BWhite} ${FUNCNAME[1]} @ $(basename ${BASH_SOURCE[1]}) : ${BASH_LINENO[0]}  -> $FUNCNAME @ $(basename $BASH_SOURCE) : $LINENO ${White}"; exit 1; fi
     if [ -z "$1" ]; then print_error "ADD-PACKAGE-ERROR" " : $FUNCNAME @ $(basename $BASH_SOURCE) : $LINENO"; fi
     CMD="$(rtrim $1)";
@@ -6824,7 +6994,7 @@ add_package()
         fi
     fi
     return 0;
-} 
+}
 #}}}
 # -------------------------------------
 if [[ "$RUN_TEST" -eq 1 ]]; then
@@ -6838,7 +7008,7 @@ if [[ "$RUN_TEST" -eq 1 ]]; then
     fi
 fi
 # -----------------------------------------------------------------------------
-# 
+#
 # REMOVE PACKAGE {{{
 if [[ "$RUN_HELP" -eq 1 ]]; then
     NAME="remove_package";
@@ -6860,7 +7030,7 @@ if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
 fi
 # -------------------------------------
 remove_package()
-{ 
+{
     if [[ "$#" -ne "1" ]]; then echo -e "${BRed}$(gettext -s "WRONG-NUMBER-ARGUMENTS-PASSED-TO") ${BWhite} ${FUNCNAME[1]} @ $(basename ${BASH_SOURCE[1]}) : ${BASH_LINENO[0]}  -> $FUNCNAME @ $(basename $BASH_SOURCE) : $LINENO ${White}"; exit 1; fi
     if [ -z "$1" ]; then
         print_error "REMOVE-PACKAGE-ERROR" " : $FUNCNAME @ $(basename $BASH_SOURCE) : $LINENO";
@@ -6873,7 +7043,7 @@ remove_package()
         remove_from_array "PACKAGES" "$1";
     fi
     return 0;
-} 
+}
 # -------------------------------------
 if [[ "$RUN_TEST" -eq 1 ]]; then
     remove_package "test package";
@@ -6917,7 +7087,7 @@ add_packagemanager()
     if [[ -z "$CMD" || "$CMD" == "" ]]; then
         return 1;
     fi
-    # Check to see if its in Array    
+    # Check to see if its in Array
     if ! is_in_array "PACKMANAGER_NAME[@]" "$2" ; then
         if [ "${#PACKMANAGER}" -eq 0 ]; then
             PACKMANAGER[0]="$1";
@@ -7030,7 +7200,7 @@ package_install()
                         refresh_repo;
                     fi
                 fi
-            fi             
+            fi
             print_this " " "${BRed} $(localize "PACKAGE-INSTALL-RETRY") ${BWhite}  $(localize "PACKAGE-INSTALL-PACKAGE") $PACKAGE $(localize "PACKAGE-INSTALL-PACKAGE-MANAGER") $2 $(localize "PACKAGE-INSTALL-MANUAL")";
             if ! install_package "$1" "$2" "PACKAGE-INSTALL-$2" ; then
                 failed_install_core "$PACKAGE";
@@ -7038,7 +7208,7 @@ package_install()
                 print_error "PACKAGE-INSTALL-ERROR" ": $PACKAGE - $(localize "PACKAGE-INSTALL-PACKAGE-MANAGER") $2 - $(localize "PACKAGE-INSTALL-FAILED-INTERNET") - USE_PARALLEL=$USE_PARALLEL : $FUNCNAME @ $(basename $BASH_SOURCE) : $LINENO";
                 if [[ "$DEBUGGING" -eq 1 ]]; then pause_function "$FUNCNAME @ $(basename $BASH_SOURCE) : $LINENO"; fi
                 return 1;
-            fi            
+            fi
         fi
         print_this "PACKAGE-INSTALL-COMPLETE" ": $2";
         return 0;
@@ -7050,7 +7220,7 @@ package_install()
     local -i number_installed=0;
     local -i number_failed=0;
     local -i current=0;
-    #    
+    #
     for PACKAGE in $1; do
         retry_times=0;
         if ! check_package "$PACKAGE" ; then # 1. First check
@@ -7081,10 +7251,10 @@ package_install()
                                 system_upgrade;
                             fi
                         fi
-                    fi             
+                    fi
                     print_this "*" "${BRed} $(localize "PACKAGE-INSTALL-RETRY") ${BWhite}  $(localize "PACKAGE-INSTALL-PACKAGE") $PACKAGE $(localize "PACKAGE-INSTALL-PACKAGE-MANAGER") $2 $(localize "PACKAGE-INSTALL-MANUAL") $(localize "PACKAGE-INSTALL-CURRENTLY") $current -> $total_packages - $(localize "PACKAGE-INSTALL-PACKAGES") -> $(localize "PACKAGE-INSTALL-RETRIES") = ${retry_times}";
                     install_package_with "$PACKAGE" "1" "0" "x"; # Install with Manual Interaction, Confirm and no Force
-                    # Last try     
+                    # Last try
                     if ! check_package "$PACKAGE" ; then # 4. Failed Three times
                         ((retry_times++));
                         ((number_failed++)); # increment number installed
@@ -7123,7 +7293,7 @@ package_install()
         if [[ "$DEBUGGING" -eq 1 ]]; then pause_function "$FUNCNAME @ $(basename $BASH_SOURCE) : $LINENO"; fi
         return 1;
     fi
-} 
+}
 #}}}
 # -----------------------------------------------------------------------------
 # PACKAGE GROUP INSTALL {{{
@@ -7178,18 +7348,18 @@ package_group_install()
                         abort_install "$RUNTIME_MODE";
                     else
                         print_this "PACKAGE-INSTALL-REFRESH";
-                        refresh_repo;                       
+                        refresh_repo;
                     fi
                 fi
-            fi             
+            fi
             print_this " " "${BRed} $(localize "PACKAGE-INSTALL-RETRY") ${BWhite}  $(localize "PACKAGE-INSTALL-PACKAGE") $PACKAGE $(localize "PACKAGE-INSTALL-PACKAGE-MANAGER") $2 $(localize "PACKAGE-INSTALL-MANUAL")"
             if ! install_package "$1" "$2" "PACKAGE-INSTALL-$2" ; then
                 failed_install_core "$PACKAGE";
                 write_error "PACKAGE-INSTALL-ERROR" ": $PACKAGE - $(localize "PACKAGE-INSTALL-PACKAGE-MANAGER") $2 - $(localize "PACKAGE-INSTALL-FAILED-INTERNET") - USE_PARALLEL=$USE_PARALLEL : $FUNCNAME @ $(basename $BASH_SOURCE) : $LINENO";
                 print_error "PACKAGE-INSTALL-ERROR" ": $PACKAGE - $(localize "PACKAGE-INSTALL-PACKAGE-MANAGER") $2 - $(localize "PACKAGE-INSTALL-FAILED-INTERNET") - USE_PARALLEL=$USE_PARALLEL : $FUNCNAME @ $(basename $BASH_SOURCE) : $LINENO";
                 if [[ "$DEBUGGING" -eq 1 ]]; then pause_function "$FUNCNAME @ $(basename $BASH_SOURCE) : $LINENO"; fi
-                return 1;     
-            fi            
+                return 1;
+            fi
         fi
         print_this "PACKAGE-INSTALL-COMPLETE" ": $2";
         return 0;
@@ -7201,7 +7371,7 @@ package_group_install()
     local -i number_installed=0;
     local -i number_failed=0;
     local -i current=0;
-    #    
+    #
     for PACKAGE in $1; do
         retry_times=0
         if ! check_package "$PACKAGE" ; then # 1. First check
@@ -7232,10 +7402,10 @@ package_group_install()
                                 system_upgrade;
                             fi
                         fi
-                    fi             
+                    fi
                     print_this "*" "${BRed} $(localize "PACKAGE-INSTALL-RETRY") ${BWhite}  $(localize "PACKAGE-INSTALL-PACKAGE") $PACKAGE $(localize "PACKAGE-INSTALL-PACKAGE-MANAGER") $2 $(localize "PACKAGE-INSTALL-MANUAL") $(localize "PACKAGE-INSTALL-CURRENTLY") $current -> $total_packages - $(localize "PACKAGE-INSTALL-PACKAGES") -> $(localize "PACKAGE-INSTALL-RETRIES") = ${retry_times}";
                     install_group_package_with ' --needed' "$PACKAGE"; # Install with Manual Interaction
-                    # Last try     
+                    # Last try
                     if ! check_package "$PACKAGE" ; then # 4. Failed Three times
                         ((retry_times++));
                         ((number_failed++)); # increment number installed
@@ -7274,7 +7444,7 @@ package_group_install()
         if [[ "$DEBUGGING" -eq 1 ]]; then pause_function "$FUNCNAME @ $(basename $BASH_SOURCE) : $LINENO"; fi
         return 1;
     fi
-} 
+}
 #}}}
 # -----------------------------------------------------------------------------
 # PACKAGE REMOVE {{{
@@ -7332,7 +7502,7 @@ package_remove()
             fi
         fi
     done
-} 
+}
 #}}}
 # -----------------------------------------------------------------------------
 # INSTALL PACKAGE {{{
@@ -7369,8 +7539,8 @@ install_package()
                 write_error "INSTALL-PACKAGE-ERROR" ": [$1] $(localize "INSTALL-PACKAGE-ERROR-2") $2 : $FUNCNAME @ $(basename $BASH_SOURCE) : $LINENO";
                 print_error "INSTALL-PACKAGE-ERROR" ": [$1] $(localize "INSTALL-PACKAGE-ERROR-2") $2 : $FUNCNAME @ $(basename $BASH_SOURCE) : $LINENO";
                 if [[ "$DEBUGGING" -eq 1 ]]; then pause_function "$FUNCNAME @ $(basename $BASH_SOURCE) : $LINENO"; fi
-            fi        
-        done    
+            fi
+        done
         if [[ "$IS_ERROR" -eq 1 ]]; then
             if [[ "$DEBUGGING" -eq 1 ]]; then pause_function "$FUNCNAME @ $(basename $BASH_SOURCE) : $LINENO"; fi
             return 1;
@@ -7391,7 +7561,7 @@ install_package()
         # Arguments for aria2c.
         aria2_args=( "--metalink-file=-"  "--conf-path=/etc/ppl.conf" )
         # download packages
-        pm2ml -no /var/cache/pacman/pkg "$1" -r -p http -l 50 | aria2c "${aria2_args[@]}"        
+        pm2ml -no /var/cache/pacman/pkg "$1" -r -p http -l 50 | aria2c "${aria2_args[@]}"
         # invoke pacman
         if [[ "$RUNTIME_MODE" -eq 1 ]]; then
             install_package_with "$1" "0" "0" "x"; # If running from Boot Mode; you don't want to upgrade the system
@@ -7442,7 +7612,7 @@ do_curl()
     local -i DOWNLOADED=0;
     if curl_this "${1}" ; then
         DOWNLOADED=1;
-    else    
+    else
         local -i RETRIES=0;
         while [  $RETRIES -lt 3 ]; do
             print_this "DO-CURL-DOWNLOADING" " $1.tar.gz -> https://aur.archlinux.org/packages/${1:0:2}/$1/$1.tar.gz :) RETRIES=$RETRIES";
@@ -7455,7 +7625,7 @@ do_curl()
                         restart_internet;
                     else
                         write_error "DO-CURL-ONLINE-FAILED" " curl -o ${1}.tar.gz https://aur.archlinux.org/packages/${1:0:2}/${1}/${1}.tar.gz : $FUNCNAME @ $(basename $BASH_SOURCE) : $LINENO";
-                        if [[ "$DEBUGGING" -eq 1 ]]; then 
+                        if [[ "$DEBUGGING" -eq 1 ]]; then
                             print_this     "DO-CURL-ONLINE-FAILED" " curl -o ${1}.tar.gz https://aur.archlinux.org/1/${1:0:2}/${1}/${1}.tar.gz : $FUNCNAME @ $(basename $BASH_SOURCE) : $LINENO";
                             pause_function "${1} -> $FUNCNAME @ $(basename $BASH_SOURCE) : $LINENO";
                         fi
@@ -7472,7 +7642,7 @@ do_curl()
         write_error "DO-CURL-FAILED" ": ${1} -> $FUNCNAME @ $(basename $BASH_SOURCE) : $LINENO";
         return 1;
     fi
-} 
+}
 #}}}
 # -----------------------------------------------------------------------------
 # AUR DOWNLOAD {{{
@@ -7500,7 +7670,7 @@ if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
 fi
 # -------------------------------------
 aur_download()
-{ 
+{
     local -i IsFileNew=0;
     print_info "AUR-DOWNLOAD-DOWNLOADING-AUR-PACKAGE" " $1";
     if ! cd "$AUR_CUSTOM_PACKAGES/"; then
@@ -7511,14 +7681,14 @@ aur_download()
     if [ -f "${1}.tar.gz" ]; then
         print_this "AUR-DOWNLOAD-FILE-EXIST" " ${1}"; # @FIX check date, if it needs to be updated, download it again
         IsFileNew=0;
-        # curl -z 21-Dec-11 http://www.example.com/yy.html        
+        # curl -z 21-Dec-11 http://www.example.com/yy.html
         # -z "$(date —rfc-2822 -d @$(<index.html.timestamp))"
         # @FIX will it rename on download, since file exist
         # curl -z "${1}.tar.gz" -o "${1}.tar.gz" "https://aur.archlinux.org/packages/${1:0:2}/${1}/${1}.tar.gz"
     else
         if ! do_curl "$1" ; then
             write_error "AUR-DOWNLOAD-CURL-FAILED" " curl -o ${1}.tar.gz https://aur.archlinux.org/packages/${1:0:2}/${1}/${1}.tar.gz : $FUNCNAME @ $(basename $BASH_SOURCE) : $LINENO";
-            if [[ "$DEBUGGING" -eq 1 ]]; then 
+            if [[ "$DEBUGGING" -eq 1 ]]; then
                 print_this     "AUR-DOWNLOAD-CURL-FAILED" " curl -o ${1}.tar.gz https://aur.archlinux.org/1/${1:0:2}/${1}/${1}.tar.gz : $FUNCNAME @ $(basename $BASH_SOURCE) : $LINENO";
                 pause_function "${1} -> $FUNCNAME @ $(basename $BASH_SOURCE) : $LINENO";
             fi
@@ -7533,13 +7703,13 @@ aur_download()
             if [ ! -d "${1}" ]; then
                 if ! tar zxvf "$1.tar.gz" ; then
                     write_error "AUR-DOWNLOAD-FILE-CORRUPTED" " curl -o ${1}.tar.gz https://aur.archlinux.org/packages/${1:0:2}/${1}/${1}.tar.gz : $FUNCNAME @ $(basename $BASH_SOURCE) : $LINENO";
-                    if [[ "$DEBUGGING" -eq 1 ]]; then 
+                    if [[ "$DEBUGGING" -eq 1 ]]; then
                         print_this     "AUR-DOWNLOAD-FILE-CORRUPTED" " curl -o ${1}.tar.gz https://aur.archlinux.org/1/${1:0:2}/${1}/${1}.tar.gz : $FUNCNAME @ $(basename $BASH_SOURCE) : $LINENO";
                         pause_function "${1} -> $FUNCNAME @ $(basename $BASH_SOURCE) : $LINENO";
                     fi
                     return 1;
-                fi            
-            fi            
+                fi
+            fi
             chown -R "${USERNAME}:${USERNAME}" "$AUR_CUSTOM_PACKAGES/${1}";
             chmod -R 775 "$AUR_CUSTOM_PACKAGES/${1}";
             cd "${1}";
@@ -7547,7 +7717,7 @@ aur_download()
             return 0;
         else
             if tar zxvf "$1.tar.gz" ; then
-                if [[ "$AUR_REPO" -ne 1 ]]; then # AUR Repo 
+                if [[ "$AUR_REPO" -ne 1 ]]; then # AUR Repo
                     rm "${1}.tar.gz";
                 fi
                 chown -R "${USERNAME}:${USERNAME}" "$AUR_CUSTOM_PACKAGES/${1}";
@@ -7556,23 +7726,23 @@ aur_download()
                 return 0;
             else
                 write_error "AUR-DOWNLOAD-FILE-CORRUPTED" " curl -o ${1}.tar.gz https://aur.archlinux.org/packages/${1:0:2}/${1}/${1}.tar.gz : $FUNCNAME @ $(basename $BASH_SOURCE) : $LINENO";
-                if [[ "$DEBUGGING" -eq 1 ]]; then 
+                if [[ "$DEBUGGING" -eq 1 ]]; then
                     print_this     "AUR-DOWNLOAD-FILE-CORRUPTED" " curl -o ${1}.tar.gz https://aur.archlinux.org/1/${1:0:2}/${1}/${1}.tar.gz : $FUNCNAME @ $(basename $BASH_SOURCE) : $LINENO";
                     pause_function "${1} -> $FUNCNAME @ $(basename $BASH_SOURCE) : $LINENO";
                 fi
                 return 1;
             fi
-        fi           
+        fi
     else
         write_error "AUR-DOWNLOAD-FILE-NOT-FOUND" " curl -o ${1}.tar.gz https://aur.archlinux.org/packages/${1:0:2}/${1}/${1}.tar.gz : $FUNCNAME @ $(basename $BASH_SOURCE) : $LINENO";
-        if [[ "$DEBUGGING" -eq 1 ]]; then 
+        if [[ "$DEBUGGING" -eq 1 ]]; then
             print_this     "AUR-DOWNLOAD-FILE-NOT-FOUND" " curl -o ${1}.tar.gz https://aur.archlinux.org/packages/${1:0:2}/${1}/${1}.tar.gz : $FUNCNAME @ $(basename $BASH_SOURCE) : $LINENO";
             pause_function "${1} -> $FUNCNAME @ $(basename $BASH_SOURCE) : $LINENO";
         fi
         return 1;
     fi
     return 1;
-} 
+}
 #}}}
 # -----------------------------------------------------------------------------
 # GET AUR PACKAGES {{{
@@ -7597,7 +7767,7 @@ if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
 fi
 # -------------------------------------
 get_aur_packages()
-{ 
+{
     # Ran from User Not root; so its running in a emtpy sandbox, so export all functions you need
     local White='\e[0;37m';  # White
     local BWhite='\e[1;37m'; # Bold White
@@ -7605,7 +7775,7 @@ get_aur_packages()
     #
     if [ "$#" -ne "3" ]; then echo -e "${BRed} get_aur_packages $(gettext -s "WRONG-NUMBER-OF-ARGUMENTS") ${White}"; fi
     local parms="-s";
-    if [[ "$3" -eq 1 ]]; then # AUR Repo 
+    if [[ "$3" -eq 1 ]]; then # AUR Repo
         parms="-fs";
     else                      # No Repo
         parms="-fsi";          # Install
@@ -7620,11 +7790,11 @@ get_aur_packages()
         return 1;
     fi
     return 0;
-        
+
     #
     echo -e "${BWhite}\t $(gettext -s "GET-AUR-PACKAGES-COMPILING") ${1} makepkg ${parms} --noconfirm in function: get_aur_packages at line: $(basename $BASH_SOURCE) : $LINENO ${White}"
     cd "${1}";
-    if [[ "$3" -eq 1 ]]; then # AUR Repo 
+    if [[ "$3" -eq 1 ]]; then # AUR Repo
         if ! makepkg -s --noconfirm ; then
             if [[ "$2" -eq 1 ]]; then # DEBUGGING
                 echo -e "${BRed}\t${1} $(gettext -s "GET-AUR-PACKAGES-FAILED-COMPILING") makepkg ${parms} --noconfirm in function: get_aur_packages at line: $(basename $BASH_SOURCE) : $LINENO ${White}";
@@ -7673,12 +7843,12 @@ if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
 fi
 # -------------------------------------
 aur_download_packages()
-{ 
+{
     local OLD_IFS="$IFS"; IFS=$' '; # Very Important
     AUR_CUSTOM_PACKAGES="/home/${USERNAME}/${AUR_REPO_NAME}" # if Boot Mode /root/usb/AUR-Packages, if Live Mode /mnt/AUR-Packages
     #
     print_info "AUR-DOWNLOAD-PACKAGES-TITLE";
-    MyReturn=0;    
+    MyReturn=0;
     local -i retries=0;
     for PACKAGE in $1; do
         if [ ! -d "$AUR_CUSTOM_PACKAGES/" ]; then
@@ -7700,7 +7870,7 @@ aur_download_packages()
             MyReturn="$?"; # Always call this frist thing after a function return to capture it.
             if [[ "$MyReturn" == 0 ]]; then
                 if cd "$AUR_CUSTOM_PACKAGES/" ; then
-                    chown -R "${USERNAME}:${USERNAME}" "$AUR_CUSTOM_PACKAGES/"; 
+                    chown -R "${USERNAME}:${USERNAME}" "$AUR_CUSTOM_PACKAGES/";
                     # exec command as user instead of root
                     su "${USERNAME}" -c "get_aur_packages \"$PACKAGE\" \"$DEBUGGING\" \"$AUR_REPO\""; # Run as User
                     MyReturn="$?"; # Always call this frist thing after a function return to capture it.
@@ -7714,14 +7884,14 @@ aur_download_packages()
                 if [[ "$DEBUGGING" -eq 1 ]]; then pause_function "$FUNCNAME @ $(basename $BASH_SOURCE) : $LINENO"; fi
             fi
             #
-            if [[ "$DEBUGGING" -eq 1 ]]; then pause_function "$PACKAGE $(localize "AUR-DOWNLOAD-PACKAGES-RETRIES") = $retries : $FUNCNAME @ $(basename $BASH_SOURCE) : $LINENO"; fi            
+            if [[ "$DEBUGGING" -eq 1 ]]; then pause_function "$PACKAGE $(localize "AUR-DOWNLOAD-PACKAGES-RETRIES") = $retries : $FUNCNAME @ $(basename $BASH_SOURCE) : $LINENO"; fi
         done
         #
     done
     cd "$FULL_SCRIPT_PATH";
     IFS="$OLD_IFS";
     return "$MyReturn";
-} 
+}
 #}}}
 # -----------------------------------------------------------------------------
 # CONFIGURE AUR HELPER {{{
@@ -7762,9 +7932,9 @@ configure_aur_helper()
                     print_error  "CONFIGURE-AUR-HELPER-NOT-INSTALLED" " $AUR_HELPER : $FUNCNAME @ $(basename $BASH_SOURCE) : $LINENO";
                     pause_function "$FUNCNAME @ $(basename $BASH_SOURCE) : $LINENO";
                     return 1;
-                fi    
+                fi
             else
-                print_info "CONFIGURE-AUR-HELPER-INSTALLED" " $AUR_HELPER";    
+                print_info "CONFIGURE-AUR-HELPER-INSTALLED" " $AUR_HELPER";
             fi
             sudo pacman -D --asdeps package-query;
             if ! check_package "yaourt" ; then
@@ -7821,7 +7991,7 @@ if [[ "$RUN_TEST" -eq 4 ]]; then
         else
             print_error "TEST-FUNCTION-FAILED" "configure_aur_helper @ $(basename $BASH_SOURCE) : $LINENO";
             read -e -sn 1 -p "$(gettext -s "PRESS-ANY-KEY-CONTINUE")";
-        fi  
+        fi
     fi
 fi
 #}}}
@@ -7866,7 +8036,7 @@ install_package_with()
     fi
     #
     if [[ "$My_DIST" == "redhat" ]]; then # -------------------------------- Redhat, Centos, Fedora
-        if [[ "$2" -eq 0 && "$3" -eq 0 ]]; then    # Confirm 
+        if [[ "$2" -eq 0 && "$3" -eq 0 ]]; then    # Confirm
             sudo yum install "$1";
         elif [[ "$2" -eq 0 && "$3" -eq 1 ]]; then  # Confirm and Force
             rpm -e --nodeps PACKAGE
@@ -7882,7 +8052,7 @@ install_package_with()
             sudo yum install "$1" -y;
         fi
     elif [[ "$My_DIST" == "archlinux" ]]; then # --------------------------- My_PSUEDONAME = Archlinux Distros
-        if [[ "$2" -eq 0 && "$3" -eq 0 ]]; then    # Confirm 
+        if [[ "$2" -eq 0 && "$3" -eq 0 ]]; then    # Confirm
             sudo pacman --needed -S "$1";
         elif [[ "$2" -eq 0 && "$3" -eq 1 ]]; then  # Confirm and Force
             sudo pacman --needed --force -S "$1";
@@ -7894,7 +8064,7 @@ install_package_with()
             sudo pacman --noconfirm --needed -S "$1";   # Default No Confirm
         fi
     elif [[ "$My_DIST" == "debian" ]]; then # ------------------------------ Debian: My_PSUEDONAME = Ubuntu, LMDE - Distros
-        if [[ "$2" -eq 0 && "$3" -eq 0 ]]; then    # Confirm 
+        if [[ "$2" -eq 0 && "$3" -eq 0 ]]; then    # Confirm
             sudo apt-get install "$1";
         elif [[ "$2" -eq 0 && "$3" -eq 1 ]]; then  # Confirm and Force
             sudo apt-get -f install "$1";
@@ -7912,7 +8082,7 @@ install_package_with()
     elif [[ "$My_DIST" == "suse" ]]; then # -------------------------------- My_PSUEDONAME = Suse Distros
         print_error "DO-INSTALL-DISTRO-UNSUPPORTED";
     fi
-} 
+}
 #}}}
 # -----------------------------------------------------------------------------
 # INSTALL GROUP PACKAGE WITH {{{
@@ -7953,9 +8123,9 @@ install_group_package_with()
             print_error "DO-INSTALL-DISTRO-UNSUPPORTED";
         fi
     fi
-    #        
+    #
     if [[ "$My_DIST" == "redhat" ]]; then # -------------------------------- Redhat, Centos, Fedora
-        if [[ "$2" -eq 0 && "$3" -eq 0 ]]; then    # Confirm 
+        if [[ "$2" -eq 0 && "$3" -eq 0 ]]; then    # Confirm
             sudo yum groupinstall "$1";
         elif [[ "$2" -eq 0 && "$3" -eq 1 ]]; then  # Confirm and Force
             rpm -e --nodeps PACKAGE;
@@ -7971,7 +8141,7 @@ install_group_package_with()
             sudo yum groupinstall "$1" -y;
         fi
     elif [[ "$My_DIST" == "archlinux" ]]; then # --------------------------- My_PSUEDONAME = Archlinux Distros
-        if [[ "$2" -eq 0 && "$3" -eq 0 ]]; then    # Confirm 
+        if [[ "$2" -eq 0 && "$3" -eq 0 ]]; then    # Confirm
             sudo pacman --needed -S "$1";
         elif [[ "$2" -eq 0 && "$3" -eq 1 ]]; then  # Confirm and Force
             sudo pacman --needed --force -S "$1";
@@ -7980,10 +8150,10 @@ install_group_package_with()
         elif [[ "$2" -eq 1 && "$3" -eq 0 ]]; then  # No Confirm
             sudo pacman --needed --noconfirm -S "$1";
         else                                       # Default No Confirm
-            sudo pacman --noconfirm --needed -S "$1";   
+            sudo pacman --noconfirm --needed -S "$1";
         fi
     elif [[ "$My_DIST" == "debian" ]]; then # ------------------------------ Debian: My_PSUEDONAME = Ubuntu, LMDE - Distros
-        if [[ "$2" -eq 0 && "$3" -eq 0 ]]; then    # Confirm 
+        if [[ "$2" -eq 0 && "$3" -eq 0 ]]; then    # Confirm
             sudo apt-get install "$1";
         elif [[ "$2" -eq 0 && "$3" -eq 1 ]]; then  # Confirm and Force
             sudo apt-get -f install "$1";
@@ -7992,7 +8162,7 @@ install_group_package_with()
         elif [[ "$2" -eq 1 && "$3" -eq 0 ]]; then  # No Confirm
             sudo apt-get -y install "$1";
         else                                       # Default No Confirm
-            sudo apt-get -y install "$1";  
+            sudo apt-get -y install "$1";
         fi
     elif [[ "$My_DIST" == "unitedlinux" ]]; then # ------------------------- My_PSUEDONAME = unitedlinux Distros
         print_error "DO-INSTALL-DISTRO-UNSUPPORTED";
@@ -8001,7 +8171,7 @@ install_group_package_with()
     elif [[ "$My_DIST" == "suse" ]]; then # -------------------------------- My_PSUEDONAME = Suse Distros
         print_error "DO-INSTALL-DISTRO-UNSUPPORTED";
     fi
-} 
+}
 #}}}
 # -----------------------------------------------------------------------------
 # REFRESH REPO {{{
@@ -8041,7 +8211,7 @@ refresh_repo()
             print_error "DO-INSTALL-DISTRO-UNSUPPORTED";
         fi
     fi
-} 
+}
 #}}}
 # -----------------------------------------------------------------------------
 # SYSTEM UPDATE {{{
@@ -8303,7 +8473,7 @@ if [[ "$RUN_HELP" -eq 1 ]]; then
     REVISION="5 Dec 2012";
     create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
 fi
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then 
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "CHECK-PACKAGE-USAGE" "check_package 1->(Single-Package-to-Check Or Multiple Packages)" "Comment: check_package @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "CHECK-PACKAGE-DESC"  "checks package(s) to see if they are installed." "Comment: check_package @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "CHECK-PACKAGE-NOTES" "I have seen this fail for one or more packages that were already install: mate; so I added -Qm for this reason." "Comment: check_package @ $(basename $BASH_SOURCE) : $LINENO";
@@ -8384,8 +8554,8 @@ check_package()
         elif [[ "$My_DIST" == "suse" ]]; then # -------------------------------- My_PSUEDONAME = Suse Distros
             print_error "DO-INSTALL-DISTRO-UNSUPPORTED";
         fi
-    fi    
-} 
+    fi
+}
 # -------------------------------------
 if [[ "$RUN_TEST" -eq 2 ]]; then
     if check_package "nano" ; then
@@ -8419,7 +8589,7 @@ set_language()
     LANGUAGE="$1";
     # KDE #{{{
     if [[ "$LANGUAGE" == pt_BR || "$LANGUAGE" == en_GB || "$LANGUAGE" == zh_CN ]]; then
-        LANGUAGE_KDE="$(to_lower_case "$LANGUAGE")"; 
+        LANGUAGE_KDE="$(to_lower_case "$LANGUAGE")";
     elif [[ "$LANGUAGE" == en_US ]]; then
         LANGUAGE_KDE="en_gb";
     else
@@ -8448,14 +8618,14 @@ set_language()
     # ASPELL #{{{
     LANGUAGE_AS="$(echo $LANGUAGE | cut -d\_ -f1)";
     #}}}
-    # LIBREOFFICE #{{{ 
+    # LIBREOFFICE #{{{
     if [[ "$LANGUAGE" == pt_BR || "$LANGUAGE" == en_GB || "$LANGUAGE" == en_US || "$LANGUAGE" == zh_CN ]]; then
         LANGUAGE_LO="$(echo $LANGUAGE | sed 's/_/-/')";
     else
         LANGUAGE_LO="$(echo $LANGUAGE | cut -d\_ -f1)";
     fi
     #}}}
-    # CALLIGRA #{{{ 
+    # CALLIGRA #{{{
     LANGUAGE_CALLIGRA="${LANGUAGE:0:2}"
     if [[ "$LANGUAGE" == 'pt_br' ]]; then
         LANGUAGE_CALLIGRA='pt_br'; # Portugese
@@ -8523,7 +8693,7 @@ download_aur_repo_packages()
                 print_error "DOWNLOAD-AUR-REPO-PACKAGES-PACKAGE-FAIL" ": $PACKAGE : $FUNCNAME @ $(basename $BASH_SOURCE) : $LINENO";
                 if [[ "$DEBUGGING" -eq 1 ]]; then pause_function "DO_SINGLES : $FUNCNAME @ $(basename $BASH_SOURCE) : $LINENO"; fi
             fi
-        done        
+        done
     else
         if ! aur_download_packages "$all_packages" ; then
             write_error "DOWNLOAD-AUR-REPO-PACKAGES-PACKAGE-FAIL" ": $all_packages : $FUNCNAME @ $(basename $BASH_SOURCE) : $LINENO";
@@ -8531,7 +8701,7 @@ download_aur_repo_packages()
             if [[ "$DEBUGGING" -eq 1 ]]; then pause_function "$FUNCNAME @ $(basename $BASH_SOURCE) : $LINENO"; fi
         fi
     fi
-    #    
+    #
     if [[ "$AUR_REPO" -eq 1 ]]; then
         # set before getting here: AUR_REPO_NAME="${MOUNTPOINT}$AUR_REPO_NAME" # /mnt/home/${USERNAME}/aur-packages/
         if [[ "$RUNTIME_MODE" -eq 1 ]]; then
@@ -8572,7 +8742,7 @@ install_download()
     if [[ "$AUR_REPO" -eq 1 ]]; then
         # package-name-1.0.1-1-x86_64.pkg.tar.xz
         if [[ "$3" -eq 1 ]]; then
-            sudo pacman --needed -U "${AUR_CUSTOM_PACKAGES}/${1}/${1}-"*.pkg.tar.xz; 
+            sudo pacman --needed -U "${AUR_CUSTOM_PACKAGES}/${1}/${1}-"*.pkg.tar.xz;
         else
             sudo pacman --needed -U "${AUR_CUSTOM_PACKAGES}/${1}/${1}-"*.pkg.tar.xz 2> "${LOG_PATH}/failures/core/${PACKAGE}.log";
         fi
@@ -8599,7 +8769,7 @@ if [[ "$RUN_HELP" -eq 1 ]]; then
     REVISION="5 Dec 2012";
     create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
 fi
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then 
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "AUR-PACKAGE-INSTALL-USAGE" "aur_package_install 1->(SPACE DELIMITED LIST OF PACKAGES TO INSTALL FROM AUR) 2->(NAME-OF-PACKAGE-MANAGER)" "Comment: aur_package_install @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "AUR-PACKAGE-INSTALL-DESC"  "Install AUR Package using AUR_HELPER" "Comment: aur_package_install @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "AUR-PACKAGE-INSTALL-NOTES" "Called from add_packagemanager, run in Live Mode: Install one at a time, check to see if its already installed, if fail, try again with confirm." "Comment: aur_package_install @ $(basename $BASH_SOURCE) : $LINENO";
@@ -8667,7 +8837,7 @@ aur_package_install()
                                     # @FIX what to do now
                                     abort_install "$RUNTIME_MODE";
                                 fi
-                            fi             
+                            fi
                         fi
                         print_this "AUR-PACKAGE-INSTALL-REFRESH" " - $(localize "AUR-PACKAGE-INSTALL-UPDATE"): $AUR_HELPER $PACKAGE $(localize "AUR-PACKAGE-INSTALL-CURRENTLY") $current $(localize "AUR-PACKAGE-INSTALL-OF") $total_packages $(localize "AUR-PACKAGE-INSTALL-PACKAGES"), $(localize "AUR-PACKAGE-INSTALL-INSTALLED") $number_installed - $(localize "AUR-PACKAGE-INSTALL-FAILS") $number_failed -> $(localize "AUR-PACKAGE-INSTALL-RETRIES") = ${retry_times}."
                         su "${USERNAME}" -c "$AUR_HELPER --noconfirm -Syu"; # Run as User
@@ -8726,10 +8896,10 @@ aur_package_install()
         if [[ "$DEBUGGING" -eq 1 ]]; then pause_function "$FUNCNAME @ $(basename $BASH_SOURCE) : $LINENO"; fi
         return 1;
     fi
-} 
+}
 #}}}
 # -----------------------------------------------------------------------------
-# 
+#
 # ADD AUR PACKAGE {{{
 if [[ "$RUN_HELP" -eq 1 ]]; then
     NAME="add_aur_package";
@@ -8751,7 +8921,7 @@ if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
 fi
 # -------------------------------------
 add_aur_package()
-{ 
+{
     if [[ "$#" -ne "1" ]]; then echo -e "${BRed}$(gettext -s "WRONG-NUMBER-ARGUMENTS-PASSED-TO") ${BWhite} ${FUNCNAME[1]} @ $(basename ${BASH_SOURCE[1]}) : ${BASH_LINENO[0]}  -> $FUNCNAME @ $(basename $BASH_SOURCE) : $LINENO ${White}"; exit 1; fi
     if [ -z "$1" ]; then
         print_error "ADD-AUR-PACKAGE-ERROR" " add_aur_package : $FUNCNAME @ $(basename $BASH_SOURCE) : $LINENO";
@@ -8769,7 +8939,7 @@ add_aur_package()
         fi
     fi
     return 0;
-} 
+}
 # -------------------------------------
 if [[ "$RUN_TEST" -eq 1 ]]; then
     add_aur_package "test package";
@@ -8783,7 +8953,7 @@ if [[ "$RUN_TEST" -eq 1 ]]; then
 fi
 #}}}
 # -----------------------------------------------------------------------------
-# 
+#
 # REMOVE AUR PACKAGE {{{
 if [[ "$RUN_HELP" -eq 1 ]]; then
     NAME="remove_aur_package";
@@ -8805,7 +8975,7 @@ if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
 fi
 # -------------------------------------
 remove_aur_package()
-{ 
+{
     if [[ "$#" -ne "1" ]]; then echo -e "${BRed}$(gettext -s "WRONG-NUMBER-ARGUMENTS-PASSED-TO") ${BWhite} ${FUNCNAME[1]} @ $(basename ${BASH_SOURCE[1]}) : ${BASH_LINENO[0]}  -> $FUNCNAME @ $(basename $BASH_SOURCE) : $LINENO ${White}"; exit 1; fi
     if [ -z "$1" ]; then
         print_error "REMOVE-AUR-PACKAGE-ERROR" " : $FUNCNAME @ $(basename $BASH_SOURCE) : $LINENO";
@@ -8819,7 +8989,7 @@ remove_aur_package()
         remove_from_array "AUR_PACKAGES" "$1";
     fi
     return 0;
-} 
+}
 # -------------------------------------
 if [[ "$RUN_TEST" -eq 1 ]]; then
     remove_aur_package "test package";
@@ -8833,7 +9003,7 @@ if [[ "$RUN_TEST" -eq 1 ]]; then
 fi
 #}}}
 # -----------------------------------------------------------------------------
-# 
+#
 # ADD MODULE {{{
 if [[ "$RUN_HELP" -eq 1 ]]; then
     NAME="add_module";
@@ -8853,12 +9023,12 @@ if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
 fi
 # -------------------------------------
 add_module()
-{ 
+{
     add_packagemanager "echo \"# Load $1 at boot\" > /etc/modules-load.d/${1}.conf; echo \"${1}\" >> /etc/modules-load.d/${1}.conf; modprobe $1" "$2";
-} 
+}
 #}}}
 # -----------------------------------------------------------------------------
-# 
+#
 # REMOVE MODULE {{{
 if [[ "$RUN_HELP" -eq 1 ]]; then
     NAME="remove_module";
@@ -8878,9 +9048,9 @@ if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
 fi
 # -------------------------------------
 remove_module()
-{ 
+{
     remove_packagemanager "$1";
-} 
+}
 #}}}
 # -----------------------------------------------------------------------------
 # DO PUSH {{{
@@ -8895,7 +9065,7 @@ if [[ "$RUN_HELP" -eq 1 ]]; then
     REVISION="5 Dec 2012";
     create_help "$NAME" "$USAGE" "$DESCRIPTION" "$NOTES" "$AUTHOR" "$VERSION" "$CREATED" "$REVISION" "$(basename $BASH_SOURCE) : $LINENO";
 fi
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then  
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "DO-PUSH-USAGE" "do_push 1->(Source-Path) 2->(Destination-Path) 3->(UserName) 4->(IP Address) 5->(Server-Name) 6->(Delete) 7->(Do Push)" "Comment: do_push @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "DO-PUSH-DESC"  "Do Push Backup during Automated install." "Comment: do_push @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "DO-PUSH-NOTES" "" "Comment: do_push @ $(basename $BASH_SOURCE) : $LINENO";
@@ -8928,7 +9098,7 @@ do_push()
                 print_this "DO-PUSH-RSYNC-PASS" "$5";
                 ssh -t -t "root@$4" "chown -R $3:$3 $2;";
                 if [[ "$?" -ne 0 ]]; then
-                    print_warning "DO-PUSH-CHOWN-FAIL" "$4"; 
+                    print_warning "DO-PUSH-CHOWN-FAIL" "$4";
                 fi
             else
                 print_warning "DO-PUSH-RSYNC-FAILED" "$4";
@@ -8955,7 +9125,7 @@ if [[ "$RUN_TEST" -eq 2 ]]; then
     fi
 fi
 # -----------------------------------------------------------------------------
-# 
+#
 # IS SSH KEYED {{{
 if [[ "$RUN_HELP" -eq 1 ]]; then
     NAME="is_ssh_keyed";
@@ -8975,7 +9145,7 @@ if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
 fi
 # -------------------------------------
 is_ssh_keyed()
-{ 
+{
     #echo "is_ssh_keyed start";
     if [[ $(ssh -t -t -qo BatchMode=yes "$1" echo 'OK' | grep 'OK' | wc -l) -eq 1 ]]; then
         #echo "is_ssh_keyed end";
@@ -8984,10 +9154,10 @@ is_ssh_keyed()
         #echo "is_ssh_keyed end";
         return 1;
     fi
-} 
+}
 #}}}
 # -----------------------------------------------------------------------------
-# 
+#
 # IS SSH USER {{{
 if [[ "$RUN_HELP" -eq 1 ]]; then
     NAME="is_ssh_user";
@@ -9007,12 +9177,12 @@ if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
 fi
 # -------------------------------------
 is_ssh_user()
-{ 
+{
     return $( ssh "root@${2}" "egrep -i "^${1}" /etc/passwd > /dev/null 2>&1; echo \"\$?\";" );
-} 
+}
 #}}}
 # -----------------------------------------------------------------------------
-# 
+#
 # CREATE SSH USER {{{
 if [[ "$RUN_HELP" -eq 1 ]]; then
     NAME="create_ssh_user";
@@ -9037,7 +9207,7 @@ if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
 fi
 # -------------------------------------
 create_ssh_user()
-{ 
+{
     if [ $( ssh "root@${2}" "egrep -i \"^${1}\" /etc/group > /dev/null 2>&1; echo \"\$?\";" ) -eq 1 ]; then
         if [ $( ssh "root@${2}" "groupadd ${1}; echo \"\$?\";" ) -eq 0 ]; then
             if [ $( ssh "root@${2}" "useradd -m -g ${1} -G ${1},users -s /bin/bash ${1}; echo \"\$?\";" ) -eq 0 ]; then
@@ -9058,7 +9228,7 @@ create_ssh_user()
         fi
         pause_function "$LINENO"
     fi
-} 
+}
 #}}}
 # -----------------------------------------------------------------------------
 #
@@ -9095,14 +9265,14 @@ fi
 #
 key_website()
 {
-    #echo "key_website start"; 
+    #echo "key_website start";
     #
     local -i Is_Ok=0;
     # -------------------------
     # 1->(ssh URL or IP address)
-    fix_tty()    
+    fix_tty()
     {
-        # 
+        #
         if [[ "$BashRc_Path" != '' ]]; then
             # No use looking for fail, press on if it fails
             sshpass -p "$2" ssh -t -t "root@$1" "BashRcPath=\"${BashRc_Path}\"; [[ -f \"\$BashRcPath\" ]] && [[ \$(egrep -ic 'mesg y' \"\$BashRcPath\") -gt 0 ]] && sed -i 's/^mesg/#mesg/g' \"\$BashRcPath\";"
@@ -9119,8 +9289,8 @@ key_website()
             # Create account
             if [[ "$7" -eq 1 ]]; then
                create_ssh_user "$1" "$2" "$3" "$4" "$5" "$6";
-            fi        
-        fi            
+            fi
+        fi
     }
     # -------------------------
     # 1->(index)
@@ -9147,7 +9317,7 @@ key_website()
         fi
         Is_Ok="$?";
     fi
-    #    
+    #
     if is_online "${2}" ; then
         # mkdir -p "${Destination_PATH}/${Destination[$i]}/"
         #echo "ssh-copy-id -i ~/.ssh/id_rsa.pub ${User_Names[$i]}@${Domain_Name}"
@@ -9164,12 +9334,12 @@ key_website()
             print_test "KEY-WEBSITE-PASS" "[root@${2}]";
         else
             print_caution "KEY-WEBSITE-FAIL" "root@${2} -> $FUNCNAME @ $(basename $BASH_SOURCE) : $LINENO";
-            print_this "KEY-WEBSITE-LINE-3" ": root@${2}";   
+            print_this "KEY-WEBSITE-LINE-3" ": root@${2}";
             #
             get_ssh_public_key "$2";
             #
             fix_tty "$2" "$4";
-            #            
+            #
             sshpass -p "$4" ssh-copy-id -i "${HOME}/.ssh/id_${SSH_Keygen_Type}.pub" "root@${2}";
             if [[ "$?" -eq 0 ]]; then
                 print_test "KEY-WEBSITE-PASS" "root@${2}";
@@ -9228,7 +9398,7 @@ if [[ "$RUN_TEST" -eq 2 ]]; then
     if is_ssh_keyed "${Test_SSH_User}@${Test_SSH_IP}"; then
         echo -e "\t${BBlue}$(gettext -s "TEST-FUNCTION-PASSED")  is_ssh_keyed ${White} @ $(basename $BASH_SOURCE) : $LINENO";
     else
-        if key_website "${Test_SSH_User}" "${Test_SSH_IP}" "$Test_SSH_PASSWD" "$Test_SSH_Root_PASSWD" "$Test_App_Path" "$Test_App_Folder" "1"; then 
+        if key_website "${Test_SSH_User}" "${Test_SSH_IP}" "$Test_SSH_PASSWD" "$Test_SSH_Root_PASSWD" "$Test_App_Path" "$Test_App_Folder" "1"; then
             if is_ssh_keyed "${Test_SSH_User}@${Test_SSH_IP}"; then
                 echo -e "\t${BBlue}$(gettext -s "TEST-FUNCTION-PASSED")  key_website ${White} @ $(basename $BASH_SOURCE) : $LINENO";
             else
@@ -9238,7 +9408,7 @@ if [[ "$RUN_TEST" -eq 2 ]]; then
         else
             echo -e "\t${BRed}$(gettext -s "TEST-FUNCTION-FAILED")  key_website ${White} @ $(basename $BASH_SOURCE) : $LINENO";
             read -e -sn 1 -p "$(gettext -s "PRESS-ANY-KEY-CONTINUE")";
-        fi        
+        fi
     fi
 fi
 #}}}
@@ -9261,7 +9431,7 @@ if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "UNPACK-BOOLS-NOTES"  "Format:Install_Apache=0:Install_WittyWizard=1" "Comment: unpack_bools @ $(basename $BASH_SOURCE) : $LINENO";
 fi
 # -------------------------------------
-unpack_bools() 
+unpack_bools()
 {
     local OLD_IFS="$IFS"; IFS=$':'; # Very Important
     local Packed=( $(echo "$1") );
@@ -9270,7 +9440,7 @@ unpack_bools()
        eval "$(string_split "$x" "=" 1)=$(string_split "$x" "=" 2)";
        #echo "$(string_split "$x" "=" 1)=$(string_split "$x" "=" 2)";
        #pause_function "Rsync_Delete_Push=$Rsync_Delete_Push"
-    done                                
+    done
     IFS="$OLD_IFS";
 }
 # -------------------------------------
@@ -9303,7 +9473,7 @@ if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "UNPACK-THIS-VAR-NOTES"  "Format:Install_Apache=0:Install_WittyWizard=1" "Comment: unpack_this_var @ $(basename $BASH_SOURCE) : $LINENO";
 fi
 # -------------------------------------
-unpack_this_var() 
+unpack_this_var()
 {
     local OLD_IFS="$IFS"; IFS=$':'; # Very Important
     local Packed=( $(echo "$1") );
@@ -9313,7 +9483,7 @@ unpack_this_var()
            echo "$(string_split "$x" "=" 2)";
            return 0;
         fi
-    done                                
+    done
     IFS="$OLD_IFS";
     echo "$3";
     return 1;
@@ -9346,13 +9516,13 @@ if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "RANDOM-PASSWORD-NOTES"  "Uses sha256sum" "Comment: random_password @ $(basename $BASH_SOURCE) : $LINENO";
 fi
 # -------------------------------------
-random_password() 
+random_password()
 {
     #local CHAR;
     #[ "$2" == "0" ] && CHAR="[:alnum:]" || CHAR="[:graph:]";
     #cat /dev/urandom | tr -cd "$CHAR" | head -c ${1:-32};
     #echo '';
-    date +%s | sha256sum | base64 | head -c "$1" ; echo; # no Special Characters 
+    date +%s | sha256sum | base64 | head -c "$1" ; echo; # no Special Characters
 }
 # -----------------------------------------------------------------------------
 # SELECT FILE  {{{
@@ -9376,7 +9546,7 @@ if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "SELECT-FILE-INFO"   "Please choose a Farm File" "Comment: select_file @ $(basename $BASH_SOURCE) : $LINENO";
 fi
 # -------------------------------------
-select_file() 
+select_file()
 {
     MyFile=$(dialog --stdout --title "$(gettext -s "SELECT-FILE-INFO")" --fselect "$1" 21 80);
     if [[ "$?" -eq 0 ]]; then
@@ -9408,7 +9578,7 @@ if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "PASSWORD SAFE-NOTES"  "" "Comment: password_safe @ $(basename $BASH_SOURCE) : $LINENO";
 fi
 # -------------------------------------
-password_safe() 
+password_safe()
 {
     if [[ "$3" == 'encrypt' ]]; then
         echo -e "$1" | openssl enc -aes-128-cbc -a -salt -pass pass:"$2";
@@ -9431,7 +9601,7 @@ fi
 # *****************************************************************************
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then 
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "SCRIPT-ID1" "Arch Linux Wizard Installation Script" "Comment: FunctionName @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "SCRIPT-ID2" "Versions" "Comment: FunctionName @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "SCRIPT-ID3" "Last updated" "Comment: FunctionName @ $(basename $BASH_SOURCE) : $LINENO";
@@ -9498,7 +9668,7 @@ if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "PAUSE-FUNCTION-NOTES"   "Localized: Arguments passed in are not Localize, this is used for passing in Function names, that can not be localized; if required: localize before passing in." "Comment: pause_function @ $(basename $BASH_SOURCE) : $LINENO";
     #
     localize_info "PRESS-ANY-KEY-CONTINUE" "Press any key to continue" "Comment: pause_function @ $(basename $BASH_SOURCE) : $LINENO";
-    # ----------------------------------------------------------------------------- 
+    # -----------------------------------------------------------------------------
     # write_error
     localize_info "WRITE-ERROR-USAGE" "write_error 1->(Error) 2->(Debugging Information)" "Comment: write_error @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "WRITE-ERROR-DESC"  "Write Error to log." "Comment: write_error @ $(basename $BASH_SOURCE) : $LINENO";
@@ -9638,7 +9808,7 @@ show_help()
 #}}}
 declare TEXT_SCRIPT_ID="$(localize "SCRIPT-ID1"): $SCRIPT_NAME $(localize "SCRIPT-ID2"): $SCRIPT_VERSION $(localize "SCRIPT-ID3"): $LAST_UPDATE";
 # -------------------------------------
-if [[ "$RUN_LOCALIZER" -eq 1 ]]; then 
+if [[ "$RUN_LOCALIZER" -eq 1 ]]; then
     localize_info "READ-INPUT-OPTIONS-TEST-TITLE" "Test Options Menu." "Comment: test_read_input_options @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "READ-INPUT-OPTIONS-TEST-1"  "Test Options." "Comment: test_read_input_options @ $(basename $BASH_SOURCE) : $LINENO";
     localize_info "READ-INPUT-OPTIONS-TEST-2"  "Option :" "Comment: test_read_input_options @ $(basename $BASH_SOURCE) : $LINENO";
@@ -9743,7 +9913,7 @@ if [[ "$RUN_TEST" -eq 10 || "$RUN_TEST" -eq 3 ]]; then
             #
             read_input_options "$RecommendedOptions" "$Breakable_Key";
             RecommendedOptions="" # Clear All previously entered Options so we do not repeat them
-            #            
+            #
             for S_OPT in "${OPTIONS[@]}"; do
                 case "$S_OPT" in
                     1)  # Option 1
@@ -9840,7 +10010,7 @@ fi
 # Run Test down here to avoid function calls before they are defined.
 if [[ "$RUN_TEST" -eq 1 ]]; then
     HayStack="1 2 3 4 5";
-    Needle="1 2 3 4 5"; # 1=Exact     : 1 2 3 4 5 
+    Needle="1 2 3 4 5"; # 1=Exact     : 1 2 3 4 5
     if $(is_needle_in_haystack "$Needle" "$HayStack" 1) ; then # 1=Exact
         echo -e "\t${BBlue}$(gettext -s "TEST-FUNCTION-PASSED")  is_needle_in_haystack ${White} @ $(basename $BASH_SOURCE) : $LINENO";
     else
