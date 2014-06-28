@@ -10,60 +10,131 @@
  */
 
 #include <Wt/WServer>
+//#include <boost/filesystem.hpp>
+#include <sys/stat.h>
 #include "HomeFundation.h"
 #include "SimpleChat.h"
 #include <map>
-
-#ifdef RAPIDXML
-    #include "rapidxml/rapidxml.hpp"
-    #include "rapidxml/rapidxml_utils.hpp"
-#else
-    #include <QXmlStreamReader>
-    #include <QDebug>
-    #include <QString>
-    #include <QFile>
-#endif
-// Database
-#include <Wt/Dbo/Session>
-#include <Wt/Dbo/ptr>
-#include <Wt/Dbo/Dbo>
-#ifdef POSTGRES
-    #include <Wt/Dbo/backend/Postgres>
-#elif SQLITE3
-    #include <Wt/Dbo/backend/Sqlite3>
-#elif MYSQL
-    #include <Wt/Dbo/backend/MySQL>
-#elif FIREBIRD
-    #include <Wt/Dbo/backend/Firebird>
-#endif // FIREBIRD
-#include <Wt/Dbo/FixedSqlConnectionPool>
+#include "rapidxml/rapidxml.hpp"
+#include "rapidxml/rapidxml_utils.hpp"
 //
 #include "model/BlogSession.h"
 #include "BlogRSSFeed.h"
-
+#include <sys/stat.h>
 /*
 typedef std::map <std::string, boost::any> theConnectionPool;
 theConnectionPool myConnectionPool;
 typedef std::map <std::string, std::string> theRssFeed;
-theRssFeed myRssFeed;
 */
 /* ****************************************************************************
- * Global map
- */
-std::map <std::string, boost::any> myConnectionPool;
-std::map <std::string, std::string> myRssFeed;
-/* ****************************************************************************
- * Global variables
+ * Global Variable
+ * root Prefix: Used to set the URL Path: http:domain.tdl\prefix\root-path
+ * See Wt Documenation on: --deploy-path=
  */
 std::string rootPrefix="ww"; // this is used to fix path issues in Wt, must be in run and in path of all menu items and resources
+/* ****************************************************************************
+ * Global map
+ * Connection Pool Map
+ * Holds the Pointer to Wt::Dbo::SqlConnectionPool *
+ */
+std::map <std::string, boost::any> myConnectionPool;
+/* ****************************************************************************
+ * Global Variable
+ * domainHost="wittywizard.org"
+ */
+std::map <std::string, std::string> myDomainHost;
+/* ****************************************************************************
+ * Global Variable
+ * domainPath="/home/wittywizard/"
+ * Full Path to Domain: /home/domain.tdl/
+ * string *myDomainPath;
+ */
+std::map <std::string, std::string> myDomainPath;
+/* ****************************************************************************
+ * Global Variable
+ * dbName="wittywizard"
+ */
+std::map <std::string, std::string> myDbName;
+/* ****************************************************************************
+ * Global Variable
+ * dbUser="wittywizard"
+ */
+std::map <std::string, std::string> myDbUser;
+/* ****************************************************************************
+ * Global Variable
+ * password="The1Wizard2Witty4Flesh"
+ */
+std::map <std::string, std::string> myDbPassword;
+/* ****************************************************************************
+ * Global Variable
+ * dbPort="5432"
+ */
+std::map <std::string, std::string> myDbPort;
+/* ****************************************************************************
+ * Global Variable
+ * gasAccount="pub-1083602596491715"
+ *
+ */
+std::map <std::string, std::string> myGasAccount;
+/* ****************************************************************************
+ * Global Variable
+ * gaAccount="UA-xxxxxxxx-x"
+ * Google Analytic Account: See domain.xml
+ * http://google.com/analytics/
+ */
+std::map <std::string, std::string> myGaAccount;
+/* ****************************************************************************
+ * Global Variable
+ * myIncludes="home|chat|blog|about|contact|video"
+ * myIncludes: Each Menu Item Included
+ * See domain.xml:includes="home|chat|blog|about|contact|video"
+ */
+std::map <std::string, std::string> myIncludes;
+/* ****************************************************************************
+ * Global Variable
+ * defaultTheme="blue"
+ * See domain.xml:defaultTheme="blue"
+ */
+std::map <std::string, std::string> myDefaultTheme;
+/* ****************************************************************************
+ * Global Function
+ * is File: Full Path to File: /home/domain.tdl/filename.ext
+ */
+inline bool isFile(const std::string& name)
+{
+  struct stat buffer;
+  return (stat (name.c_str(), &buffer) == 0);
+  // which is faster?
+  // return boost::filesystem::exists(name);
+}
+/* ****************************************************************************
+ * Global Function
+ * is Path: Full Path: /home/domain.tdl/
+ */
+struct stat sb;
+inline bool isPath(const std::string& pathName)
+{
+    if (stat(pathName.c_str(), &sb) == 0 && S_ISDIR(sb.st_mode))
+    {
+        return true;
+    }
+    return false;
+}
 /* ****************************************************************************
  * makeConnectionPool
  * FIXIT: Would it be faster to save this to a database?
  */
 bool makeConnectionPool(QString filePath)
 {
-    filePath.append("domains.xml"); // Note: this is in the root with executable
-#ifdef RAPIDXML
+    if (isFile(filePath.toStdString()))
+    {
+        Wt::log("info") << "Starting XML Configuration File makeConnectionPool(" << filePath.toStdString() << ")";
+    }
+    else
+    {
+        Wt::log("error") << "-> Missing XML Configuration File makeConnectionPool(" << filePath.toStdString() << ")";
+        return 1;
+    }
     // Open XML File
     rapidxml::file<> xmlFile(filePath.toUtf8().constData());
     rapidxml::xml_document<> doc;
@@ -74,185 +145,101 @@ bool makeConnectionPool(QString filePath)
     rapidxml::xml_attribute<> *x_item;
     for (rapidxml::xml_node<> * domain_node = root_node->first_node("domain"); domain_node; domain_node = domain_node->next_sibling("domain"))
     {
-        // domainhost
-        x_item = domain_node->first_attribute("domainhost");
+        // domainHost
+        x_item = domain_node->first_attribute("domainHost");
         if (!x_item)
         {
-            Wt::log("error") << "-> makeConnectionPool() Missing XML Element: domainhost = " << domain_node->name() << ")";
+            Wt::log("error") << "-> makeConnectionPool(" << filePath.toStdString() << ") Missing XML Element: domainHost = " << domain_node->name();
             return 1;
         }
-        std::string domainhost(x_item->value(), x_item->value_size());
-        // path
-        x_item = domain_node->first_attribute("path");
+        std::string domainHost(x_item->value(), x_item->value_size());
+        myDomainHost[domainHost] = domainHost;
+        // domainPath
+        x_item = domain_node->first_attribute("domainPath");
         if (!x_item)
         {
-            Wt::log("error") << "-> makeConnectionPool() Missing XML Element: path)";
+            Wt::log("error") << "-> makeConnectionPool(" << filePath.toStdString() << ") Missing XML Element: domainPath";
             return 1;
         }
-        std::string path(x_item->value(), x_item->value_size());
-        // user
-        x_item = domain_node->first_attribute("user");
+        std::string domainPath(x_item->value(), x_item->value_size());
+        myDomainPath[domainHost] = domainPath;
+        if (!isPath(domainPath.c_str()))
+        {
+            Wt::log("error") << "-> makeConnectionPool(" << filePath.toStdString() << ") Missing Path for Domain: " << domainHost << " : path = " << domainPath;
+        }
+        // dbName
+        x_item = domain_node->first_attribute("dbName");
         if (!x_item)
         {
-            Wt::log("error") << "-> makeConnectionPool() Missing XML Element: user)";
+            Wt::log("error") << "-> makeConnectionPool(" << filePath.toStdString() << ") Missing XML Element: dbName";
             return 1;
         }
-        std::string user(x_item->value(), x_item->value_size());
-        // password
-        x_item = domain_node->first_attribute("password");
+        std::string dbName(x_item->value(), x_item->value_size());
+        myDbName[domainHost] = dbName;
+        // dbUser
+        x_item = domain_node->first_attribute("dbUser");
         if (!x_item)
         {
-            Wt::log("error") << "-> makeConnectionPool() Missing XML Element: password)";
+            Wt::log("error") << "-> makeConnectionPool(" << filePath.toStdString() << ") Missing XML Element: dbUser";
             return 1;
         }
-        std::string password(x_item->value(), x_item->value_size());
-        // port
-        x_item = domain_node->first_attribute("port");
+        std::string dbUser(x_item->value(), x_item->value_size());
+        myDbUser[domainHost] = dbUser;
+        // dbPassword
+        x_item = domain_node->first_attribute("dbPassword");
         if (!x_item)
         {
-            Wt::log("error") << "-> makeConnectionPool() Missing XML Element: port)";
+            Wt::log("error") << "-> makeConnectionPool(" << filePath.toStdString() << ") Missing XML Element: dbPassword";
             return 1;
         }
-        std::string port(x_item->value(), x_item->value_size());
-        // dbname
-        x_item = domain_node->first_attribute("dbname");
+        std::string dbPassword(x_item->value(), x_item->value_size());
+        myDbPassword[domainHost] = dbPassword;
+        // dbPort
+        x_item = domain_node->first_attribute("dbPort");
         if (!x_item)
         {
-            Wt::log("error") << "-> makeConnectionPool() Missing XML Element: dbname)";
+            Wt::log("error") << "-> makeConnectionPool(" << filePath.toStdString() << ") Missing XML Element: dbPort";
             return 1;
         }
-        std::string dbname(x_item->value(), x_item->value_size());
-        // rssTitle
-        x_item = domain_node->first_attribute("rssTitle");
+        std::string dbPort(x_item->value(), x_item->value_size());
+        myDbPort[domainHost] = dbPort;
+        // gaAccount
+        x_item = domain_node->first_attribute("gaAccount");
         if (!x_item)
         {
-            Wt::log("error") << "-> makeConnectionPool() Missing XML Element: rssTitle)";
+            Wt::log("error") << "-> makeConnectionPool(" << filePath.toStdString() << ") Missing XML Element: gaAccount";
             return 1;
         }
-        std::string rssTitle(x_item->value(), x_item->value_size());
-        // rssURL
-        x_item = domain_node->first_attribute("rssURL");
+        std::string gaAccount(x_item->value(), x_item->value_size());
+        myGaAccount[domainHost] = gaAccount;
+        // gasAccount
+        x_item = domain_node->first_attribute("gasAccount");
         if (!x_item)
         {
-            Wt::log("error") << "-> makeConnectionPool() Missing XML Element: rssURL)";
+            Wt::log("error") << "-> makeConnectionPool(" << filePath.toStdString() << ") Missing XML Element: gasAccount";
             return 1;
         }
-        std::string rssURL(x_item->value(), x_item->value_size());
-        // rssDescription
-        x_item = domain_node->first_attribute("rssDescription");
+        std::string gasAccount(x_item->value(), x_item->value_size());
+        myGasAccount[domainHost] = gasAccount;
+        // myIncludes
+        x_item = domain_node->first_attribute("myIncludes");
         if (!x_item)
         {
-            Wt::log("error") << "-> makeConnectionPool() Missing XML Element: rssDescription)";
+            Wt::log("error") << "-> makeConnectionPool(" << filePath.toStdString() << ") Missing XML Element: myIncludes";
             return 1;
         }
-        std::string rssDescription(x_item->value(), x_item->value_size());
-        myRssFeed[domainhost.c_str()] = std::string(rssTitle.c_str()) + "\t" + std::string(rssURL.c_str()) + "\t" + std::string(rssDescription.c_str()) + "\t" + std::string(path.c_str());
-
-        Wt::Dbo::SqlConnection *dbConnection;
-        #ifdef POSTGRES
-            dbConnection = new Wt::Dbo::backend::Postgres("user=" + std::string(user.c_str()) + " password=" + std::string(password.c_str()) + " port=" + std::string(port.c_str()) + " dbname=" + std::string(dbname.c_str()));
-        #elif SQLITE3
-            Wt::Dbo::backend::Sqlite3 *sqlite3 = new Wt::Dbo::backend::Sqlite3(std::string(path.c_str()) + "app_root/" + std::string(dbname.c_str()));
-            sqlite3->setDateTimeStorage(Wt::Dbo::SqlDateTime, Wt::Dbo::backend::Sqlite3::PseudoISO8601AsText);
-            dbConnection = sqlite3;
-        #elif MYSQL
-            dbConnection = new Wt::Dbo::backend::MySQL(dbname.c_str(), user.c_str(), password.c_str(), "localhost");
-        #elif FIREBIRD
-            #ifdef WIN32
-                myFile = "C:\\opt\\db\\firebird\\" + dbname;
-            #else
-                myFile = "/opt/db/firebird/" + dbname;
-            #endif
-            dbConnection = new Wt::Dbo::backend::Firebird("localhost", myFile.c_str(), myUser.c_str(), myPW.c_str(), "", "", ""); // Server:localhost, Path:File, user, password
-        #endif // FIREBIRD
-        dbConnection->setProperty("show-queries", "true");
-        // We need to convert it FixedSqlConnectionPool to SqlConnectionPool, not sure if I should just refactor to use FixedSqlConnectionPool
-        Wt::Dbo::SqlConnectionPool *dbConnection_ = new Wt::Dbo::FixedSqlConnectionPool(dbConnection, 10);
-        myConnectionPool[domainhost.c_str()] = dbConnection_;
+        std::string includes(x_item->value(), x_item->value_size());
+        myIncludes[domainHost] = includes;
+        // defaultTheme
+        x_item = domain_node->first_attribute("defaultTheme");
+        if (!x_item)
+        {
+            Wt::log("error") << "-> makeConnectionPool(" << filePath.toStdString() << ") Missing XML Element: defaultTheme";
+            return 1;
+        }
+        std::string defaultTheme(x_item->value(), x_item->value_size());
+        myDefaultTheme[domainHost] = defaultTheme;
     } // end for (rapidxml::xml_node<> * domain_node = root_node->first_node("domain"); domain_node; domain_node = domain_node->next_sibling("domain"))
-#else
-    QString domainhost;
-    QString path;
-    QString user;
-    QString password;
-    QString port;
-    QString dbname;
-    QString rssTitle;
-    QString rssURL;
-    QString rssDescription;
-    QFile file(filePath);
-
-    if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
-    {
-        Wt::log("warnning") << "(makeConnectionPool: File open error" << file.errorString().toStdString() << ")";
-        return false;
-    }
-    QXmlStreamReader inputStream(&file);
-    while (!inputStream.atEnd() && !inputStream.hasError())
-    {
-        inputStream.readNext();
-        if (inputStream.isStartElement())
-        {
-            /* Let's get the attributes for domains */
-            QXmlStreamAttributes attributes = inputStream.attributes();
-            if(attributes.hasAttribute("domainhost"))
-            {
-                domainhost = attributes.value("domainhost").toString();
-            }
-            if(attributes.hasAttribute("path"))
-            {
-                path = attributes.value("path").toString();
-            }
-            if(attributes.hasAttribute("user"))
-            {
-                user = attributes.value("user").toString();
-            }
-            if(attributes.hasAttribute("password"))
-            {
-                password = attributes.value("password").toString();
-            }
-            if(attributes.hasAttribute("port"))
-            {
-                port = attributes.value("port").toString();
-            }
-            if(attributes.hasAttribute("dbname"))
-            {
-                dbname = attributes.value("dbname").toString();
-            }
-            if(attributes.hasAttribute("rssTitle"))
-            {
-                rssTitle = attributes.value("rssTitle").toString();
-            }
-            if(attributes.hasAttribute("rssURL"))
-            {
-                rssURL = attributes.value("rssURL").toString();
-            }
-            if(attributes.hasAttribute("rssDescription"))
-            {
-                rssDescription = attributes.value("rssDescription").toString();
-            }
-            myRssFeed[domainhost.toStdString()] = rssTitle.toStdString().append("\t").append(rssURL.toStdString()).append("\t").append(rssDescription.toStdString()).append("\t").append(path.toStdString()).c_str();
-            #ifdef POSTGRES
-                myConnectionPool[domainhost.toStdString()] = BlogSession::createConnectionPool("user=" + user.toStdString() + " password=" + password.toStdString() + " port=" + port.toStdString() + " dbname=" + dbname.toStdString());
-            #elif SQLITE3
-                myConnectionPool[domainhost.toStdString()] = BlogSession::createConnectionPool(path.toStdString().append("app_root/").append(dbname));
-            #elif MYSQL
-                myConnectionPool[domainhost.toStdString()] = BlogSession::createConnectionPool(dbname, user, password, "localhost", port);
-            #elif FIREBIRD
-                // Untested
-                std::string myFile;
-                std::string myUser = user;
-                std::string myPW = password;
-                #ifdef WIN32
-                    myFile = "C:\\opt\\db\\firebird\\" + dbname;
-                #else
-                    myFile = "/opt/db/firebird/" + dbname;
-                #endif
-                myConnectionPool[domainhost.toStdString()] = BlogSession::createConnectionPool("localhost" + "\t" + myFile + "\t" + myUser + "\t" + myPW); // Pack Parameter
-            #endif // FIREBIRD
-        } // end if (inputStream.isStartElement())
-    } // end while (!inputStream.atEnd() && !inputStream.hasError())
-#endif
     return true;
 } // end bool makeConnectionPool
 /* ****************************************************************************
@@ -264,16 +251,20 @@ int main(int argc, char **argv)
     {
         Wt::WServer server(argv[0]);
 
+        //Wt::WMessageResourceBundle* bundle = new Wt::WMessageResourceBundle;
+        //bundle->use(myDomainPath[domainName] + "./app_root/ww-home", false);
+        //server.setLocalizedStrings(bundle);
+
         server.setServerConfiguration(argc, argv, WTHTTP_CONFIGURATION);
 
         BlogSession::configureAuth();
 
-        if (!makeConnectionPool(server.appRoot().c_str()))
+        // Note: this is in the root with executable
+        // ./app_root/domains.xml
+        if (!makeConnectionPool(server.appRoot().append("domains.xml").c_str()))
         {
             return 1; // Fix 404
         }
-
-        Wt::log("notice") << "main() myRssFeed element " << myRssFeed["localhost"] << ")";
 
         server.addEntryPoint(Wt::Application, boost::bind(&createWWHomeApplication,  _1), "", "favicon.ico");
         // rss feed
