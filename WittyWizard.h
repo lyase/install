@@ -5,13 +5,25 @@
 #include <Wt/WLogger>
 #include <iomanip>
 #include <locale>
-// Set Cookie
+/* ****************************************************************************
+ *  Set Cookie
+ */
 void SetCookie(std::string name, std::string myValue);
-// Get Cookie
+/* ****************************************************************************
+ *  Get Cookie
+ */
 std::string GetCookie(std::string name);
-// String Replace
+/* ****************************************************************************
+ *  String Replace
+ */
 bool StringReplace(std::string& string2replace, const std::string& changefrom, const std::string& changeTo);
-//
+/* ****************************************************************************
+ * FormatWithCommas
+ */
 std::string FormatWithCommas(long value, std::string myLocale);
+/* ****************************************************************************
+ * Set Sql Connection Pool
+ */
+bool SetSqlConnectionPool(std::string domainName);
 #endif // WITTYWIZARD_H
 // --- End Of File ------------------------------------------------------------
