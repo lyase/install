@@ -26,7 +26,7 @@ enum pageType
 class VideoImpl : public Wt::WContainerWidget
 {
     public:
-        VideoImpl(const std::string& appPath, const std::string& basePath, Wt::Dbo::SqlConnectionPool& connectionPool);
+        VideoImpl(const std::string& appPath, const std::string& basePath, Wt::Dbo::SqlConnectionPool& connectionPool, const std::string& lang);
         void SetInternalBasePath(const std::string& basePath);
         virtual ~VideoImpl();
         /* --------------------------------------------------------------------
@@ -48,16 +48,20 @@ class VideoImpl : public Wt::WContainerWidget
         std::string GetCategories(std::string delimitor);
         bool GetCategoriesPath();
         void ClearCategories();
+        Wt::WWidget* GetPage(Wt::WString src);
         //
         std::string appPath_;
         std::string basePath_;
         VideoSession session_;
+        std::string lang_;
         Wt::WWidget* videoPage_;
+        Wt::WTemplate *videoTemplate;
         //std::vector<myVideo> myVideos;
         bool isVideo = false;
         bool bindVideo = false;
         bool isChanged = false;
         Wt::WContainerWidget* items_;
+        Wt::WContainerWidget* bindItems;
         QString catagoryPath;
         //int categoryIndex = 0;
         //int videoIndex = 0;
@@ -74,22 +78,18 @@ class VideoImpl : public Wt::WContainerWidget
         Wt::WComboBox *ComboSizes;       // Sizes: sizes="1080,720"
         Wt::WComboBox *ComboQuality;     // quality="hd,lq"
         bool isTextYewTubeIframe = false;
-        Wt::WText *TextYewTubeIframe;    // yew-tube iFrame
-        bool isTextPageTop = false;
-        Wt::WText *TextPageTop;          // page top
-        bool isTextPageBottom = false;
-        Wt::WText *TextPageBottom;       // page bottom
+        Wt::WText* TextYewTubeIframe;    // yew-tube iFrame
+        Wt::WText* topPage;
+        Wt::WText* bottomPage;
         //
         std::string mp4Video;
         std::string ogvVideo;
         std::string poster;
+        std::string yewtubevideo;
         std::string yewtubesrc;
         std::string title;
-        int width, height;
         std::string size;
         std::string quality;
-        std::string pageBottom;
-        std::string pageTop;
         bool isutube = false;
         bool isComboChange = false;
 

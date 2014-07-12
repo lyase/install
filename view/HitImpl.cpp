@@ -74,6 +74,25 @@ void HitImpl::Set()
  */
 std::string HitImpl::getHits()
 {
+    // Create an instance of app to access Internal Paths
+    Wt::WApplication* app = Wt::WApplication::instance();
+    try
+    {
+        // Start a Transaction
+        Wt::Dbo::Transaction t(session_);
+
+        hits = session_.query<int>("select count(*) from hitcounter").where("page = ?").bind(app->internalPath());
+        Wt::log("notice") << "HitImpl::getHits()  hits = " << hits << " | page = " << app->internalPath();
+
+        // Commit Transaction
+        t.commit();    }
+    catch (std::exception& e)
+    {
+        std::cerr << e.what() << std::endl;
+        Wt::log("error") << "HitImpl::getHits()  Failed reading from hitcounter database.";
+        hits = 0;
+    }
+
     try
     {
         Wt::WLocale myString = Wt::WLocale(theLocale.c_str());
@@ -95,6 +114,7 @@ std::string HitImpl::getHits()
         std::cerr << "HitImpl::getHits: Failed local not installed";
         Wt::log("error") << "HitImpl::getHits() Failed local not installed";
     }
+
     return std::to_string(hits);
 } // end
 /* ****************************************************************************
@@ -102,6 +122,25 @@ std::string HitImpl::getHits()
  */
 std::string HitImpl::getUniqueHits()
 {
+    // Create an instance of app to access Internal Paths
+    Wt::WApplication* app = Wt::WApplication::instance();
+    try
+    {
+        // Start a Transaction
+        Wt::Dbo::Transaction t(session_);
+
+        uniqueHits = session_.query<int>("select count(distinct ipaddress) from hitcounter").where("page = ?").bind(app->internalPath());
+        Wt::log("notice") << "HitImpl::getHits()  uniqueHits = " << uniqueHits << " | page = " << app->internalPath();
+
+        // Commit Transaction
+        t.commit();    }
+    catch (std::exception& e)
+    {
+        std::cerr << e.what() << std::endl;
+        Wt::log("error") << "HitImpl::getUniqueHits()  Failed reading from hitcounter database.";
+        hits = 0;
+    }
+
     try
     {
         Wt::WLocale myString = Wt::WLocale(theLocale.c_str());

@@ -6,6 +6,7 @@
  * Modified for Witty Wizard
  *
  */
+#ifdef BLOGMAN
 #include <Wt/WLineEdit>
 #include <Wt/WTemplate>
 #include <Wt/WText>
@@ -60,4 +61,5 @@ void BlogLoginWidget::createLoggedInView()
     logout->clicked().connect(&login(), &Wt::Auth::Login::logout);
     bindWidget("logout", logout);
 } // end
+#endif // BLOGMAN
 // --- End Of File ------------------------------------------------------------

@@ -22,7 +22,7 @@ class BlogImpl;
 class BlogView : public Wt::WCompositeWidget
 {
     public:
-        BlogView(const std::string& basePath, Wt::Dbo::SqlConnectionPool& db, const std::string& rssFeedUrl, const std::string& defaultTheme, Wt::WContainerWidget *parent = 0);
+        BlogView(const std::string& basePath, const std::string& appPath, Wt::Dbo::SqlConnectionPool& db, const std::string& rssFeedUrl, const std::string& defaultTheme, Wt::WContainerWidget *parent = 0);
 
         void SetInternalBasePath(const std::string& basePath);
 

@@ -1,6 +1,7 @@
 /* ****************************************************************************
  * Edit Users
  */
+#ifdef BLOGMAN
 #include "EditUsers.h"
 
 #include <Wt/Dbo/Dbo>
@@ -110,4 +111,5 @@ void EditUser::SwitchRole()
     t.commit();
     BindTemplate();
 } // end void EditUser::SwitchRole
+#endif // BLOGMAN
 // --- End Of File ------------------------------------------------------------

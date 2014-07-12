@@ -17,6 +17,7 @@
  * WPushButton
  * Session
  */
+/*
 namespace Wt
 {
     class WLineEdit;
@@ -26,6 +27,7 @@ namespace Wt
         class Session;
     }
 }
+*/
 /* ****************************************************************************
  * Edit Users
  */

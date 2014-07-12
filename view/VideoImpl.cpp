@@ -47,14 +47,38 @@
 #include "model/TheVideo.h"
 #include "WittyWizard.h"
 /* ****************************************************************************
+ * Global functions
+ */
+extern bool isFile(const std::string& name);
+/* ****************************************************************************
  * Video Impl
  * This gets called every time the page is refreshed
+ * appPath: /home/jflesher/FileShare/Code/0-WittyWizard/build-WittyWizard-Desktop-Debug/app_root/home/localhost/video/videoman
+ * basePath: /en/video/
+ * connectionPool:
+ * lang:
  */
-VideoImpl::VideoImpl(const std::string& appPath, const std::string& basePath, Wt::Dbo::SqlConnectionPool& connectionPool) : appPath_(appPath), basePath_(basePath), session_(appPath, connectionPool), videoPage_(0)
+VideoImpl::VideoImpl(const std::string& appPath, const std::string& basePath, Wt::Dbo::SqlConnectionPool& connectionPool, const std::string& lang) : appPath_(appPath), basePath_(basePath), session_(appPath, connectionPool), lang_(lang), videoPage_(0)
 {
-    Wt::log("start") << " *** VideoImpl::VideoImpl() *** ";
+    Wt::log("start") << " *** VideoImpl::VideoImpl() lang = " << lang << " *** ";
     items_ = new Wt::WContainerWidget(this);\
     items_->setId("videocan");
+    //
+    bindItems = new Wt::WContainerWidget(this);\
+    bindItems->setId("videomanbinder");
+    //Wt::WApplication *app = Wt::WApplication::instance();
+    Wt::WApplication *app = wApp;
+    // Do we want to use our own Template or use a common Template?
+    // /home/jflesher/FileShare/Code/0-WittyWizard/build-WittyWizard-Desktop-Debug/app_root/home/localhost/video/videoman.xml
+    if (0 && !isFile(appPath + "videoman.xml"))
+    {
+        Wt::log("error") << " *** VideoImpl::VideoImpl() Themeplate Not Found: " << appPath + "videoman.xml" << " *** ";
+    }
+    app->messageResourceBundle().use(appPath + "videoman"); // ./app_root/ Wt::WApplication::appRoot()
+
+    videoTemplate = new Wt::WTemplate(Wt::WString::tr("videoman-template"), this); //  <message id="videoman-template">
+    videoPage_ = videoTemplate;
+
     Init();
 } // end VideoImpl::VideoImpl
 /* ****************************************************************************
@@ -81,12 +105,6 @@ void VideoImpl::Init()
 void VideoImpl::MakeVideo()
 {
     Wt::log("start") << " *** VideoImpl::MakeVideo( ) *** ";
-    #ifdef USE_TEMPLATE
-        Wt::WApplication *app = Wt::WApplication::instance();
-        Wt::WTemplate *videoTemplate = new Wt::WTemplate(Wt::WString::tr("videoman-template"), app->root()); //  <message id="videoman-template">
-        videoPage_ = videoTemplate;
-    #endif
-
     // Set Category and Video from Internal Path, ComboBox or Cookie
     GetCategoriesPath();
     #ifndef USE_TEMPLATE
@@ -97,6 +115,7 @@ void VideoImpl::MakeVideo()
     CreateCategoryCombo();
     //
     CreateVideoCombobox();
+    //
     Wt::log("end") << " ** VideoImpl::MakeVideo() ** ";
 } // end void VideoImpl::MakeVideo()
 /* ****************************************************************************
@@ -570,6 +589,9 @@ bool VideoImpl::CreateVideoCombobox()
     try
     {
         Wt::Dbo::QueryModel< Wt::Dbo::ptr<TheVideo> > *model = new Wt::Dbo::QueryModel< Wt::Dbo::ptr<TheVideo> >();
+        // FIXIT language  AND language = " + lang_
+        //model->setQuery(session_.query< Wt::Dbo::ptr<TheVideo> >("select u from video u").where("categories = ? AND language = ?").bind(categoryQuery).bind(lang_), false);
+        //model->setQuery(session_.query< Wt::Dbo::ptr<TheVideo> >("select u from video u").where("categories = ?").bind(categoryQuery).where("language = ?").bind(lang_), false);
         model->setQuery(session_.query< Wt::Dbo::ptr<TheVideo> >("select u from video u").where("categories = ?").bind(categoryQuery), false);
         model->addColumn("name");
         // ComboVideo has not been set
@@ -613,6 +635,7 @@ void VideoImpl::GetVideo()
     ogvVideo = "";
     poster = "";
     title = "";
+    yewtubevideo = "";
     try
     {
         if (videoText.empty())
@@ -673,42 +696,33 @@ void VideoImpl::GetVideo()
         Wt::Dbo::Transaction t(session_);
         //Wt::Dbo::QueryModel< Wt::Dbo::ptr<TheVideo> > *model = new Wt::Dbo::QueryModel< Wt::Dbo::ptr<TheVideo> >();
         //model->setQuery(session_.query< Wt::Dbo::ptr<TheVideo> >("select u from video u").where("name = ?").bind(videoCombo->currentText().toUTF8()), false);
+        //Wt::Dbo::ptr<TheVideo> playVideo = session_.find<TheVideo>().where("name = ? AND language = ?").bind(ComboVideo->currentText().toUTF8()).bind(lang_);
+        //Wt::Dbo::ptr<TheVideo> playVideo = session_.find<TheVideo>().where("name = ?").bind(ComboVideo->currentText().toUTF8()).where("language = ?").bind(lang_);
         Wt::Dbo::ptr<TheVideo> playVideo = session_.find<TheVideo>().where("name = ?").bind(ComboVideo->currentText().toUTF8());
         //
-        bool isPageTop = false;
-        std::string pageTopSrc="";
-        std::string pageTopWidth = "";
-        std::string pageTopHeight = "";
-        bool isPageBottom = false;
-        std::string pageBottomSrc = "";
-        std::string pageBottomWidth = "";
-        std::string pageBottomHeight = "";
-
-        pageTop    = playVideo->pagetop.c_str();    // source: http://url.tdl/iframe.html
-        pageBottom = playVideo->pagebottom.c_str();
-
-        if (!pageTop.empty())
+        if (playVideo->pagetop.empty())
         {
-            isPageTop     = true;
-            pageTopWidth  = playVideo->pagetopwidth.c_str();
-            pageTopHeight = playVideo->pagetopheight.c_str();
-            pageTopSrc = "<div id=\"pagebottom\" class=\"pagebottom\"><iframe id=\"pagebottomframe\" class=\"well\" src=\"" + pageTop + "\" width=\"" + pageTopWidth + "\" height=\"" + pageTopHeight + "\" style=\"\" frameBorder=\"1\" scrolling=\"yes\" ></iframe></div>";
+            topPage = new Wt::WText("");
         }
-        if (!pageBottom.empty())
+        else
         {
-            isPageBottom     = true;
-            pageBottomWidth  = playVideo->pagebottomwidth.c_str();
-            pageBottomHeight = playVideo->pagebottomheight.c_str();
-            pageBottomSrc = "<div id=\"pagebottom\" class=\"pagebottom\"><iframe id=\"pagebottomframe\" class=\"well\" src=\"" + pageBottom + "\" width=\"" + pageBottomWidth + "\" height=\"" + pageBottomHeight + "\" style=\"\" frameBorder=\"1\" scrolling=\"yes\" ></iframe></div>";
+            topPage =  new Wt::WText("<div id=\"vpagetop\" class=\"vpagetop\" style=\"width:" + playVideo->pagetopwidth + ";height:" + playVideo->pagetopheight + ";\">" + playVideo->pagetop +  "</div>", Wt::XHTMLUnsafeText, bindItems); // , items_
+            topPage->setStyleClass("videomantoppage");
         }
-        //
-        width  = playVideo->width;
-        height = playVideo->height;
+        if (playVideo->pagebottom.empty())
+        {
+            bottomPage = new Wt::WText("");
+        }
+        else
+        {
+            bottomPage =  new Wt::WText("<div id=\"vpagebottom\" class=\"vpagebottom\" style=\"width:" + playVideo->pagebottomwidth + ";height:" + playVideo->pagebottomheight + ";\">" + playVideo->pagebottom + "</div>", Wt::XHTMLUnsafeText, bindItems); // , items_
+            bottomPage->setStyleClass("videomanbottompage");
+        }
         //
         if (playVideo->isutube)
         {
             yewtubesrc = playVideo->path;
-            poster = "<div id=\"pagetop\" class=\"pagetop\"></div><br /><div id=\"yewtube\" class=\"yewtube\"><iframe id=\"vframe\" src=\"" + yewtubesrc + "\" width=\"" + std::to_string(width) + "\" height=\"" + std::to_string(height) + "\" style=\"\" frameBorder=\"0\" scrolling=\"no\" allowfullscreen=\"true\"></iframe></div><br /><div id=\"pagebottom\" class=\"pagebottom\"></div>";
+            yewtubevideo = "<div id=\"vplayer\" class=\"vplayer\"><br /><div id=\"yewtube\" class=\"yewtube\"><iframe id=\"vframe\" src=\"" + yewtubesrc + "\" width=\"" + playVideo->width + "\" height=\"" + playVideo->height + "\" style=\"\" frameBorder=\"0\" scrolling=\"no\" allowfullscreen=\"true\"></iframe></div><br /></div>";
         }
         else // if (playVideo->isutube)
         {
@@ -725,7 +739,7 @@ void VideoImpl::GetVideo()
             if (sizeCount > 1)
             {
                 // Create a dropdown box
-                if (!ComboSizes)
+                if (!ComboSizes) // FIXIT test: does this work?
                 {
                     ComboSizes = new Wt::WComboBox(items_);
                     Wt::log("notice") << "VideoImpl::GetVideo()  new ComboBox ComboSizes";
@@ -787,40 +801,15 @@ void VideoImpl::GetVideo()
 
         } // end if (playVideo->isutube)
         //
-        if (isPageTop)
-        {
-            if (!isTextPageTop) // not working if (!TextPageTop)
-            {
-                TextPageTop = new Wt::WText(pageTopSrc, Wt::XHTMLUnsafeText, items_);
-                TextPageTop->setStyleClass("pagetop");
-                isTextPageTop = true;
-            }
-            else
-            {
-                std::string jsPageTop = "document.getElementById('pagetopframe').src='" + pageTop + "';";
-                Wt::log("notice") << " VideoImpl::getVideo() jsPageTop = " << jsPageTop << " ";
-                this->doJavaScript(jsPageTop);
-            } // end if (!TextPageTop)
-        } // end if (isPageTop)
         //
         if (playVideo->isutube)
         {
-            // if (!TextYewTubeIframe) // not working
-            if (!isTextYewTubeIframe)
-            {
-                TextYewTubeIframe = new Wt::WText(poster, Wt::XHTMLUnsafeText, items_);
-                TextYewTubeIframe->setStyleClass("yewtube");
-                isTextYewTubeIframe = true;
-            }
-            else
-            {
-                std::string jsframe = "document.getElementById('vframe').src='" + yewtubesrc + "';";
-                Wt::log("notice") << " VideoImpl::getVideo() jsframe = " << jsframe << " ";
-                this->doJavaScript(jsframe);
-            }
+            TextYewTubeIframe = new Wt::WText(yewtubevideo, Wt::XHTMLUnsafeText, bindItems); // , items_
+            TextYewTubeIframe->setStyleClass("yewtube");
         }
         else
         {
+            TextYewTubeIframe = new Wt::WText(""); // this does not use an div
         #ifdef WVIDEO
             if (!player)
             {
@@ -844,7 +833,7 @@ void VideoImpl::GetVideo()
                 player->setPoster(poster);
                 player->setAlternativeContent(new Wt::WImage(poster));
             }
-            player->resize(width, height);
+            player->resize(std::stoi(playVideo->width), std::stoi(playVideo->height));
         #else
             //
             //Wt::WApplication::instance()-> useStyleSheet(Wt::WApplication::resourcesUrl() + "jPlayer/skin/blue.monday/jplayer.blue.monday.css");
@@ -875,27 +864,24 @@ void VideoImpl::GetVideo()
             {
                 player->setTitle(title);
             }
-            player->setVideoSize(width, height);
+            player->setVideoSize(std::stoi(playVideo->width), std::stoi(playVideo->height));
         #endif
         } // end if (playVideo->isutube)
-        if (isPageBottom)
-        {
-            if (!isTextPageBottom) // not working if (!TextPageBottom)
-            {
-                TextPageBottom = new Wt::WText(pageBottomSrc, Wt::XHTMLUnsafeText, items_);
-                TextPageBottom->setStyleClass("pagebottom");
-                isTextPageBottom = true;
-            }
-            else
-            {
-                std::string jsPageBottom = "document.getElementById('pagebottomframe').src='" + pageBottom + "';";
-                Wt::log("notice") << " VideoImpl::getVideo() jsPageBottom = " << jsPageBottom << " ";
-                this->doJavaScript(jsPageBottom);
-            } // end if (!TextPageTop)
-        } // end if (isPageTop)
         #ifdef USE_TEMPLATE
             videoTemplate->bindWidget("videocombobinder", ComboVideo);
         #endif
+        //
+        videoTemplate->bindWidget("catcombobinder-0", new Wt::WText(""));
+        videoTemplate->bindWidget("catcombobinder-1", new Wt::WText(""));
+        videoTemplate->bindWidget("catcombobinder-2", new Wt::WText(""));
+        videoTemplate->bindWidget("catcombobinder-3", new Wt::WText(""));
+        videoTemplate->bindWidget("catcombobinder-4", new Wt::WText(""));
+        videoTemplate->bindWidget("catcombobinder-5", new Wt::WText(""));
+        videoTemplate->bindWidget("videocombobinder", new Wt::WText(""));
+
+        videoTemplate->bindWidget("videoman", TextYewTubeIframe);
+        videoTemplate->bindWidget("videomanpagetop", topPage);
+        videoTemplate->bindWidget("videomanpagebottom", bottomPage);
         // Commit Transaction
         t.commit();
     }
@@ -1072,7 +1058,85 @@ bool VideoImpl::GetCategoriesPath()
     {
         return false;
     }
+    std::string path = app->internalPath(); // /en/video/
+    std::vector<std::string> parts;
+    boost::split(parts, path, boost::is_any_of("/"));
+    // path = /en/video/IAM/00-02-N-IAM | parts.size()=5 | parts[0]= | parts[1]=en | parts[2]=video | parts[3]=IAM | parts[4]=00-02-N-IAM
+    // Wt::log("notice") << " @@@@@@@@@@ VideoImpl::GetCategoriesPath() path = " << path << " | parts.size()=" << parts.size() << " | parts[0]=" << parts[0] << " | parts[1]=" << parts[1] << " | parts[2]=" << parts[2] << " | parts[3]=" << parts[3] << " | parts[4]=" << parts[4];
+    // 0 Categories 1 Video
+    if (parts.size() == 4)
+    {
+        categoryText_0 = "";
+        videoText      = parts[3];
+        categoryQuery = "";
+        categoryPath  = "";
+    }
+    // 1 Categories 1 Video
+    if (parts.size() == 5)
+    {
+        categoryText_0 = parts[3];
+        videoText      = parts[4];
+        categoryQuery = categoryText_0;
+        categoryPath  = categoryText_0;
+    }
+    // 2 Categories 1 Video
+    if (parts.size() == 6)
+    {
+        categoryText_0 = parts[3];
+        categoryText_1 = parts[4];
+        videoText      = parts[5];
+        categoryQuery = categoryText_0 + "|" + categoryText_1;
+        categoryPath  = categoryText_0 + "/" + categoryText_1;
+    }
+    // 3 Categories 1 Video
+    if (parts.size() == 7)
+    {
+        categoryText_0 = parts[3];
+        categoryText_1 = parts[4];
+        categoryText_2 = parts[5];
+        videoText      = parts[6];
+        categoryQuery = categoryText_0 + "|" + categoryText_1 + "|" + categoryText_2;
+        categoryPath  = categoryText_0 + "/" + categoryText_1 + "/" + categoryText_2;
+    }
+    // 4 Categories 1 Video
+    if (parts.size() == 8)
+    {
+        categoryText_0 = parts[3];
+        categoryText_1 = parts[4];
+        categoryText_2 = parts[5];
+        categoryText_3 = parts[6];
+        videoText      = parts[7];
+        categoryQuery = categoryText_0 + "|" + categoryText_1 + "|" + categoryText_2 + "|" + categoryText_3;
+        categoryPath  = categoryText_0 + "/" + categoryText_1 + "/" + categoryText_2 + "/" + categoryText_3;
+    }
+    // 5 Categories 1 Video
+    if (parts.size() == 9)
+    {
+        categoryText_0 = parts[3];
+        categoryText_1 = parts[4];
+        categoryText_2 = parts[5];
+        categoryText_3 = parts[6];
+        categoryText_4 = parts[7];
+        videoText      = parts[8];
+        categoryQuery = categoryText_0 + "|" + categoryText_1 + "|" + categoryText_2 + "|" + categoryText_3 + "|" + categoryText_4;
+        categoryPath  = categoryText_0 + "/" + categoryText_1 + "/" + categoryText_2 + "/" + categoryText_3 + "/" + categoryText_4;
+    }
+    // 6 Categories 1 Video
+    if (parts.size() == 10)
+    {
+        categoryText_0 = parts[3];
+        categoryText_1 = parts[4];
+        categoryText_2 = parts[5];
+        categoryText_3 = parts[6];
+        categoryText_4 = parts[7];
+        categoryText_5 = parts[8];
+        videoText      = parts[9];
+        categoryQuery = categoryText_0 + "|" + categoryText_1 + "|" + categoryText_2 + "|" + categoryText_3 + "|" + categoryText_4 + "|" + categoryText_5;
+        categoryPath  = categoryText_0 + "/" + categoryText_1 + "/" + categoryText_2 + "/" + categoryText_3 + "/" + categoryText_4 + "/" + categoryText_5;
+    }
     bool isInternalPathLegal=false;
+/*
+
     ClearCategories();
     categoryText_0 = app->internalPathNextPart(basePath_); // /en/video/
     Wt::log("notice") << " <<<< VideoImpl::GetCategoriesPath() categoryText_0 = " << categoryText_0;
@@ -1298,6 +1362,7 @@ bool VideoImpl::GetCategoriesPath()
             }
         }
     } // end if (categoryPath.empty())
+*/
     if (!videoText.empty())
     {
         isInternalPathLegal = true;

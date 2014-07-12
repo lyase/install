@@ -6,6 +6,7 @@
  * Modified for Witty Wizard
  *
  */
+#ifdef BLOGMAN
 #include <Wt/WAnchor>
 #include <Wt/WApplication>
 #include <Wt/WCheckBox>
@@ -39,18 +40,18 @@
 /* ****************************************************************************
  * Blog View Constructor
  */
-BlogView::BlogView(const std::string& basePath, Wt::Dbo::SqlConnectionPool& db, const std::string& rssFeedUrl, const std::string& defaultTheme, Wt::WContainerWidget* parent) : Wt::WCompositeWidget(parent), userChanged_(this)
+BlogView::BlogView(const std::string& basePath, const std::string& appPath, Wt::Dbo::SqlConnectionPool& db, const std::string& rssFeedUrl, const std::string& defaultTheme, Wt::WContainerWidget* parent) : Wt::WCompositeWidget(parent), userChanged_(this)
 {
-    impl_ = new BlogImpl(basePath, db, rssFeedUrl, defaultTheme, this);
+    impl_ = new BlogImpl(basePath, appPath, db, rssFeedUrl, defaultTheme, this);
     setImplementation(impl_);
-} // end
+} // end BlogView
 /* ****************************************************************************
  * set Internal Base Path
  */
 void BlogView::SetInternalBasePath(const std::string& basePath)
 {
-    impl_->setInternalBasePath(basePath);
-} // end
+    impl_->SetInternalBasePath(basePath);
+} // end SetInternalBasePath
 /* ****************************************************************************
  * user
  */
@@ -64,5 +65,6 @@ Wt::WString BlogView::user()
     {
         return Wt::WString::Empty;
     }
-} // end
+} // end user
+#endif // BLOGMAN
 // --- End Of File ------------------------------------------------------------

@@ -19,7 +19,6 @@ HitView::HitView(Wt::Dbo::SqlConnectionPool& db, std::string myLocale)
 Wt::WWidget* HitView::Update()
 {
     Wt::log("start") << " *** HitView::Update() theLocale_ = " << theLocale_ << " *** ";
-
     Wt::WContainerWidget *container = new Wt::WContainerWidget();
 
     Wt::WText *text1 =  new Wt::WText(Wt::WString::tr("hits") + ": " + impl_->getHits() + "<br />", container);

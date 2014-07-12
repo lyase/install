@@ -6,6 +6,7 @@
  * Modified for Witty Wizard
  *
  */
+#ifdef BLOGMAN
 
 #include "CommentView.h"
 #include "PostView.h"
@@ -309,4 +310,5 @@ void PostView::UpdateCommentCount(Wt::Dbo::ptr<Comment> comment)
         }
     }
 } // end void PostView::UpdateCommentCount
+#endif // BLOGMAN
 // --- End Of File ------------------------------------------------------------

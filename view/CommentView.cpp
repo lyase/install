@@ -6,7 +6,7 @@
  * Modified for Witty Wizard
  *
  */
-
+#ifdef BLOGMAN
 #include "CommentView.h"
 
 #include "../model/BlogSession.h"
@@ -233,4 +233,5 @@ void CommentView::Rm()
 
     t.commit();
 } // end void CommentView::Rm
+#endif // BLOGMAN
 // --- End Of File ------------------------------------------------------------
