@@ -101,10 +101,10 @@ class Home : public Wt::WApplication
          * homePage_ is the base page read from template
          */
         Wt::WWidget* homePage_;
+        Wt::WTemplate* homeTemplate_;
         //
-        Wt::WStackedWidget* contents_;
+        //Wt::WStackedWidget* contents_;
         //
-        // QString domainName;
         std::string domainName;
         //
         std::string myHost;
@@ -121,6 +121,7 @@ class Home : public Wt::WApplication
         Wt::WWidget* Chat();
         Wt::WWidget* VideoMan();
         Wt::WWidget* HitCounter();
+        Wt::WWidget* Admin();
 
         Wt::WMenu* mainMenu_;
         int language_ = 0;
