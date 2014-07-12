@@ -1,6 +1,7 @@
 /* ****************************************************************************
  * Witty Wizard
  */
+#include <sys/stat.h>
 // Database
 #include <Wt/Dbo/Session>
 #include <Wt/Dbo/ptr>
@@ -51,6 +52,30 @@ extern std::map <std::string, std::string> myDbPassword;
  * port="5432"
  */
 extern std::map <std::string, std::string> myDbPort;
+/* ****************************************************************************
+ * Global Function
+ * is File: Full Path to File: /home/domain.tdl/filename.ext
+ */
+bool isFile(const std::string& name)
+{
+  struct stat buffer;
+  return (stat (name.c_str(), &buffer) == 0);
+  // which is faster?
+  // return boost::filesystem::exists(name);
+}
+/* ****************************************************************************
+ * Global Function
+ * is Path: Full Path: /home/domain.tdl/
+ */
+struct stat sb;
+bool isPath(const std::string& pathName)
+{
+    if (stat(pathName.c_str(), &sb) == 0 && S_ISDIR(sb.st_mode))
+    {
+        return true;
+    }
+    return false;
+}
 /* ****************************************************************************
  * Set Cookie
  */
@@ -120,6 +145,8 @@ std::string FormatWithCommas(long value, std::string myLocale) // T value
  */
 bool SetSqlConnectionPool(std::string domainName)
 {
+    // myConnectionPool.find(domainName) == myConnectionPool.end() ~ this is defined inside the function: myConnectionPool[domainName] = dbConnection_;
+    // myDomainHost.find(domainName) != myDomainHost.end() ~ make sure the connection is defined
     if (myConnectionPool.find(domainName) == myConnectionPool.end() && myDomainHost.find(domainName) != myDomainHost.end())
     {
         Wt::log("start") << " *** SetSqlConnectionPool(" << domainName << ")  myDbUser = " << myDbUser[domainName] << " | myDbPort = " << myDbPort[domainName] << " |  myDbName = "  <<  myDbName[domainName];
