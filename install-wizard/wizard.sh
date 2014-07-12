@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-declare LAST_UPDATE="8 Jun 2014 16:33";
+declare LAST_UPDATE="30 Jun 2014 16:33";
 declare SCRIPT_VERSION="1.0.1.A";
 if [ -z "${SCRIPT_NAME}" ]; then
     declare SCRIPT_NAME="wizard.sh";
@@ -6758,7 +6758,7 @@ package_type()
                 echo "sudo systemctl restart httpd";
                 return 0;
             elif [[ "$1" -eq 6 ]]; then # haproxy
-                echo "sudo systemctl haproxy start; sudo systemctl enable haproxy";
+                echo "sudo systemctl start haproxy; sudo systemctl enable haproxy";
                 return 0;
             elif [[ "$1" -eq 7 ]]; then # monit
                 echo "sudo systemctl monit start; sudo systemctl enable monit";
