@@ -26,6 +26,7 @@
 WwHome::WwHome(const Wt::WEnvironment& env) : Home(env)
 {
     // add Language
+    //              name,  code, shortDescription, longDescription
     addLanguage(Lang("en", "en_US", "en",  "English"));
     addLanguage(Lang("cn", "zh_CN", "汉语", "中文 (Chinese)"));
     addLanguage(Lang("ru", "ru_RU", "ру",  "Русский (Russian)"));
