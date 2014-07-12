@@ -7,6 +7,7 @@
  * Modified for Witty Wizard
  *
  */
+#ifdef BLOGMAN
 #ifndef BLOG_RSS_FEED_H_
 #define BLOG_RSS_FEED_H_
 
@@ -28,6 +29,6 @@ class BlogRSSFeed : public Wt::WResource
     protected:
         virtual void handleRequest(const Wt::Http::Request &request, Wt::Http::Response &response);
 };
-
 #endif // BLOG_RSS_FEED_H_
+#endif // BLOGMAN
 // --- End Of File ------------------------------------------------------------
