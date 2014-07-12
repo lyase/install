@@ -25,5 +25,14 @@ std::string FormatWithCommas(long value, std::string myLocale);
  * Set Sql Connection Pool
  */
 bool SetSqlConnectionPool(std::string domainName);
+/* ****************************************************************************
+ * isFile
+ */
+bool isFile(const std::string& name);
+/* ****************************************************************************
+ * isPath
+ */
+bool isPath(const std::string& pathName);
+//
 #endif // WITTYWIZARD_H
 // --- End Of File ------------------------------------------------------------
