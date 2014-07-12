@@ -6,7 +6,7 @@
  * Modified for Witty Wizard
  *
  */
-
+#ifdef BLOGMAN
 #include "Tag.h"
 #include "Post.h"
 #include "Token.h"
@@ -16,5 +16,5 @@
 #include <Wt/Dbo/Impl>
 
 DBO_INSTANTIATE_TEMPLATES(Tag);
-
+#endif // BLOGMAN
 // --- End Of File ------------------------------------------------------------

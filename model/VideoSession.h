@@ -11,7 +11,7 @@ class VideoSession : public Wt::Dbo::Session
     public:
         VideoSession(const std::string& appPath, Wt::Dbo::SqlConnectionPool& connectionPool);
     private:
-        void Update();
+        bool ImportXML();
         //
         std::string appPath_;
         Wt::Dbo::SqlConnectionPool& connectionPool_;

@@ -12,6 +12,7 @@
 #include <Wt/Dbo/QueryModel>
 #include "HitSession.h"
 #include "HitCounter.h"
+extern bool initDb;
 /* ****************************************************************************
  * Hit Session
  */
@@ -20,19 +21,27 @@ HitSession::HitSession(Wt::Dbo::SqlConnectionPool& connectionPool) : connectionP
     Wt::log("start") << " *** HitSession::HitSession() *** ";
     setConnectionPool(connectionPool_);
     mapClass<HitCounter>("hitcounter"); // table name hitcounter
-    try
+    if (initDb)
     {
-        Wt::Dbo::Transaction t(*this);
-        // Note: you must drop tables to do update
-        //dropTables();
-        createTables();
-        std::cerr << "Created database: hitcounter " << std::endl;
-        t.commit();
-    }
-    catch (std::exception& e)
-    {
-        std::cerr << e.what() << std::endl;
-        std::cerr << "Using existing hitcounter database";
+        try
+        {
+            Wt::Dbo::Transaction t(*this);
+            // Note: you must drop tables to do update
+            if (0)
+            {
+                Wt::log("warning") << "HitSession::HitSession() droptables = ";
+                dropTables();
+            }
+            createTables();
+            std::cerr << "Created database: hitcounter " << std::endl;
+            t.commit();
+        }
+        catch (std::exception& e)
+        {
+            std::cerr << e.what() << std::endl;
+            std::cerr << "Using existing hitcounter database";
+            Wt::log("notice") << " *** HitSession::HitSession()  Using existing hitcounter database ";
+        }
     }
     Update();
     Wt::log("end") << " *** HitSession::HitSession() *** ";
@@ -42,9 +51,9 @@ HitSession::HitSession(Wt::Dbo::SqlConnectionPool& connectionPool) : connectionP
  */
 void HitSession::Update()
 {
-    Wt::log("start") << " *** HitSession::Update()  *** ";
     // Create an instance of app to access Internal Paths
     Wt::WApplication* app = Wt::WApplication::instance();
+    Wt::log("start") << " *** HitSession::Update()  *** Path = " << app->internalPath();
     try
     {
         // Start a Transaction

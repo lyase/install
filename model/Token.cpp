@@ -6,6 +6,7 @@
  * Modified for Witty Wizard
  *
  */
+#ifdef BLOGMAN
 
 #include "Token.h"
 #include "User.h"
@@ -25,4 +26,5 @@ Token::Token()
 Token::Token(const std::string& v, const Wt::WDateTime& e) : value(v), expires(e)
 {
 } // end
+#endif // BLOGMAN
 // --- End Of File ------------------------------------------------------------

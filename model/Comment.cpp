@@ -6,7 +6,7 @@
  * Modified for Witty Wizard
  *
  */
-
+#ifdef BLOGMAN
 #include "Comment.h"
 #include "Post.h"
 #include "User.h"
@@ -106,4 +106,5 @@ void Comment::setDeleted()
 {
     textHtml_ = Wt::WString::tr("comment-deleted");
 } // end
+#endif // BLOGMAN
 // --- End Of File ------------------------------------------------------------

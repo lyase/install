@@ -7,6 +7,7 @@
  * Modified for Witty Wizard
  *
  */
+#ifdef BLOGMAN
 #ifndef BLOG_USER_DATABASE_H_
 #define BLOG_USER_DATABASE_H_
 
@@ -72,6 +73,6 @@ class BlogUserDatabase : public Wt::Auth::AbstractUserDatabase
 
         void getUser(const std::string& id) const;
 };
-
 #endif // USER_H_
+#endif // BLOGMAN
 // --- End Of File ------------------------------------------------------------

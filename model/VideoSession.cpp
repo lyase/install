@@ -19,6 +19,14 @@
 #include "TheVideo.h"
 #include "VideoSession.h"
 /* ****************************************************************************
+ * Global Functions
+ */
+extern bool isFile(const std::string& name);
+/* ****************************************************************************
+ * Global Variable
+ */
+extern bool initDb;
+/* ****************************************************************************
  * Video Session
  */
 VideoSession::VideoSession(const std::string& appPath, Wt::Dbo::SqlConnectionPool& connectionPool) : appPath_(appPath), connectionPool_(connectionPool)
@@ -26,20 +34,31 @@ VideoSession::VideoSession(const std::string& appPath, Wt::Dbo::SqlConnectionPoo
     Wt::log("start") << " *** VideoSession::VideoSession() *** ";
     setConnectionPool(connectionPool_);
     mapClass<TheVideo>("video");
-    try
+    if (initDb)
     {
-        Wt::Dbo::Transaction t(*this);
-        // Note: you must drop tables to do update, FIXIT make it a url in the backend with credentials
-        //dropTables();
-        createTables();
-        std::cerr << "Created database: video " << std::endl;
-        t.commit();
-        Update();
-    }
-    catch (std::exception& e)
-    {
-        std::cerr << e.what() << std::endl;
-        std::cerr << "Using existing video database";
+        try
+        {
+            Wt::Dbo::Transaction t(*this);
+            // Note: you must drop tables to do VideoSession::ImportXML, FIXIT make it a url in the backend with credentials
+            if (0)
+            {
+                Wt::log("warning") << " *** VideoSession::VideoSession() dropTables *** ";
+                dropTables();
+            }
+            createTables();
+            std::cerr << "Created database: video " << std::endl;
+            t.commit();
+            if (!ImportXML())
+            {
+                Wt::log("error") << " *** VideoSession::VideoSession() ImportXML failed! *** ";
+            }
+        }
+        catch (std::exception& e)
+        {
+            std::cerr << e.what() << std::endl;
+            std::cerr << "Using existing video database";
+            Wt::log("error") << " *** VideoSession::VideoSession() Using existing video database *** ";
+        }
     }
     Wt::log("end") << " *** VideoSession::VideoSession() *** ";
 } // end VideoSession::VideoSession
@@ -48,9 +67,18 @@ VideoSession::VideoSession(const std::string& appPath, Wt::Dbo::SqlConnectionPoo
  * Check Database for existing records and delete them
  * Read in XML file and populate Database
  */
-void VideoSession::Update()
+bool VideoSession::ImportXML()
 {
-    Wt::log("start") << " *** VideoSession::Update()  *** ";
+    Wt::log("start") << " *** VideoSession::ImportXML()  *** ";
+    if (isFile(appPath_.c_str() + std::string("video.xml")))
+    {
+        Wt::log("info") << "VideoSession::ImportXML: " << appPath_.c_str() + std::string("video.xml");
+    }
+    else
+    {
+        Wt::log("error") << "-> Missing XML Configuration File VideoSession::ImportXML: " << appPath_.c_str() + std::string("video.xml");
+        return false;
+    }
     try
     {
         // Open XML File
@@ -92,22 +120,22 @@ void VideoSession::Update()
         nodeAttrib = domain_node->first_attribute("scheme");
         if (!nodeAttrib)
         {
-            Wt::log("error") << "(Update: Missing XML Element: scheme = " << domain_node->name() << ")";
-            return;
+            Wt::log("error") << "VideoSession::ImportXML: Missing XML Element: scheme = " << domain_node->name() << ")";
+            return false;
         }
         std::string mySchema(nodeAttrib->value(), nodeAttrib->value_size());
         // scheme name
         nodeAttrib = domain_node->first_attribute("name");
         if (!nodeAttrib)
         {
-            Wt::log("error") << "(Update: Missing XML Element scheme: name = " << domain_node->name() << ")";
-            return;
+            Wt::log("error") << "VideoSession::ImportXML: Missing XML Element scheme: name = " << domain_node->name() << ")";
+            return false;
         }
         std::string mySchemeNames(nodeAttrib->value(), nodeAttrib->value_size());
-        Wt::log("progress") << "(Update: scheme name)";
+        Wt::log("progress") << "VideoSession::ImportXML: scheme name)";
         for (rapidxml::xml_node<> * domain_node = category_node->first_node("video"); domain_node; domain_node = domain_node->next_sibling("video"))
         {
-            Wt::log("progress") << "(Update: Start Loop = " << domain_node->name() << ")";
+            Wt::log("progress") << "VideoSession::ImportXML: Start Loop = " << domain_node->name() << ")";
             // Start a Transaction
             Wt::Dbo::Transaction t(*this);
             // Create a new Video Instance
@@ -121,192 +149,202 @@ void VideoSession::Update()
             nodeAttrib = domain_node->first_attribute("name");
             if (!nodeAttrib)
             {
-                Wt::log("error") << "(Update: Missing XML Element: name = " << domain_node->name() << ")";
-                return;
+                Wt::log("error") << "VideoSession::ImportXML: Missing XML Element: name = " << domain_node->name();
+                return false;
             }
             std::string myname(nodeAttrib->value(), nodeAttrib->value_size());
             videoDb->name = myname;
-            Wt::log("progress") << "(Update: name)";
+            Wt::log("progress") << "VideoSession::ImportXML: name = " << myname << ")";
             // categories
             nodeAttrib = domain_node->first_attribute("categories");
             if (!nodeAttrib)
             {
-                Wt::log("error") << "(Update: Missing XML Element: categories = " << domain_node->name() << ")";
-                return;
+                Wt::log("error") << "VideoSession::ImportXML: Missing XML Element: categories = " << domain_node->name();
+                return false;
             }
             std::string mycategories(nodeAttrib->value(), nodeAttrib->value_size());
             videoDb->categories = mycategories;
-            Wt::log("progress") << "(Update: categories)";
+            Wt::log("progress") << "VideoSession::ImportXML: categories = " << mycategories;
             // title
             nodeAttrib = domain_node->first_attribute("title");
             if (!nodeAttrib)
             {
-                Wt::log("error") << "(Update: Missing XML Element: title = " << domain_node->name() << ")";
-                return;
+                Wt::log("error") << "VideoSession::ImportXML: Missing XML Element: title = " << domain_node->name() << ")";
+                return false;
             }
             std::string mytitle(nodeAttrib->value(), nodeAttrib->value_size());
             videoDb->title = mytitle;
-            Wt::log("progress") << "(Update: title)";
+            Wt::log("progress") << "VideoSession::ImportXML: title = " << mytitle;
             // path
             nodeAttrib = domain_node->first_attribute("path");
             if (!nodeAttrib)
             {
-                Wt::log("error") << "(Update: Missing XML Element: path = " << domain_node->name() << ")";
-                return;
+                Wt::log("error") << "VideoSession::ImportXML: Missing XML Element: path = " << domain_node->name() << ")";
+                return false;
             }
             std::string mypath(nodeAttrib->value(), nodeAttrib->value_size());
             videoDb->path = mypath;
-            Wt::log("progress") << "(Update: path)";
+            Wt::log("progress") << "VideoSession::ImportXML: path = " << mypath;
+            // language
+            nodeAttrib = domain_node->first_attribute("language");
+            if (!nodeAttrib)
+            {
+                Wt::log("error") << "VideoSession::ImportXML: Missing XML Element: language = " << domain_node->name() << ")";
+                return false;
+            }
+            std::string mylanguage(nodeAttrib->value(), nodeAttrib->value_size());
+            videoDb->language = mylanguage;
+            Wt::log("progress") << "VideoSession::ImportXML: language = " << mylanguage;
             // ism4v
             nodeAttrib = domain_node->first_attribute("ism4v");
             if (!nodeAttrib)
             {
-                Wt::log("error") << "(Update: Missing XML Element: ism4v = " << domain_node->name() << ")";
-                return;
+                Wt::log("error") << "VideoSession::ImportXML: Missing XML Element: ism4v = " << domain_node->name() << ")";
+                return false;
             }
             std::string myism4v(nodeAttrib->value(), nodeAttrib->value_size());
-            videoDb->ism4v = atoi(myism4v.c_str());
-            Wt::log("progress") << "(Update: ism4v)";
+            videoDb->ism4v = std::stoi(myism4v);
+            Wt::log("progress") << "VideoSession::ImportXML: ism4v = " << myism4v;
             // isogv
             nodeAttrib = domain_node->first_attribute("isogv");
             if (!nodeAttrib)
             {
-                Wt::log("error") << "(Update: Missing XML Element: isogv = " << domain_node->name() << ")";
-                return;
+                Wt::log("error") << "VideoSession::ImportXML: Missing XML Element: isogv = " << domain_node->name() << ")";
+                return false;
             }
             std::string myisogv(nodeAttrib->value(), nodeAttrib->value_size());
-            videoDb->isogv = atoi(myisogv.c_str());
-            Wt::log("progress") << "(Update: isogv)";
+            videoDb->isogv = std::stoi(myisogv);
+            Wt::log("progress") << "VideoSession::ImportXML: isogv = " << myisogv;
             // isutube
             nodeAttrib = domain_node->first_attribute("isutube");
             if (!nodeAttrib)
             {
-                Wt::log("error") << "(Update: Missing XML Element: isutube = " << domain_node->name() << ")";
-                return;
+                Wt::log("error") << "VideoSession::ImportXML: Missing XML Element: isutube = " << domain_node->name() << ")";
+                return false;
             }
             std::string myisutube(nodeAttrib->value(), nodeAttrib->value_size());
-            videoDb->isutube = atoi(myisutube.c_str());
-            Wt::log("progress") << "(Update: isutube)";
+            videoDb->isutube = std::stoi(myisutube);
+            Wt::log("progress") << "VideoSession::ImportXML: isutube = " << myisutube;
             // poster
             nodeAttrib = domain_node->first_attribute("poster");
             if (!nodeAttrib)
             {
-                Wt::log("error") << "(Update: Missing XML Element: poster = " << domain_node->name() << ")";
-                return;
+                Wt::log("error") << "VideoSession::ImportXML: Missing XML Element: poster = " << domain_node->name() << ")";
+                return false;
             }
             std::string myposter(nodeAttrib->value(), nodeAttrib->value_size());
             videoDb->poster = myposter;
-            Wt::log("progress") << "(Update: poster)";
+            Wt::log("progress") << "VideoSession::ImportXML: poster = " << myposter;
             // width
             nodeAttrib = domain_node->first_attribute("width");
             if (!nodeAttrib)
             {
-                Wt::log("error") << "(Update: Missing XML Element: width = " << domain_node->name() << ")";
-                return;
+                Wt::log("error") << "VideoSession::ImportXML: Missing XML Element: width = " << domain_node->name() << ")";
+                return false;
             }
             std::string mywidth(nodeAttrib->value(), nodeAttrib->value_size());
-            videoDb->width = atoi(mywidth.c_str());
-            Wt::log("progress") << "(Update: width)";
+            videoDb->width = mywidth;
+            Wt::log("progress") << "VideoSession::ImportXML: width = " << mywidth;
             // height
             nodeAttrib = domain_node->first_attribute("height");
             if (!nodeAttrib)
             {
-                Wt::log("error") << "(Update: Missing XML Element: height = " << domain_node->name() << ")";
-                return;
+                Wt::log("error") << "VideoSession::ImportXML: Missing XML Element: height = " << domain_node->name() << ")";
+                return false;
             }
             std::string myheight(nodeAttrib->value(), nodeAttrib->value_size());
-            videoDb->height = atoi(myheight.c_str());
-            Wt::log("progress") << "(Update: height)";
+            videoDb->height = myheight;
+            Wt::log("progress") << "VideoSession::ImportXML: height = " << myheight;
             // isautoplay stored as a 1=true, 0=false
             nodeAttrib = domain_node->first_attribute("isautoplay");
             if (!nodeAttrib)
             {
-                Wt::log("error") << "(Update: Missing XML Element: isautoplay = " << domain_node->name() << ")";
-                return;
+                Wt::log("error") << "VideoSession::ImportXML: Missing XML Element: isautoplay = " << domain_node->name() << ")";
+                return false;
             }
             std::string myisautoplay(nodeAttrib->value(), nodeAttrib->value_size());
-            videoDb->isautoplay = atoi(myisautoplay.c_str());
-            Wt::log("progress") << "(Update: isautoplay)";
+            videoDb->isautoplay = std::stoi(myisautoplay);
+            Wt::log("progress") << "VideoSession::ImportXML: isautoplay = " << myisautoplay;
             // sizes
             nodeAttrib = domain_node->first_attribute("sizes");
             if (!nodeAttrib)
             {
-                Wt::log("error") << "(Update: Missing XML Element: sizes = " << domain_node->name() << ")";
-                return;
+                Wt::log("error") << "VideoSession::ImportXML: Missing XML Element: sizes = " << domain_node->name() << ")";
+                return false;
             }
             std::string mysizes(nodeAttrib->value(), nodeAttrib->value_size());
             videoDb->sizes = mysizes;
-            Wt::log("progress") << "(Update: sizes)";
+            Wt::log("progress") << "VideoSession::ImportXML: sizes = " << mysizes;
             // quality
             nodeAttrib = domain_node->first_attribute("quality");
             if (!nodeAttrib)
             {
-                Wt::log("error") << "(Update: Missing XML Element: quality = " << domain_node->name() << ")";
-                return;
+                Wt::log("error") << "VideoSession::ImportXML: Missing XML Element: quality = " << domain_node->name() << ")";
+                return false;
             }
             std::string myquality(nodeAttrib->value(), nodeAttrib->value_size());
             videoDb->quality = myquality;
-            Wt::log("progress") << "(Update: quality)";
+            Wt::log("progress") << "VideoSession::ImportXML: quality = " << myquality;
             // pagetop
             nodeAttrib = domain_node->first_attribute("pagetop");
             if (!nodeAttrib)
             {
-                Wt::log("error") << "(Update: Missing XML Element: pagetop = " << domain_node->name() << ")";
-                return;
+                Wt::log("error") << "VideoSession::ImportXML: Missing XML Element: pagetop = " << domain_node->name() << ")";
+                return false;
             }
             std::string mypagetop(nodeAttrib->value(), nodeAttrib->value_size());
             videoDb->pagetop = mypagetop;
-            Wt::log("progress") << "(Update: pagetop)";
+            Wt::log("progress") << "VideoSession::ImportXML: pagetop = "; // << mypagetop;
             // pagetopwidth
             nodeAttrib = domain_node->first_attribute("pagetopwidth");
             if (!nodeAttrib)
             {
-                Wt::log("error") << "(Update: Missing XML Element: pagetopwidth = " << domain_node->name() << ")";
-                return;
+                Wt::log("error") << "VideoSession::ImportXML: Missing XML Element: pagetopwidth = " << domain_node->name() << ")";
+                return false;
             }
             std::string mypagetopwidth(nodeAttrib->value(), nodeAttrib->value_size());
             videoDb->pagetopwidth = mypagetopwidth;
-            Wt::log("progress") << "(Update: pagetopwidth)";
+            Wt::log("progress") << "VideoSession::ImportXML: pagetopwidth = " << mypagetopwidth;
             // pagetopheight
             nodeAttrib = domain_node->first_attribute("pagetopheight");
             if (!nodeAttrib)
             {
-                Wt::log("error") << "(Update: Missing XML Element: pagetopheight = " << domain_node->name() << ")";
-                return;
+                Wt::log("error") << "VideoSession::ImportXML: Missing XML Element: pagetopheight = " << domain_node->name() << ")";
+                return false;
             }
             std::string mypagetopheight(nodeAttrib->value(), nodeAttrib->value_size());
             videoDb->pagetopheight = mypagetopheight;
-            Wt::log("progress") << "(Update: pagetopheight)";
+            Wt::log("progress") << "VideoSession::ImportXML: pagetopheight = " << mypagetopheight;
             // pagebottom
             nodeAttrib = domain_node->first_attribute("pagebottom");
             if (!nodeAttrib)
             {
-                Wt::log("error") << "(Update: Missing XML Element: pagebottom = " << domain_node->name() << ")";
-                return;
+                Wt::log("error") << "VideoSession::ImportXML: Missing XML Element: pagebottom = " << domain_node->name() << ")";
+                return false;
             }
             std::string mypagebottom(nodeAttrib->value(), nodeAttrib->value_size());
             videoDb->pagebottom = mypagebottom;
-            Wt::log("progress") << "(Update: pagebottom)";
+            Wt::log("progress") << "VideoSession::ImportXML: pagebottom = "; // << mypagebottom;
             // pagebottomwidth
             nodeAttrib = domain_node->first_attribute("pagebottomwidth");
             if (!nodeAttrib)
             {
-                Wt::log("error") << "(Update: Missing XML Element: pagebottomwidth = " << domain_node->name() << ")";
-                return;
+                Wt::log("error") << "VideoSession::ImportXML: Missing XML Element: pagebottomwidth = " << domain_node->name() << ")";
+                return false;
             }
             std::string mypagebottomwidth(nodeAttrib->value(), nodeAttrib->value_size());
             videoDb->pagebottomwidth = mypagebottomwidth;
-            Wt::log("progress") << "(Update: pagebottomwidth)";
+            Wt::log("progress") << "VideoSession::ImportXML: pagebottomwidth = " << mypagebottomwidth;
             // pagebottomheight
             nodeAttrib = domain_node->first_attribute("pagebottomheight");
             if (!nodeAttrib)
             {
-                Wt::log("error") << "(Update: Missing XML Element: pagebottomheight = " << domain_node->name() << ")";
-                return;
+                Wt::log("error") << "VideoSession::ImportXML: Missing XML Element: pagebottomheight = " << domain_node->name() << ")";
+                return false;
             }
             std::string mypagebottomheight(nodeAttrib->value(), nodeAttrib->value_size());
             videoDb->pagebottomheight = mypagebottomheight;
-            Wt::log("progress") << "(Update: pagebottomheight)";
+            Wt::log("progress") << "VideoSession::ImportXML: pagebottomheight = " << mypagebottomheight;
             // Commit Transaction
             t.commit();
         } // end for
@@ -314,10 +352,12 @@ void VideoSession::Update()
     catch (std::exception& e)
     {
         std::cerr << e.what() << std::endl;
-        std::cerr << "Update: Failed writting to video database";
-        Wt::log("error") << "-> VideoSession::Update()  Failed writting to video database)";
+        std::cerr << "VideoSession::ImportXML(): Failed writting to video database";
+        Wt::log("error") << "-> VideoSession::ImportXML()  Failed writting to video database)";
+        return false;
     }
-    Wt::log("end") << "VideoSession::Update()";
-} // end void VideoSession::Update
+    Wt::log("end") << "VideoSession::ImportXML()";
+    return true;
+} // end void VideoSession::VideoSession::ImportXML
 #endif // VIDEOMAN
 // --- End Of File ------------------------------------------------------------

@@ -7,6 +7,7 @@
  * Modified for Witty Wizard
  *
  */
+#ifdef BLOGMAN
 #ifndef TOKEN_H_
 #define TOKEN_H_
 
@@ -43,6 +44,6 @@ class Token : public Wt::Dbo::Dbo<Token>
 };
 
 DBO_EXTERN_TEMPLATES(Token);
-
 #endif // TOKEN_H_
+#endif // BLOGMAN
 // --- End Of File ------------------------------------------------------------

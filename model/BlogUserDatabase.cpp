@@ -6,7 +6,7 @@
  * Modified for Witty Wizard
  *
  */
-
+#ifdef BLOGMAN
 #include <Wt/Dbo/Impl>
 #include <Wt/Auth/Identity>
 
@@ -362,4 +362,5 @@ BlogUserDatabase::WithUser::~WithUser()
 {
     transaction.commit();
 } // end
+#endif // BLOGMAN
 // --- End Of File ------------------------------------------------------------

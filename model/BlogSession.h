@@ -7,6 +7,7 @@
  * Modified for Witty Wizard
  *
  */
+#ifdef BLOGMAN
 #ifndef BLOG_SESSION_H_
 #define BLOG_SESSION_H_
 
@@ -54,6 +55,6 @@ class BlogSession : public Wt::Dbo::Session
 
         Wt::Signal< Wt::Dbo::ptr<Comment> > commentsChanged_;
 };
-
 #endif // BLOG_SESSION_H_
+#endif // BLOGMAN
 // --- End Of File ------------------------------------------------------------

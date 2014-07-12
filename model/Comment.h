@@ -7,6 +7,7 @@
  * Modified for Witty Wizard
  *
  */
+#ifdef BLOGMAN
 #ifndef COMMENT_H_
 #define COMMENT_H_
 
@@ -68,8 +69,7 @@ class Comment
         Wt::WString textSrc_;
         Wt::WString textHtml_;
 };
-
 DBO_EXTERN_TEMPLATES(Comment);
-
 #endif // COMMENT_H_
+#endif // BLOGMAN
 // --- End Of File ------------------------------------------------------------

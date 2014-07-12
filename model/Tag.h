@@ -7,6 +7,7 @@
  * Modified for Witty Wizard
  *
  */
+#ifdef BLOGMAN
 #ifndef TAG_H_
 #define TAG_H_
 
@@ -42,6 +43,6 @@ class Tag
 };
 
 DBO_EXTERN_TEMPLATES(Tag);
-
 #endif // TAG_H_
+#endif // BLOGMAN
 // --- End Of File ------------------------------------------------------------

@@ -6,6 +6,7 @@
  * Modified for Witty Wizard
  *
  */
+#ifdef BLOGMAN
 #include <Wt/Auth/AuthService>
 #include <Wt/Auth/HashFunction>
 #include <Wt/Auth/Identity>
@@ -43,6 +44,7 @@
 #include "Token.h"
 #include "User.h"
 #include "asciidoc/asciidoc.h"
+extern bool initDb;
 /* ****************************************************************************
  * Unix Crypt Hash Function
  * BlogOAuth
@@ -108,46 +110,48 @@ BlogSession::BlogSession(Wt::Dbo::SqlConnectionPool &connectionPool) : connectio
     mapClass<Tag>("tag");
     mapClass<Token>("token");
     mapClass<User>("user");
-
-    try
+    if (initDb)
     {
-        Wt::Dbo::Transaction t(*this);
-        createTables();
+        try
+        {
+            Wt::Dbo::Transaction t(*this);
+            createTables();
 
-        Wt::Dbo::ptr<User> admin = add(new User());
-        User *a = admin.modify();
-        a->name = ADMIN_USERNAME;
-        a->role = User::Admin;
+            Wt::Dbo::ptr<User> admin = add(new User());
+            User *a = admin.modify();
+            a->name = ADMIN_USERNAME;
+            a->role = User::Admin;
 
-        Wt::Auth::User authAdmin = users_.findWithIdentity(Wt::Auth::Identity::LoginName, a->name);
-        blogPasswords.updatePassword(authAdmin, ADMIN_PASSWORD);
+            Wt::Auth::User authAdmin = users_.findWithIdentity(Wt::Auth::Identity::LoginName, a->name);
+            blogPasswords.updatePassword(authAdmin, ADMIN_PASSWORD);
 
-        Wt::Dbo::ptr<Post> post = add(new Post());
-        Post *p = post.modify();
+            Wt::Dbo::ptr<Post> post = add(new Post());
+            Post *p = post.modify();
 
-        p->state = Post::Published;
-        p->author = admin;
-        p->title = "Welcome!";
-        p->briefSrc = "Welcome to your own blog.";
-        // Fix Security
-        p->bodySrc = "We have created for you an " + ADMIN_USERNAME + " user with password " + ADMIN_PASSWORD;
-        p->briefHtml = asciidoc(p->briefSrc);
-        p->bodyHtml = asciidoc(p->bodySrc);
-        p->date = Wt::WDateTime::currentDateTime();
+            p->state = Post::Published;
+            p->author = admin;
+            p->title = "Welcome!";
+            p->briefSrc = "Welcome to your own blog.";
+            // Fix Security
+            p->bodySrc = "We have created for you an " + ADMIN_USERNAME + " user with password " + ADMIN_PASSWORD;
+            p->briefHtml = asciidoc(p->briefSrc);
+            p->bodyHtml = asciidoc(p->bodySrc);
+            p->date = Wt::WDateTime::currentDateTime();
 
-        Wt::Dbo::ptr<Comment> rootComment = add(new Comment());
-        rootComment.modify()->post = post;
+            Wt::Dbo::ptr<Comment> rootComment = add(new Comment());
+            rootComment.modify()->post = post;
 
-        t.commit();
+            t.commit();
 
-        std::cerr << "Created database, and user " << ADMIN_USERNAME << " / " << ADMIN_PASSWORD << std::endl;
+            std::cerr << "Created database, and user " << ADMIN_USERNAME << " / " << ADMIN_PASSWORD << std::endl;
+        }
+        catch (std::exception& e)
+        {
+            std::cerr << e.what() << std::endl;
+            std::cerr << "Using existing database";
+        }
     }
-    catch (std::exception& e)
-    {
-        std::cerr << e.what() << std::endl;
-        std::cerr << "Using existing database";
-    }
-} // end
+} // end BlogSession
 /* ****************************************************************************
  * configure Auth
  */
@@ -171,9 +175,10 @@ void BlogSession::configureAuth()
     {
         blogOAuth.push_back(new Wt::Auth::GoogleService(blogAuth));
     }
-} // end
+} // end configureAuth
 /* ****************************************************************************
  * create Connection Pool
+ * Not used anymore
  */
 Wt::Dbo::SqlConnectionPool *BlogSession::createConnectionPool(const std::string &dbParm)
 {
@@ -203,7 +208,7 @@ Wt::Dbo::SqlConnectionPool *BlogSession::createConnectionPool(const std::string 
     #endif // FIREBIRD
     dbConnection->setProperty("show-queries", "true");
     return new Wt::Dbo::FixedSqlConnectionPool(dbConnection, 10);
-} // end
+} // end createConnectionPool
 /* ****************************************************************************
  * user
  */
@@ -217,19 +222,20 @@ Wt::Dbo::ptr<User> BlogSession::user() const
     {
         return Wt::Dbo::ptr<User>();
     }
-} // end
+} // end user
 /* ****************************************************************************
  * password Auth
  */
 Wt::Auth::PasswordService *BlogSession::passwordAuth() const
 {
     return &blogPasswords;
-} // end
+} // end passwordAuth
 /* ****************************************************************************
  * oAuth
  */
 const std::vector<const Wt::Auth::OAuthService *> &BlogSession::oAuth() const
 {
     return blogOAuth;
-} // end
+} // end oAuth
+#endif // BLOGMAN
 // --- End Of File ------------------------------------------------------------

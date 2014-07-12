@@ -7,6 +7,7 @@
  * Modified for Witty Wizard
  *
  */
+#ifdef BLOGMAN
 #ifndef USER_H_
 #define USER_H_
 
@@ -86,6 +87,6 @@ class User
 };
 
 DBO_EXTERN_TEMPLATES(User);
-
 #endif // USER_H_
+#endif // BLOGMAN
 // --- End Of File ------------------------------------------------------------

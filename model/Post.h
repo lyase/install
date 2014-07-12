@@ -7,6 +7,7 @@
  * Modified for Witty Wizard
  *
  */
+#ifdef BLOGMAN
 #ifndef POST_H_
 #define POST_H_
 
@@ -79,6 +80,6 @@ class Post : public Wt::Dbo::Dbo<Post>
 };
 
 DBO_EXTERN_TEMPLATES(Post);
-
 #endif // POST_H_
+#endif // BLOGMAN
 // --- End Of File ------------------------------------------------------------

@@ -6,7 +6,7 @@
  * Modified for Witty Wizard
  *
  */
-
+#ifdef BLOGMAN
 #include <boost/lexical_cast.hpp>
 
 #include "Post.h"
@@ -75,4 +75,5 @@ std::string Post::titleToUrl() const
     }
     return result;
 } // end
+#endif // BLOGMAN
 // --- End Of File ------------------------------------------------------------

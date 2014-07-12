@@ -6,6 +6,7 @@
  * Modified for Witty Wizard
  *
  */
+#ifdef BLOGMAN
 #include "User.h"
 #include "Comment.h"
 #include "Post.h"
@@ -36,4 +37,5 @@ Posts User::allPosts(Post::State state) const
 {
     return posts.find().where("state = ?").bind(state).orderBy("date desc");
 } // end
+#endif // BLOGMAN
 // --- End Of File ------------------------------------------------------------
