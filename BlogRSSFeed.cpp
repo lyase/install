@@ -6,6 +6,7 @@
  * Modified for Witty Wizard
  *
  */
+#ifdef BLOGMAN
 #include <Wt/WApplication>
 #include <Wt/Http/Response>
 #include <Wt/Utils>
@@ -172,24 +173,26 @@ To get clients locale, get HTTP header "Accept-Language" using Request::headerVa
 For example, "en-US,en;q=0.8,ru;q=0.6" means Russian.
 
 */
-    //const Wt::WEnvironment& env = Wt::WApplication::instance()->environment();
     /*
-    const Wt::WEnvironment& env = new Wt::WEnvironment();
-
-    Wt::WApplication *app = new Wt::WApplication(env);
-    Wt::WApplication::UpdateLock lock(app);
-    if (lock)
-    {
-        // exclusive access to app state
-        app->messageResourceBundle().use(myDomainPath[domainName] + "app_root/ww-home", false);
-    }
-    //MyResources myRes = new MyResources(Wt::WApplication::instance()->environment(), domainName);
     //Wt::WApplication *app = Wt::WApplication::instance();
 
     */
-    //Wt::WApplication* app = Wt::WApplication::instance(); // to just wApp
+    /*
+     * WMessageResourceBundle& WApplication::builtinLocalizedStrings()
+     */
+    //Wt::WApplication* app = Wt::WApplication::instance();
+    //const Wt::WEnvironment& env = new Wt::WEnvironment(); // is protected error
+/*
+    const Wt::WEnvironment& env = Wt::WApplication::instance()->environment(); // segment fault WEnvironment& WApplication::env()
+    Wt::WApplication *app = new Wt::WApplication(env);
 
 
+    Wt::WApplication::UpdateLock lock(app);  // Wt::WApplication::instance() ~ segment fault in UpdateLock: impl_ = new UpdateLockImpl(app);
+    if (lock)    {
+        // exclusive access to app state
+        app->messageResourceBundle().use(myDomainPath[domainName] + "app_root/ww-home", false);
+    }
+*/
 
     //
     std::string url          = Wt::WString::tr("rss-url").toUTF8();
@@ -248,4 +251,5 @@ For example, "en-US,en;q=0.8,ru;q=0.6" means Russian.
 
     t.commit();
 } // end void BlogRSSFeed::handleRequest
+#endif // BLOGMAN
 // --- End Of File ------------------------------------------------------------
