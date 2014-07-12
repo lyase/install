@@ -42,12 +42,15 @@
 //#include <Wt/WImage>
 #include <Wt/WBootstrapTheme>
 #include <Wt/WComboBox>
-
-#include "BlogRSSFeed.h"
-#include "model/BlogSession.h"
-#include "model/Token.h"
-#include "model/User.h"
-
+//
+#ifdef BLOGMAN
+    #include "BlogRSSFeed.h"
+    #include "model/BlogSession.h"
+    #include "model/Token.h"
+    #include "model/User.h"
+    #include "view/BlogView.h"
+#endif // BLOGMAN
+//
 #include "rapidxml/rapidxml.hpp"
 #include "rapidxml/rapidxml_utils.hpp"
 
@@ -59,14 +62,13 @@
 //#include <Wt/Dbo/SqlConnectionPool>
 
 #include "HomeBase.h"
-#include "view/BlogView.h"
 #include "SimpleChat.h"
 #ifdef VIDEOMAN
     #include "view/VideoView.h"
     #include "view/VideoImpl.h"
 #endif
 #include "view/HitView.h"
-#include "WittyWizard.h"
+//#include "WittyWizard.h"
 /* ****************************************************************************
  * default Language
  */
@@ -111,6 +113,11 @@ extern std::map <std::string, std::string> myIncludes;
  * See domain.xml:defaultTheme="blue"
  */
 extern std::map <std::string, std::string> myDefaultTheme;
+/* ****************************************************************************
+ * Global functions
+ */
+extern bool isFile(const std::string& name);
+extern bool isPath(const std::string& pathName);
 /* ************************************************************************* */
 /*! \class Home
  *  \brief Virtual Base Class
@@ -122,55 +129,51 @@ Home::Home(const Wt::WEnvironment& env) : Wt::WApplication(env), homePage_(0)
     myUrlScheme = env.urlScheme().c_str(); // http or https
     myBaseUrl = myUrlScheme + "://" + myHost + "/"; // FIXIT
     domainName = env.hostName().c_str();
-    //unsigned pos = domainName.indexOf(":");
     unsigned pos = domainName.find(":");
     if (pos > 0)
     {
-        //domainName = domainName.mid(0, pos);
         domainName = domainName.substr(0, pos);
     }
     // this is just for testing multiple sites in a localhost nated network
     if (0) domainName = "wittywizard.org";
     if (0) domainName = "lightwizzard.com";
     if (0) domainName = "vetshelpcenter.com";
+    #if defined(BLOGMAN) || defined(VIDEOMAN)
     //
     if (!SetSqlConnectionPool(domainName))
     {
-        Wt::log("error") << "(BlogRSSFeed::handleRequest: SetSqlConnectionPool failed for domain: " << domainName << ")";
+        Wt::log("error") << "(Home::Home: SetSqlConnectionPool failed for domain: " << domainName << ")";
         // FIXIT make this a error page
         return;
     }
-    appPath_ = myDomainPath[domainName]; // Path Checked in main.cpp
-    Wt::log("notice") << "Home::Home() appPath: " << appPath_ << "";
     // connect to Connection Pool
-//    if(myConnectionPool.find(domainName.toStdString()) == myConnectionPool.end())
     if(myConnectionPool.find(domainName) == myConnectionPool.end())
     {
         // element not found;
-        //Wt::log("error") << "Home::Home() myConnectionPool element not found " << domainName.toStdString() << "";
         Wt::log("error") << "Home::Home() myConnectionPool element not found " << domainName << "";
         return;
     }
     try
     {
-        //dbConnection_ = boost::any_cast<Wt::Dbo::SqlConnectionPool *>(myConnectionPool[domainName.toStdString()]);
         dbConnection_ = boost::any_cast<Wt::Dbo::SqlConnectionPool *>(myConnectionPool[domainName]);
     }
     catch (...)
     {
-        //Wt::log("error") << "->>> Home::Home() Failed Connection Pool " << domainName.toStdString() << "<<<-";
         Wt::log("error") << "->>> Home::Home() Failed Connection Pool " << domainName << "<<<-";
         return;
     }
-    //std::string mrPath(appPath_ + "app_root/ww-home"); // Fix name
-    //messageResourceBundle().use(mrPath, false);
-    // FIXIT appRoot() ./app_root/
-    messageResourceBundle().use(appPath_ + "app_root/ww-home", false);
+    #endif // BLOGMAN || VIDEOMAN
+    //
+    if (!isFile(appRoot() + "home/" + domainName + "/ww-home.xml"))
+    {
+        Wt::log("error") << "**** Home::Home() missing file: " <<  appRoot() + "home/" + domainName + "/ww-home.xml" << "****";
+    }
+    messageResourceBundle().use(appRoot() + "home/" + domainName + "/ww-home", false);
     // Fix if it should use local copy of themes
     useStyleSheet(Wt::WApplication::resourcesUrl() + "css/wittywizard.css");
     useStyleSheet(Wt::WApplication::resourcesUrl() + "css/wittywizard_ie.css", "lt IE 7"); // "." +
     // Debug to see what path is returned in settings
-    if (0)
+    if (1)
     {
         Wt::log("notice") << "Home::Home: (resourcesUrl(): " << resourcesUrl() << ")"; // /resources/
         Wt::log("notice") << "Home::Home: (appRoot(): " << appRoot() << ")";           // ./app_root/
@@ -215,6 +218,7 @@ Home::Home(const Wt::WEnvironment& env) : Wt::WApplication(env), homePage_(0)
  */
 Home::~Home()
 {
+
 } // end Home::~Home()
 /* ****************************************************************************
  * init
@@ -251,7 +255,8 @@ void Home::SetBaseURL()
 void Home::CreateHome()
 {
     Wt::WTemplate* homeTemplate = new Wt::WTemplate(Wt::WString::tr("template"), root()); // in ww-home.xml -> <message id="template">
-    homePage_ = homeTemplate;
+    homePage_ = homeTemplate; // not sure why I need this
+    homeTemplate_ = homeTemplate;
     //
     Wt::WStackedWidget* contents = new Wt::WStackedWidget();
     Wt::WAnimation fade(Wt::WAnimation::Fade, Wt::WAnimation::Linear, 250);
@@ -278,16 +283,37 @@ void Home::CreateHome()
     // FIXIT
     //QString includeThis = myIncludes[domainName];
     //includeThis.split("|")
+    // "|home|chat|blog|about|contact|video|"
     mainMenu_->addItem(Wt::WString::tr("home"),  HomePage())->setPathComponent("");
-    mainMenu_->addItem(Wt::WString::tr("blog"),  deferCreate(boost::bind(&Home::Blog, this))); // http://localhost:8088/?_=/blog or http://localhost:8088/blog
-    mainMenu_->addItem(Wt::WString::tr("chat"),  deferCreate(boost::bind(&Home::Chat, this))); //
+    std::string theIncludes = myIncludes[domainName];
+    Wt::log("notice") << "Home::CreateHome:  theIncludes=" << theIncludes;
+
+    #ifdef BLOGMAN
+        if (theIncludes.find("|blog|") != std::string::npos)
+        {
+            mainMenu_->addItem(Wt::WString::tr("blog"),  deferCreate(boost::bind(&Home::Blog, this))); // http://localhost:8088/?_=/blog or http://localhost:8088/blog
+        }
+    #endif // BLOGMAN
+    if (theIncludes.find("|chat|") != std::string::npos)
+    {
+        mainMenu_->addItem(Wt::WString::tr("chat"),  deferCreate(boost::bind(&Home::Chat, this))); //
+    }
     // Make sure you can completly remove any module, this goes for blog or chat also
     #ifdef VIDEOMAN
-        mainMenu_->addItem(Wt::WString::tr("video"), deferCreate(boost::bind(&Home::VideoMan, this)));
+        if (theIncludes.find("|video|") != std::string::npos)
+        {
+            mainMenu_->addItem(Wt::WString::tr("video"), deferCreate(boost::bind(&Home::VideoMan, this)));
+        }
         // FIXIT add Menu Options for all videos
     #endif // VIDEOMAN
-    mainMenu_->addItem(Wt::WString::tr("contact"), deferCreate(boost::bind(&Home::Contact, this)));
-    mainMenu_->addItem(Wt::WString::tr("about"),   deferCreate(boost::bind(&Home::About, this)));
+    if (theIncludes.find("|contact|") != std::string::npos)
+    {
+        mainMenu_->addItem(Wt::WString::tr("contact"), deferCreate(boost::bind(&Home::Contact, this)));
+    }
+    if (theIncludes.find("|about|") != std::string::npos)
+    {
+        mainMenu_->addItem(Wt::WString::tr("about"),   deferCreate(boost::bind(&Home::About, this)));
+    }
     //mainMenu_->addItem("Search", searchResult);
 
     // Setup a Right-aligned menu.
@@ -462,9 +488,9 @@ void Home::SetWizardTheme(bool fromCookie, int index)
         // FIXIT check for legal path
         std::string jsCss = "document.getElementById('wittywizardstylesheet').href='" + Wt::WApplication::resourcesUrl() + "themes/wittywizard/" + myTheme + "/ww-" + myTheme + ".css';";
         this->doJavaScript(jsCss);
-        //useStyleSheet(Wt::WApplication::resourcesUrl() + "themes/wittywizard/" + myTheme + "/ww-" + myTheme + ".css");
         SetCookie("theme", myTheme);
         SetCookie("themepath", Wt::WApplication::resourcesUrl() + "themes/wittywizard/");
+        useStyleSheet(Wt::WApplication::resourcesUrl() + "themes/wittywizard/" + myTheme + "/ww-" + myTheme + ".css");
     }
 } // end void Home::SetWizardTheme
 /* ****************************************************************************
@@ -477,6 +503,8 @@ void Home::SetLanguage(int index, std::string languageCode)
     isPathChanging = true;
     std::string currentLanguageCode = internalPathNextPart("/"); // Checks First path statement
     std::string thePath = internalPath(); // begins with /
+    //std::vector<std::string> parts;
+    //boost::split(parts, path, boost::is_any_of("/"));
     Wt::log("start") << " <<<<<<<*** Home::SetLanguage(index: " << index << ", languagePath: " << languageCode << ") " << " | thePath = " << thePath;
     #ifdef VIDEOMAN
         VideoView *video;
@@ -491,6 +519,7 @@ void Home::SetLanguage(int index, std::string languageCode)
         currentMenuItem = internalPathNextPart('/' + languageCode + '/'); // Checks second path statement: Menu Item
         if (!currentMenuItem.empty())
         {
+            // FIXIT Do I need to do this?
             #ifdef VIDEOMAN
             if (currentMenuItem == "video")
             {
@@ -516,15 +545,17 @@ void Home::SetLanguage(int index, std::string languageCode)
     // Change Path
     Wt::WApplication::instance()->setInternalPath(thePath, true);
     //
+    #ifdef BLOGMAN
     BlogView *blog = dynamic_cast<BlogView *>(findWidget("blog"));
     if (blog)
     {
         if (!thePath.find('/' + languageCode + "blog/"))
         {
-            Wt::log("notice") << "Home::SetLanguage() for blog " << index << ")";
+            Wt::log("notice") << "Home::SetLanguage() for blog " << index <<  " | thePath = " << thePath << "blog/)";
             blog->SetInternalBasePath(thePath + "blog/");
         }
     }
+    #endif // BLOGMAN
     //
     #ifdef VIDEOMAN
     video = dynamic_cast<VideoView *>(findWidget("video"));
@@ -532,7 +563,7 @@ void Home::SetLanguage(int index, std::string languageCode)
     {
         if (!thePath.find('/' + languageCode + "video/"))
         {
-            Wt::log("notice") << "Home::SetLanguage() for video " << index <<  " | thePath = " << thePath << ")";
+            Wt::log("notice") << "Home::SetLanguage() for video " << index <<  " | thePath = " << thePath << "video/)";
             video->SetInternalBasePath(thePath + "video/");
         }
     }
@@ -544,6 +575,7 @@ void Home::SetLanguage(int index, std::string languageCode)
         Init();
     }
     language_ = index; // Set language_ to current Language
+    homeTemplate_->bindWidget("hitcounter", HitCounter());
     isPathChanging = false; // Set isPathChanging so SetLanguageFromPath will fire
 } // end void Home::SetLanguage
 /* ****************************************************************************
@@ -557,8 +589,19 @@ void Home::SetLanguageFromPath()
         Wt::log("restart") << " ~~~~ Home::SetLanguageFromPath() returning nothing done ~~~~ ";
         return;
     }
+    //
     std::string thePath = internalPath(); // begins with /
+    std::vector<std::string> parts;
+    boost::split(parts, thePath, boost::is_any_of("/"));
+    // path = /en/video/IAM/00-02-N-IAM | parts.size()=5 | parts[0]= | parts[1]=en | parts[2]=video | parts[3]=IAM | parts[4]=00-02-N-IAM
+    Wt::log("notice") << " @@@@@@@@@@ Home::SetLanguageFromPath() path = " << thePath << " | parts.size()=" << parts.size() << " | parts[0]=" << parts[0] << " | parts[1]=" << parts[1];
+    // 0 Categories 1 Video
+    if (parts.size() == 1)
+    {
+    }
+    //
     std::string languageCode = internalPathNextPart("/"); // Checks First
+    //
     int newLanguage = 0;
     // If Language Code is not set, set it to a Default Language
     if (languageCode.empty())
@@ -632,12 +675,14 @@ Wt::WWidget *Home::About()
 /* ****************************************************************************
  * blog
  */
+#ifdef BLOGMAN
 Wt::WWidget *Home::Blog()
 {
     const Lang& l = languages[language_];
     std::string langPath = l.name_;
     std::string defaultTheme = myDefaultTheme[domainName];
-    BlogView* blog = new BlogView("/" + langPath + "/blog/", *dbConnection_, "/" + rootPrefix + "/blog/feed/", defaultTheme);
+    // FIXIT: do I add language, then add a resource for each language?
+    BlogView* blog = new BlogView("/" + langPath + "/blog/", appRoot() + "home/" + domainName + "/", *dbConnection_, "/" + rootPrefix + "/blog/feed/", defaultTheme);
     blog->setObjectName("blog");
 
     if (!blog->user().empty())
@@ -648,6 +693,7 @@ Wt::WWidget *Home::Blog()
 
     return blog;
 } // end Wt::WWidget *Home::Blog
+#endif // BLOGMAN
 /* ****************************************************************************
  * Video Manager
  * myAppRoot: Path to video.xml
@@ -660,14 +706,18 @@ Wt::WWidget *Home::VideoMan()
     //
     const Lang& l = languages[language_];
     std::string langPath = l.name_;
-    //
-    std::string myAppRoot = appPath_ + docRoot().substr(2).c_str() + "/";
-    VideoView* thisVideo = new VideoView(myAppRoot + "video/", "/" + langPath + "/video/", *dbConnection_);
+    VideoView* thisVideo = new VideoView(appRoot() + "home/" + domainName + "/video/", "/" + langPath + "/video/", *dbConnection_, l.code_);
     thisVideo->setObjectName("video");
-
     return thisVideo;
 } // end Wt::WWidget *Home::VideoMan
 #endif // VIDEOMAN
+/* ****************************************************************************
+ * Admin
+ */
+Wt::WWidget* Home::Admin()
+{
+    return new Wt::WText(Wt::WString::tr("admin"));
+} // end void Home::Admin
 /* ****************************************************************************
  * IsPathLanguage
  * langPath: pass in first path string
