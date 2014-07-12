@@ -81,7 +81,7 @@ function load_packages()
         Boost_Install='boost boost-devel';
         Graphics_Install='GraphicsMagick GraphicsMagick-devel';
         PDF_Install='libharu libharu-devel';   # install using repo remi
-        APPS_REQUIRED_Install="gcc gcc-c++ autoconf automake cmake openssl pango pango-devel libtiff zlib glibc nano gd gd-devel rsync yum-utils bind-utils $Boost_Install $Graphics_Install";
+        APPS_REQUIRED_Install="gcc gcc-c++ autoconf automake cmake openssl pango pango-devel libtiff zlib glibc nano gd gd-devel rsync yum-utils bind-utils doxygen $Boost_Install $Graphics_Install";
         WT_REQUIRED_Install='wt wt-devel wt-dbo wt-examples jasper-libs lcms-libs libICE libSM libwmf-lite urw-fonts'; # wt requires fcgi; libwt libwtext libwthttp libwttest not found
         POSTGRESQL_Install='wt-dbo-postgres postgresql-server postgresql-contrib postgresql-devel';
         SQLITE_Install='sqlite';
@@ -156,7 +156,7 @@ function load_packages()
         #        
     elif [[ "$This_Distro" == "archlinux" ]]; then # ----------------------------------- Archlinux: This_PSUEDONAME = Archlinux Distros
         #
-        DEV_TOOLS_Install='base-devel wget rsync nano gcc autoconf automake cmake clang qt4 net-tools inetutils lshw';
+        DEV_TOOLS_Install='base-devel wget rsync nano gcc autoconf automake cmake clang qt4 net-tools inetutils lshw doxygen';
         Boost_Install='graphicsmagick';
         Graphics_Install='boost boost-libs';
         PDF_Install='libharu';
@@ -183,7 +183,7 @@ function load_packages()
             if [[ "$This_Distro_Version" == 'lenny' ]]; then
                 Extra_Install='automake libboost-test-dev -t lenny-backports';
             fi
-            DEV_TOOLS_Install='build-essential aptitude gtkorphan rsync cmake gcc g++';
+            DEV_TOOLS_Install='build-essential aptitude gtkorphan rsync cmake gcc g++ doxygen';
             Boost_Install='libboost-all-dev libboost-dev libboost-test-dev libboost-program-options-dev libevent-dev automake libtool flex bison pkg-config g++ libssl-dev libboost-date-time-dev libboost-filesystem-dev libboost-regex-dev libboost-signals-dev libboost-system-dev libboost-thread-dev libboost-thread-dev libboost-random-dev libboost-test-dev';
             Graphics_Install='graphicsmagick libgraphicsmagick1-dev libgraphicsmagick3';
             PDF_Install='libhpdf libhpdf-dev';
@@ -243,7 +243,7 @@ function load_packages()
             #
         elif [[ "$This_PSUEDONAME" == "LMDE" ]]; then # *-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
             #
-            DEV_TOOLS_Install='build-essential aptitude gtkorphan rsync cmake gcc g++';
+            DEV_TOOLS_Install='build-essential aptitude gtkorphan rsync cmake gcc g++ doxygen';
             Boost_Install='libboost-all-dev libboost-dev libboost-test-dev libboost-program-options-dev libevent-dev automake libtool flex bison pkg-config g++ libssl-dev libboost-date-time-dev libboost-filesystem-dev libboost-regex-dev libboost-signals-dev libboost-system-dev libboost-thread-dev libboost-thread-dev libboost-random-dev libboost-test-dev';
             Graphics_Install='graphicsmagick libgraphicsmagick1-dev libgraphicsmagick3';
             PDF_Install='libhpdf libhpdf-dev';
@@ -267,7 +267,7 @@ function load_packages()
             Repo_File='';
             #
         elif [[ "$This_PSUEDONAME" == "Ubuntu" ]]; then # *-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
-            #
+            # Wt Repo
             if [[ "$This_Distro_Version" == 'raring' ]]; then
                 Repo_Extra="deb http://ppa.launchpad.net/pgquiles/wt/ubuntu raring main";  
                 Repo_Extra_Key='deb-src http://ppa.launchpad.net/pgquiles/wt/ubuntu raring main';
@@ -296,7 +296,7 @@ function load_packages()
             fi
             #
             Required_Wizard='sshpass rsync openssh-server openssh-client';
-            DEV_TOOLS_Install='build-essential aptitude gtkorphan rsync cmake doxygen automake qtdeclarative5-dev qt5-default python-software-properties gcc-4.7 g++-4.7 nano';
+            DEV_TOOLS_Install='build-essential aptitude gtkorphan rsync cmake doxygen automake qtdeclarative5-dev qt5-default python-software-properties gcc-4.7 g++-4.7 nano doxygen';
             Boost_Install='libevent-dev libtool flex bison pkg-config libboost-all-dev libboost-dev libboost-test-dev libboost-program-options-dev libssl-dev libboost-date-time-dev libboost-filesystem-dev libboost-regex-dev libboost-signals-dev libboost-system-dev libboost-thread-dev libboost-thread-dev libboost-random-dev libboost-test-dev';
             Graphics_Install='graphicsmagick libgraphicsmagick1-dev libgraphicsmagick3';
             PDF_Install='libhpdf libhpdf-dev';
@@ -309,7 +309,8 @@ function load_packages()
             HAPROXY_Requirements='socat';
             HAPROXY_Install="haproxy $HAPROXY_Requirements";
             MONIT_Install='monit sysstat';
-            APACHE_Install='httpd'; # Install or Remove
+            #APACHE_Install='httpd'; # Install or Remove
+            APACHE_Install='apache2'; # Install or Remove
             #Moses_Install='automake libtool zlib1g-dev libssl-dev csh tcl tcl-dev libelf-dev';
             FTP_Install='proftpd';
             Run_This='update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.7 60;update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-4.7 50';
