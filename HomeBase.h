@@ -19,10 +19,10 @@
 #include "WittyWizard.h"
 /* ****************************************************************************
  * Lang
- * name:
- * code:
- * short Description:
- * long Description
+ * name: en, cn, ru
+ * code: en_US, zh_CN, ru_RU
+ * short Description: en, 汉语, ру
+ * long Description: English, 中文 (Chinese), Русский (Russian)
  */
 struct Lang
 {
@@ -113,6 +113,8 @@ class Home : public Wt::WApplication
         //
         void CreateHome();
         int IsPathLanguage(std::string langPath);
+        void ReInit();
+        int GetDefaultLanguage();
 
         Wt::WWidget* HomePage();
         Wt::WWidget* Contact();
@@ -124,13 +126,15 @@ class Home : public Wt::WApplication
         Wt::WWidget* Admin();
 
         Wt::WMenu* mainMenu_;
-        int language_ = 0;
+        int language_ = -1; // Language Index
 
         Wt::WWidget* WrapView(Wt::WWidget *(Home::*createFunction)());
 
         void UpdateTitle();
         void SetLanguage(int language, std::string langPath);
         void SetLanguageFromPath();
+        const Lang& GetLanguage(std::string languageName);
+        int GetLanguageIndex(std::string languageName);
         void LogInternalPath(const std::string& path);
         void ChatSetUser(const Wt::WString& name);
         void HandleLanguagePopup(int data);
