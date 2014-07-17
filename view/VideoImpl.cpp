@@ -2,7 +2,7 @@
  * Witty Wizard
  * Video Manager
  * Version: 1.0.0
- * Last Date Modified: 20 May 2014
+ * Last Date Modified: 15 July 2014
  *
  * Requires Cookie Patch: https://github.com/chan-jesus/vidanueva/blob/master/witty.patch
  *
@@ -15,6 +15,7 @@
 #include <Wt/WImage>
 #include <Wt/WComboBox>
 #include <Wt/WText>
+#include <Wt/WViewWidget>
 #include <Wt/WTemplate>
 #ifdef WVIDEO
     #include <Wt/WVideo>
@@ -32,14 +33,8 @@
 #include "rapidxml/rapidxml.hpp"
 #include "rapidxml/rapidxml_utils.hpp"
 //
-#include <QString>
-#include <QStringList>
 #include <QDebug>
-#ifdef REGX
-    #include <QRegularExpression>
-#else
-    #include <boost/algorithm/string.hpp>
-#endif
+#include <boost/algorithm/string.hpp>
 
 #include "view/VideoImpl.h"
 //#include "VideoView.h"
@@ -47,37 +42,45 @@
 #include "model/TheVideo.h"
 #include "WittyWizard.h"
 /* ****************************************************************************
+ * Global Variable
+ * See domain.xml:defaultTheme="blue"
+ */
+extern std::map <std::string, std::string> myDefaultTheme;
+/* ****************************************************************************
  * Global functions
  */
 extern bool isFile(const std::string& name);
 /* ****************************************************************************
  * Video Impl
  * This gets called every time the page is refreshed
- * appPath: /home/jflesher/FileShare/Code/0-WittyWizard/build-WittyWizard-Desktop-Debug/app_root/home/localhost/video/videoman
+ * appPath: /full-path/app_root/home/domainName/video/videoman
  * basePath: /en/video/
- * connectionPool:
- * lang:
+ * connectionPool: dbo
+ * lang: en, cn, ru ...
  */
 VideoImpl::VideoImpl(const std::string& appPath, const std::string& basePath, Wt::Dbo::SqlConnectionPool& connectionPool, const std::string& lang) : appPath_(appPath), basePath_(basePath), session_(appPath, connectionPool), lang_(lang), videoPage_(0)
 {
-    Wt::log("start") << " *** VideoImpl::VideoImpl() lang = " << lang << " *** ";
-    items_ = new Wt::WContainerWidget(this);\
+    items_ = new Wt::WContainerWidget(this);
     items_->setId("videocan");
     //
-    bindItems = new Wt::WContainerWidget(this);\
+    bindItems = new Wt::WContainerWidget(this);
     bindItems->setId("videomanbinder");
     //Wt::WApplication *app = Wt::WApplication::instance();
     Wt::WApplication *app = wApp;
-    // Do we want to use our own Template or use a common Template?
-    // /home/jflesher/FileShare/Code/0-WittyWizard/build-WittyWizard-Desktop-Debug/app_root/home/localhost/video/videoman.xml
-    if (0 && !isFile(appPath + "videoman.xml"))
+    domainName = app->environment().hostName().c_str();
+    unsigned pos = domainName.find(":");
+    if (pos > 0)
     {
-        Wt::log("error") << " *** VideoImpl::VideoImpl() Themeplate Not Found: " << appPath + "videoman.xml" << " *** ";
+        domainName = domainName.substr(0, pos);
     }
+    // FIXIT Do we want to use our own Template or use a common Template?
+    // /full-path/app_root/home/domainName/video/videoman.xml
+    if (1 && !isFile(appPath + "videoman.xml")) { Wt::log("error") << " *** VideoImpl::VideoImpl() Themeplate Not Found: " << appPath + "videoman.xml" << " *** "; }
     app->messageResourceBundle().use(appPath + "videoman"); // ./app_root/ Wt::WApplication::appRoot()
-
     videoTemplate = new Wt::WTemplate(Wt::WString::tr("videoman-template"), this); //  <message id="videoman-template">
     videoPage_ = videoTemplate;
+
+    Wt::log("start") << " *** VideoImpl::VideoImpl() lang = " << lang << " | domainName = " << domainName << " | appPath = " << appPath << " *** ";
 
     Init();
 } // end VideoImpl::VideoImpl
@@ -107,10 +110,8 @@ void VideoImpl::MakeVideo()
     Wt::log("start") << " *** VideoImpl::MakeVideo( ) *** ";
     // Set Category and Video from Internal Path, ComboBox or Cookie
     GetCategoriesPath();
-    #ifndef USE_TEMPLATE
-        // Clear all the WContainerWidget Items
-        items_->clear();
-    #endif
+    // Clear all the WContainerWidget Items
+    items_->clear();
     //
     CreateCategoryCombo();
     //
@@ -147,54 +148,57 @@ bool VideoImpl::CreateCategoryCombo()
         TheVideos videos = session_.find<TheVideo>();
         for (TheVideos::const_iterator i = videos.begin(); i != videos.end(); ++i)
         {
-            //Wt::log("notice") << "VideoImpl::CreateCategoryCombo:  const_iterator " << (*i)->categories << ")";
+            //Wt::log("notice") << "VideoImpl::CreateCategoryCombo:  const_iterator = " << (*i)->categories;
             // Category List: cat-0|cat-1|cat-2|cat-3...
-            QString myCategoriesSchema = QString::fromStdString((*i)->categories);
             // Currently only testing 1 category
-            #ifdef REGX
-                QRegExp rx("|"); // RegEx for ' ' or ',' or '.' or ':' or '\t'
-                QStringList categoryFields = myCategoriesSchema.split(rx);
-            #else
-                // @FIXIT test
-                //std::vector <std::string> categoryFields;
-                //boost::split( categoryFields, myCategoriesSchema.toStdString(), boost::is_any_of( "|" ) );
-                QStringList categoryFields = myCategoriesSchema.split("|");
-            #endif
-            if (myCategoriesSchema.isEmpty())
+            // @FIXIT test
+            std::string myCategoriesSchema = (*i)->categories;
+            std::vector<std::string> categoryFields;
+            boost::split(categoryFields, myCategoriesSchema, boost::is_any_of("|"));
+            //
+            if (myCategoriesSchema.empty())
             {
                 numberCats = 0;
             }
             else
             {
-                numberCats = myCategoriesSchema.contains('|') + 1;
+                //numberCats = myCategoriesSchema.contains('|') + 1;
+                numberCats = std::count(myCategoriesSchema.begin(), myCategoriesSchema.end(), '_') + 1;
             }
+            //Wt::log("notice") << "VideoImpl::CreateCategoryCombo:  numberCats = " << numberCats;
             if (numberCats > 1)
             {
                     int catSize = categoryFields.size();
                     if (catSize > 1)
                     {
                         // if I use (name of javascript concept where you name a variable like category_$x = 0; not a c concept) a categoryText_x where x is i, it becomes: categoryText_0 and assigns the correct value to it
-                        for (int catIndex=0;catIndex<catSize;catIndex++)
+                        for (int catIndex = 0; catIndex < catSize; catIndex++)
                         {
                             switch(catIndex)
                             {
                                 case 0:
-                                    categoryText_0 = categoryFields.at(catIndex).toStdString();
+                                    //categoryText_0 = categoryFields.at(catIndex).toStdString();
+                                    categoryText_0 = categoryFields[catIndex];
                                     break;
                                 case 1:
-                                    categoryText_1 = categoryFields.at(catIndex).toStdString();
+                                    //categoryText_1 = categoryFields.at(catIndex).toStdString();
+                                    categoryText_1 = categoryFields[catIndex];
                                     break;
                                 case 2:
-                                    categoryText_2 = categoryFields.at(catIndex).toStdString();
+                                    //categoryText_2 = categoryFields.at(catIndex).toStdString();
+                                    categoryText_2 = categoryFields[catIndex];
                                     break;
                                 case 3:
-                                    categoryText_3 = categoryFields.at(catIndex).toStdString();
+                                    //categoryText_3 = categoryFields.at(catIndex).toStdString();
+                                    categoryText_3 = categoryFields[catIndex];
                                     break;
                                 case 4:
-                                    categoryText_4 = categoryFields.at(catIndex).toStdString();
+                                    //categoryText_4 = categoryFields.at(catIndex).toStdString();
+                                    categoryText_4 = categoryFields[catIndex];
                                     break;
                                 case 5:
-                                    categoryText_5 = categoryFields.at(catIndex).toStdString();
+                                    //categoryText_5 = categoryFields.at(catIndex).toStdString();
+                                    categoryText_5 = categoryFields[catIndex];
                                     break;
                             }
                         } // end for (int catIndex=0;catIndex<catSize;catIndex++)
@@ -206,15 +210,14 @@ bool VideoImpl::CreateCategoryCombo()
                     // FIXIT for video list only
                     break;
                 case 1:
-                    categoriesQueryName = myCategoriesSchema.toStdString(); // cat-0
-                    // if (!ComboCategory_0) // this does not work reliable
-                    if (!isComboCategory_0)
+                    categoriesQueryName = myCategoriesSchema; // cat-0
+                    if (ComboCategory_0 == NULL) // this does not work reliable
                     {
                         Wt::log("notice") << "VideoImpl::CreateCategoryCombo:  new ComboCategory_0 WComboBox";
                         ComboCategory_0 = new Wt::WComboBox(items_);
-                        ComboCategory_0->addItem(categoriesQueryName); // it did not exist, add it
-                        isComboCategory_0 = true;
+                        ComboCategory_0->activated().connect(this, &VideoImpl::CategoryComboChanged);
                     }
+                    // Find it
                     if (ComboCategory_0->findText(categoriesQueryName) == -1)
                     {
                         ComboCategory_0->addItem(categoriesQueryName); // it did not exist, add it
@@ -225,20 +228,22 @@ bool VideoImpl::CreateCategoryCombo()
                     }
                     break;
                 case 2:
-                    if (!ComboCategory_0)
+                    if (ComboCategory_0 == NULL)
                     {
                         ComboCategory_0 = new Wt::WComboBox(items_);
-                        isComboCategory_0 = true;
+                        ComboCategory_0->activated().connect(this, &VideoImpl::CategoryComboChanged);
                     }
-                    if (!ComboCategory_1)
+                    if (ComboCategory_1 == NULL)
                     {
                         ComboCategory_1 = new Wt::WComboBox(items_);
+                        ComboCategory_1->activated().connect(this, &VideoImpl::CategoryComboChanged);
                     }
+                    // Find it
                     if (ComboCategory_0->findText(categoryText_0) == -1)
                     {
                         ComboCategory_0->addItem(categoryText_0); // it did not exist, add it
                     }
-                    if (categoryFields.at(0).toStdString() == categoryText_0)
+                    if (categoryFields[0] == categoryText_0)
                     {
                         ComboCategory_0->setCurrentIndex(ComboCategory_0->findText(categoryText_0));
                     }
@@ -246,30 +251,33 @@ bool VideoImpl::CreateCategoryCombo()
                     {
                         ComboCategory_1->addItem(categoryText_1); // it did not exist, add it
                     }
-                    if (categoryFields.at(1).toStdString() == categoryText_1)
+                    if (categoryFields[1] == categoryText_1)
                     {
                         ComboCategory_1->setCurrentIndex(ComboCategory_1->findText(categoryText_1));
                     }
                     break;
                 case 3:
-                    if (!ComboCategory_0)
+                    if (ComboCategory_0 == NULL)
                     {
                         ComboCategory_0 = new Wt::WComboBox(items_);
-                        isComboCategory_0 = true;
+                        ComboCategory_0->activated().connect(this, &VideoImpl::CategoryComboChanged);
                     }
-                    if (!ComboCategory_1)
+                    if (ComboCategory_1 == NULL)
                     {
                         ComboCategory_1 = new Wt::WComboBox(items_);
+                        ComboCategory_1->activated().connect(this, &VideoImpl::CategoryComboChanged);
                     }
-                    if (!ComboCategory_2)
+                    if (ComboCategory_2 == NULL)
                     {
                         ComboCategory_2 = new Wt::WComboBox(items_);
+                        ComboCategory_2->activated().connect(this, &VideoImpl::CategoryComboChanged);
                     }
+                    // Find it
                     if (ComboCategory_0->findText(categoryText_0) == -1)
                     {
                         ComboCategory_0->addItem(categoryText_0); // it did not exist, add it
                     }
-                    if (categoryFields.at(0).toStdString() == categoryText_0)
+                    if (categoryFields[0] == categoryText_0)
                     {
                         ComboCategory_0->setCurrentIndex(ComboCategory_0->findText(categoryText_0));
                     }
@@ -277,7 +285,7 @@ bool VideoImpl::CreateCategoryCombo()
                     {
                         ComboCategory_1->addItem(categoryText_1); // it did not exist, add it
                     }
-                    if (categoryFields.at(1).toStdString() == categoryText_1)
+                    if (categoryFields[1] == categoryText_1)
                     {
                         ComboCategory_1->setCurrentIndex(ComboCategory_1->findText(categoryText_1));
                     }
@@ -285,34 +293,38 @@ bool VideoImpl::CreateCategoryCombo()
                     {
                         ComboCategory_2->addItem(categoryText_2); // it did not exist, add it
                     }
-                    if (categoryFields.at(2).toStdString() == categoryText_2)
+                    if (categoryFields[2] == categoryText_2)
                     {
                         ComboCategory_2->setCurrentIndex(ComboCategory_2->findText(categoryText_2));
                     }
                     break;
                 case 4:
-                    if (!ComboCategory_0)
+                    if (ComboCategory_0 == NULL)
                     {
                         ComboCategory_0 = new Wt::WComboBox(items_);
-                        isComboCategory_0 = true;
+                        ComboCategory_0->activated().connect(this, &VideoImpl::CategoryComboChanged);
                     }
-                    if (!ComboCategory_1)
+                    if (ComboCategory_1 == NULL)
                     {
                         ComboCategory_1 = new Wt::WComboBox(items_);
+                        ComboCategory_1->activated().connect(this, &VideoImpl::CategoryComboChanged);
                     }
-                    if (!ComboCategory_2)
+                    if (ComboCategory_2 == NULL)
                     {
                         ComboCategory_2 = new Wt::WComboBox(items_);
+                        ComboCategory_2->activated().connect(this, &VideoImpl::CategoryComboChanged);
                     }
-                    if (!ComboCategory_3)
+                    if (ComboCategory_3 == NULL)
                     {
                         ComboCategory_3 = new Wt::WComboBox(items_);
+                        ComboCategory_3->activated().connect(this, &VideoImpl::CategoryComboChanged);
                     }
+                    // Find it
                     if (ComboCategory_0->findText(categoryText_0) == -1)
                     {
                         ComboCategory_0->addItem(categoryText_0); // it did not exist, add it
                     }
-                    if (categoryFields.at(0).toStdString() == categoryText_0)
+                    if (categoryFields[0] == categoryText_0)
                     {
                         ComboCategory_0->setCurrentIndex(ComboCategory_0->findText(categoryText_0));
                     }
@@ -320,7 +332,7 @@ bool VideoImpl::CreateCategoryCombo()
                     {
                         ComboCategory_1->addItem(categoryText_1); // it did not exist, add it
                     }
-                    if (categoryFields.at(1).toStdString() == categoryText_1)
+                    if (categoryFields[1] == categoryText_1)
                     {
                         ComboCategory_1->setCurrentIndex(ComboCategory_1->findText(categoryText_1));
                     }
@@ -328,7 +340,7 @@ bool VideoImpl::CreateCategoryCombo()
                     {
                         ComboCategory_2->addItem(categoryText_2); // it did not exist, add it
                     }
-                    if (categoryFields.at(2).toStdString() == categoryText_2)
+                    if (categoryFields[2] == categoryText_2)
                     {
                         ComboCategory_2->setCurrentIndex(ComboCategory_2->findText(categoryText_2));
                     }
@@ -336,38 +348,43 @@ bool VideoImpl::CreateCategoryCombo()
                     {
                         ComboCategory_3->addItem(categoryText_3); // it did not exist, add it
                     }
-                    if (categoryFields.at(3).toStdString() == categoryText_3)
+                    if (categoryFields[3] == categoryText_3)
                     {
                         ComboCategory_3->setCurrentIndex(ComboCategory_3->findText(categoryText_3));
                     }
                     break;
                 case 5:
-                    if (!ComboCategory_0)
+                    if (ComboCategory_0 == NULL)
                     {
                         ComboCategory_0 = new Wt::WComboBox(items_);
-                        isComboCategory_0 = true;
+                        ComboCategory_0->activated().connect(this, &VideoImpl::CategoryComboChanged);
                     }
-                    if (!ComboCategory_1)
+                    if (ComboCategory_1 == NULL)
                     {
                         ComboCategory_1 = new Wt::WComboBox(items_);
+                        ComboCategory_1->activated().connect(this, &VideoImpl::CategoryComboChanged);
                     }
-                    if (!ComboCategory_2)
+                    if (ComboCategory_2 == NULL)
                     {
                         ComboCategory_2 = new Wt::WComboBox(items_);
+                        ComboCategory_2->activated().connect(this, &VideoImpl::CategoryComboChanged);
                     }
-                    if (!ComboCategory_3)
+                    if (ComboCategory_3 == NULL)
                     {
                         ComboCategory_3 = new Wt::WComboBox(items_);
+                        ComboCategory_3->activated().connect(this, &VideoImpl::CategoryComboChanged);
                     }
-                    if (!ComboCategory_4)
+                    if (ComboCategory_4 == NULL)
                     {
                         ComboCategory_4 = new Wt::WComboBox(items_);
+                        ComboCategory_4->activated().connect(this, &VideoImpl::CategoryComboChanged);
                     }
+                    // Find it
                     if (ComboCategory_0->findText(categoryText_0) == -1)
                     {
                         ComboCategory_0->addItem(categoryText_0); // it did not exist, add it
                     }
-                    if (categoryFields.at(0).toStdString() == categoryText_0)
+                    if (categoryFields[0] == categoryText_0)
                     {
                         ComboCategory_0->setCurrentIndex(ComboCategory_0->findText(categoryText_0));
                     }
@@ -375,7 +392,7 @@ bool VideoImpl::CreateCategoryCombo()
                     {
                         ComboCategory_1->addItem(categoryText_1); // it did not exist, add it
                     }
-                    if (categoryFields.at(1).toStdString() == categoryText_1)
+                    if (categoryFields[1] == categoryText_1)
                     {
                         ComboCategory_1->setCurrentIndex(ComboCategory_1->findText(categoryText_1));
                     }
@@ -383,7 +400,7 @@ bool VideoImpl::CreateCategoryCombo()
                     {
                         ComboCategory_2->addItem(categoryText_2); // it did not exist, add it
                     }
-                    if (categoryFields.at(2).toStdString() == categoryText_2)
+                    if (categoryFields[2] == categoryText_2)
                     {
                         ComboCategory_2->setCurrentIndex(ComboCategory_2->findText(categoryText_2));
                     }
@@ -391,7 +408,7 @@ bool VideoImpl::CreateCategoryCombo()
                     {
                         ComboCategory_3->addItem(categoryText_3); // it did not exist, add it
                     }
-                    if (categoryFields.at(3).toStdString() == categoryText_3)
+                    if (categoryFields[3] == categoryText_3)
                     {
                         ComboCategory_3->setCurrentIndex(ComboCategory_3->findText(categoryText_3));
                     }
@@ -399,42 +416,48 @@ bool VideoImpl::CreateCategoryCombo()
                     {
                         ComboCategory_4->addItem(categoryText_4); // it did not exist, add it
                     }
-                    if (categoryFields.at(4).toStdString() == categoryText_4)
+                    if (categoryFields[4] == categoryText_4)
                     {
                         ComboCategory_4->setCurrentIndex(ComboCategory_4->findText(categoryText_4));
                     }
                     break;
                 case 6:
-                    if (!ComboCategory_0)
+                    if (ComboCategory_0 == NULL)
                     {
                         ComboCategory_0 = new Wt::WComboBox(items_);
-                        isComboCategory_0 = true;
+                        ComboCategory_0->activated().connect(this, &VideoImpl::CategoryComboChanged);
                     }
-                    if (!ComboCategory_1)
+                    if (ComboCategory_1 == NULL)
                     {
                         ComboCategory_1 = new Wt::WComboBox(items_);
+                        ComboCategory_1->activated().connect(this, &VideoImpl::CategoryComboChanged);
                     }
-                    if (!ComboCategory_2)
+                    if (ComboCategory_2 == NULL)
                     {
                         ComboCategory_2 = new Wt::WComboBox(items_);
+                        ComboCategory_2->activated().connect(this, &VideoImpl::CategoryComboChanged);
                     }
-                    if (!ComboCategory_3)
+                    if (ComboCategory_3 == NULL)
                     {
                         ComboCategory_3 = new Wt::WComboBox(items_);
+                        ComboCategory_3->activated().connect(this, &VideoImpl::CategoryComboChanged);
                     }
-                    if (!ComboCategory_4)
+                    if (ComboCategory_4 == NULL)
                     {
                         ComboCategory_4 = new Wt::WComboBox(items_);
+                        ComboCategory_4->activated().connect(this, &VideoImpl::CategoryComboChanged);
                     }
-                    if (!ComboCategory_5)
+                    if (ComboCategory_5 == NULL)
                     {
                         ComboCategory_5 = new Wt::WComboBox(items_);
+                        ComboCategory_5->activated().connect(this, &VideoImpl::CategoryComboChanged);
                     }
+                    // Find it
                     if (ComboCategory_0->findText(categoryText_0) == -1)
                     {
                         ComboCategory_0->addItem(categoryText_0); // it did not exist, add it
                     }
-                    if (categoryFields.at(0).toStdString() == categoryText_0)
+                    if (categoryFields[0] == categoryText_0)
                     {
                         ComboCategory_0->setCurrentIndex(ComboCategory_0->findText(categoryText_0));
                     }
@@ -442,7 +465,7 @@ bool VideoImpl::CreateCategoryCombo()
                     {
                         ComboCategory_1->addItem(categoryText_1); // it did not exist, add it
                     }
-                    if (categoryFields.at(1).toStdString() == categoryText_1)
+                    if (categoryFields[1] == categoryText_1)
                     {
                         ComboCategory_1->setCurrentIndex(ComboCategory_1->findText(categoryText_1));
                     }
@@ -450,7 +473,7 @@ bool VideoImpl::CreateCategoryCombo()
                     {
                         ComboCategory_2->addItem(categoryText_2); // it did not exist, add it
                     }
-                    if (categoryFields.at(2).toStdString() == categoryText_2)
+                    if (categoryFields[2] == categoryText_2)
                     {
                         ComboCategory_2->setCurrentIndex(ComboCategory_2->findText(categoryText_2));
                     }
@@ -458,7 +481,7 @@ bool VideoImpl::CreateCategoryCombo()
                     {
                         ComboCategory_3->addItem(categoryText_3); // it did not exist, add it
                     }
-                    if (categoryFields.at(3).toStdString() == categoryText_3)
+                    if (categoryFields[3] == categoryText_3)
                     {
                         ComboCategory_3->setCurrentIndex(ComboCategory_3->findText(categoryText_3));
                     }
@@ -466,7 +489,7 @@ bool VideoImpl::CreateCategoryCombo()
                     {
                         ComboCategory_4->addItem(categoryText_4); // it did not exist, add it
                     }
-                    if (categoryFields.at(4).toStdString() == categoryText_4)
+                    if (categoryFields[4] == categoryText_4)
                     {
                         ComboCategory_4->setCurrentIndex(ComboCategory_4->findText(categoryText_4));
                     }
@@ -474,7 +497,7 @@ bool VideoImpl::CreateCategoryCombo()
                     {
                         ComboCategory_5->addItem(categoryText_5); // it did not exist, add it
                     }
-                    if (categoryFields.at(5).toStdString() == categoryText_5)
+                    if (categoryFields[5] == categoryText_5)
                     {
                         ComboCategory_5->setCurrentIndex(ComboCategory_5->findText(categoryText_5));
                     }
@@ -484,78 +507,6 @@ bool VideoImpl::CreateCategoryCombo()
         } // end for (TheVideos::const_iterator i = videos.begin(); i != videos.end(); ++i)
         // Commit Transaction
         t.commit();
-        // Set Listening Events for CategoryCombo OnChange
-        switch (numberCats)
-        {
-            case 0:
-                break;
-            case 1:
-                ComboCategory_0->activated().connect(this, &VideoImpl::CategoryComboChanged);
-                #ifdef USE_TEMPLATE
-                    videoTemplate->bindWidget("catcombobinder-0", ComboCategory_0);
-                #endif
-                break;
-            case 2:
-                ComboCategory_0->activated().connect(this, &VideoImpl::CategoryComboChanged);
-                ComboCategory_1->activated().connect(this, &VideoImpl::CategoryComboChanged);
-                #ifdef USE_TEMPLATE
-                    videoTemplate->bindWidget("catcombobinder-0", ComboCategory_0);
-                    videoTemplate->bindWidget("catcombobinder-1", ComboCategory_1);
-                #endif
-                break;
-            case 3:
-                ComboCategory_0->activated().connect(this, &VideoImpl::CategoryComboChanged);
-                ComboCategory_1->activated().connect(this, &VideoImpl::CategoryComboChanged);
-                ComboCategory_2->activated().connect(this, &VideoImpl::CategoryComboChanged);
-                #ifdef USE_TEMPLATE
-                    videoTemplate->bindWidget("catcombobinder-0", ComboCategory_0);
-                    videoTemplate->bindWidget("catcombobinder-1", ComboCategory_1);
-                    videoTemplate->bindWidget("catcombobinder-2", ComboCategory_2);
-                #endif
-                break;
-            case 4:
-                ComboCategory_0->activated().connect(this, &VideoImpl::CategoryComboChanged);
-                ComboCategory_1->activated().connect(this, &VideoImpl::CategoryComboChanged);
-                ComboCategory_2->activated().connect(this, &VideoImpl::CategoryComboChanged);
-                ComboCategory_3->activated().connect(this, &VideoImpl::CategoryComboChanged);
-                #ifdef USE_TEMPLATE
-                    videoTemplate->bindWidget("catcombobinder-0", ComboCategory_0);
-                    videoTemplate->bindWidget("catcombobinder-1", ComboCategory_1);
-                    videoTemplate->bindWidget("catcombobinder-2", ComboCategory_2);
-                    videoTemplate->bindWidget("catcombobinder-3", ComboCategory_3);
-                #endif
-                break;
-            case 5:
-                ComboCategory_0->activated().connect(this, &VideoImpl::CategoryComboChanged);
-                ComboCategory_1->activated().connect(this, &VideoImpl::CategoryComboChanged);
-                ComboCategory_2->activated().connect(this, &VideoImpl::CategoryComboChanged);
-                ComboCategory_3->activated().connect(this, &VideoImpl::CategoryComboChanged);
-                ComboCategory_4->activated().connect(this, &VideoImpl::CategoryComboChanged);
-                #ifdef USE_TEMPLATE
-                    videoTemplate->bindWidget("catcombobinder-0", ComboCategory_0);
-                    videoTemplate->bindWidget("catcombobinder-1", ComboCategory_1);
-                    videoTemplate->bindWidget("catcombobinder-2", ComboCategory_2);
-                    videoTemplate->bindWidget("catcombobinder-3", ComboCategory_3);
-                    videoTemplate->bindWidget("catcombobinder-4", ComboCategory_4);
-                #endif
-                break;
-            case 6:
-                ComboCategory_0->activated().connect(this, &VideoImpl::CategoryComboChanged);
-                ComboCategory_1->activated().connect(this, &VideoImpl::CategoryComboChanged);
-                ComboCategory_2->activated().connect(this, &VideoImpl::CategoryComboChanged);
-                ComboCategory_3->activated().connect(this, &VideoImpl::CategoryComboChanged);
-                ComboCategory_4->activated().connect(this, &VideoImpl::CategoryComboChanged);
-                ComboCategory_5->activated().connect(this, &VideoImpl::CategoryComboChanged);
-                #ifdef USE_TEMPLATE
-                    videoTemplate->bindWidget("catcombobinder-0", ComboCategory_0);
-                    videoTemplate->bindWidget("catcombobinder-1", ComboCategory_1);
-                    videoTemplate->bindWidget("catcombobinder-2", ComboCategory_2);
-                    videoTemplate->bindWidget("catcombobinder-3", ComboCategory_3);
-                    videoTemplate->bindWidget("catcombobinder-4", ComboCategory_4);
-                    videoTemplate->bindWidget("catcombobinder-5", ComboCategory_5);
-                #endif
-                break;
-        } // end switch (numberCats)
     }
     catch (std::exception& e)
     {
@@ -579,8 +530,8 @@ bool VideoImpl::CreateVideoCombobox()
 {
     if (categoryQuery.empty())
     {
-        Wt::log("error") << " *** VideoImpl::CreateVideoCombobox() empty categoryQuery = __" << categoryQuery << "__ *** ";
         categoryQuery = GetCategories("/");
+        Wt::log("error") << " *** VideoImpl::CreateVideoCombobox() empty categoryQuery = __" << categoryQuery << "__ | lang_ = " << lang_ << " *** ";
     }
     else
     {
@@ -591,16 +542,17 @@ bool VideoImpl::CreateVideoCombobox()
         Wt::Dbo::QueryModel< Wt::Dbo::ptr<TheVideo> > *model = new Wt::Dbo::QueryModel< Wt::Dbo::ptr<TheVideo> >();
         // FIXIT language  AND language = " + lang_
         //model->setQuery(session_.query< Wt::Dbo::ptr<TheVideo> >("select u from video u").where("categories = ? AND language = ?").bind(categoryQuery).bind(lang_), false);
-        //model->setQuery(session_.query< Wt::Dbo::ptr<TheVideo> >("select u from video u").where("categories = ?").bind(categoryQuery).where("language = ?").bind(lang_), false);
-        model->setQuery(session_.query< Wt::Dbo::ptr<TheVideo> >("select u from video u").where("categories = ?").bind(categoryQuery), false);
+        model->setQuery(session_.query< Wt::Dbo::ptr<TheVideo> >("select u from video u").where("categories = ?").bind(categoryQuery).where("language = ?").bind(lang_), false);
+        //model->setQuery(session_.query< Wt::Dbo::ptr<TheVideo> >("select u from video u").where("categories = ?").bind(categoryQuery), false);
         model->addColumn("name");
         // ComboVideo has not been set
-        // if (!ComboVideo) // not working reliable
-        if (!isComboVideo)
+        if (ComboVideo == NULL)
         {
             ComboVideo = new Wt::WComboBox(items_);
+            isChanged = true;
+            ComboVideo->activated().connect(this, &VideoImpl::VideoComboChanged);
+            isChanged = false;
             Wt::log("notice") << "VideoImpl::CreateVideoCombobox()  new ComboBox";
-            isComboVideo = true;
         }
         else
         {
@@ -629,59 +581,38 @@ bool VideoImpl::CreateVideoCombobox()
  */
 void VideoImpl::GetVideo()
 {
-    Wt::log("start") << " *** VideoImpl::GetVideo( ) *** ";
+    // check cookie
+    Wt::log("start") << " *** VideoImpl::GetVideo() ~ videoText = {" << videoText << "} | numberCats = " << numberCats << " | lang_ = " << lang_ << " | ComboCategory_0 = " << ComboCategory_0->currentText().toUTF8() << " *** ";
     // clear all variables
     mp4Video = "";
     ogvVideo = "";
     poster = "";
     title = "";
-    yewtubevideo = "";
+    //Wt::WViewWidget()
+    std::string myTheme = GetCookie("theme");
+    if (myTheme.empty())
+    {
+        myTheme = myDefaultTheme[domainName];
+    }
     try
     {
         if (videoText.empty())
         {
             videoText = ComboVideo->currentText().toUTF8();
-            Wt::log("notice") << "VideoImpl::getVideo()  set empty videoText path = " << ComboCategory_0->currentText().toUTF8() << "/" << videoText  << " | count = " << ComboVideo->count() << " ";
+            Wt::log("warning") << "VideoImpl::getVideo()  set empty videoText path = " << ComboCategory_0->currentText().toUTF8() << "/" << videoText  << " | count = " << ComboVideo->count() << " ";
         }
         else
         {
+            isChanged = true;
             ComboVideo->setCurrentIndex(ComboVideo->findText(videoText));
             if (ComboVideo->currentIndex() == -1)
             {
                 ComboVideo->setCurrentIndex(0); // Not found, set it to the first Video
+                videoText = ComboVideo->currentText().toUTF8(); // Reset the videoText to new text, this should be an old video link, missing, renamed or deleted video
             }
-            Wt::log("notice") << "VideoImpl::getVideo() videoText | ComboVideo = " << videoText << " | " << ComboVideo->currentText().toUTF8()  << " | count = " << ComboVideo->count() <<  " ";
+            Wt::log("info") << "VideoImpl::getVideo() Find videoText {"  << videoText << "} | ComboVideo = " << " | " << ComboVideo->currentText().toUTF8()  << " | count = " << ComboVideo->count() <<  " ";
+            isChanged = false;
         }
-        // Set Internal Path to Video
-        // FIXIT add set Cookie support
-        isChanged=true;
-        switch (numberCats)
-        {
-            case 0:
-                Wt::WApplication::instance()->setInternalPath(basePath_ + ComboCategory_0->currentText().toUTF8() + "/" + ComboVideo->currentText().toUTF8(), true);
-                break;
-            case 1:
-                Wt::WApplication::instance()->setInternalPath(basePath_ + ComboCategory_0->currentText().toUTF8() + "/" + ComboVideo->currentText().toUTF8(), true);
-                Wt::log("notice") << "<<<<<<< VideoImpl::getVideo() set Internal Path = " << ComboCategory_0->currentText().toUTF8() << "/" << ComboVideo->currentText().toUTF8() << " >>>>>>>";
-                break;
-            case 2:
-                Wt::WApplication::instance()->setInternalPath(basePath_ + ComboCategory_0->currentText().toUTF8()  + "/" + ComboCategory_1->currentText().toUTF8() + "/" + ComboVideo->currentText().toUTF8(), true);
-                break;
-            case 3:
-                Wt::WApplication::instance()->setInternalPath(basePath_ + ComboCategory_0->currentText().toUTF8() + "/" + ComboCategory_1->currentText().toUTF8() + "/" + ComboCategory_2->currentText().toUTF8() + "/" + ComboVideo->currentText().toUTF8(), true);
-                break;
-            case 4:
-                Wt::WApplication::instance()->setInternalPath(basePath_ + ComboCategory_0->currentText().toUTF8() + "/" + ComboCategory_1->currentText().toUTF8() + "/" + ComboCategory_2->currentText().toUTF8() + "/" + ComboCategory_3->currentText().toUTF8() + "/" + ComboVideo->currentText().toUTF8(), true);
-                break;
-            case 5:
-                Wt::WApplication::instance()->setInternalPath(basePath_ + ComboCategory_0->currentText().toUTF8() + "/" + ComboCategory_1->currentText().toUTF8() + "/" + ComboCategory_2->currentText().toUTF8() + "/" + ComboCategory_3->currentText().toUTF8() + "/" + ComboCategory_4->currentText().toUTF8() + "/" + ComboVideo->currentText().toUTF8(), true);
-                break;
-            case 6:
-                Wt::WApplication::instance()->setInternalPath(basePath_ + ComboCategory_0->currentText().toUTF8() + "/" + ComboCategory_1->currentText().toUTF8() + "/" + ComboCategory_2->currentText().toUTF8() + "/" + ComboCategory_3->currentText().toUTF8() + "/" + ComboCategory_4->currentText().toUTF8() + "/" + ComboCategory_5->currentText().toUTF8()+ "/" + ComboVideo->currentText().toUTF8(), true);
-                break;
-        }
-        ComboVideo->activated().connect(this, &VideoImpl::VideoComboChanged);
-        isChanged=false;
     }
     catch (std::exception& e)
     {
@@ -689,7 +620,7 @@ void VideoImpl::GetVideo()
         std::cerr << "VideoImpl::getVideo: videoText.empty";
         Wt::log("error") << "(VideoImpl::getVideo:  videoText.empty)";
     }
-
+    //
     try
     {
         // Start a Transaction
@@ -697,44 +628,54 @@ void VideoImpl::GetVideo()
         //Wt::Dbo::QueryModel< Wt::Dbo::ptr<TheVideo> > *model = new Wt::Dbo::QueryModel< Wt::Dbo::ptr<TheVideo> >();
         //model->setQuery(session_.query< Wt::Dbo::ptr<TheVideo> >("select u from video u").where("name = ?").bind(videoCombo->currentText().toUTF8()), false);
         //Wt::Dbo::ptr<TheVideo> playVideo = session_.find<TheVideo>().where("name = ? AND language = ?").bind(ComboVideo->currentText().toUTF8()).bind(lang_);
-        //Wt::Dbo::ptr<TheVideo> playVideo = session_.find<TheVideo>().where("name = ?").bind(ComboVideo->currentText().toUTF8()).where("language = ?").bind(lang_);
-        Wt::Dbo::ptr<TheVideo> playVideo = session_.find<TheVideo>().where("name = ?").bind(ComboVideo->currentText().toUTF8());
-        //
+        Wt::Dbo::ptr<TheVideo> playVideo = session_.find<TheVideo>().where("name = ?").bind(ComboVideo->currentText().toUTF8()).where("language = ?").bind(lang_);
+        //Wt::Dbo::ptr<TheVideo> playVideo = session_.find<TheVideo>().where("name = ?").bind(ComboVideo->currentText().toUTF8());
+        // Set Text for Top iFrame
         if (playVideo->pagetop.empty())
         {
-            topPage = new Wt::WText("");
+            TextPageTopIframe = Wt::WString::Empty;
         }
         else
         {
-            topPage =  new Wt::WText("<div id=\"vpagetop\" class=\"vpagetop\" style=\"width:" + playVideo->pagetopwidth + ";height:" + playVideo->pagetopheight + ";\">" + playVideo->pagetop +  "</div>", Wt::XHTMLUnsafeText, bindItems); // , items_
-            topPage->setStyleClass("videomantoppage");
+            TextPageTopIframe = "<div id='vpagetop' class='vpagetop' style='width:" + (playVideo->pagetopwidth.empty() ? defaultPageTopWidth : playVideo->pagetopwidth) + ";height:" + (playVideo->pagetopheight.empty() ? defaultPageTopHeight : playVideo->pagetopheight) + ";'>" + playVideo->pagetop + "</div>";
         }
+
+        /*
+        if (!playVideo->pagebottomlink.empty())
+        {
+
+            //bottomPage = new Wt::WText("<div id='vpagebottomlink' class='vpagebottomlink' style='width:" + playVideo->pagebottomwidth + "; height:" + playVideo->pagebottomheight + ";'><iframe id='pagebottomframe' theme='" + myTheme + "' src='" + playVideo->pagebottomlink + "' style='width:" + playVideo->pagebottomwidth + "; height:" + playVideo->pagebottomheight + ";' frameBorder='1' scrolling='auto' ></iframe></div>", Wt::XHTMLUnsafeText, bindItems);
+            //bottomPage = new Wt::WText("<div id='vpagebottomlink' class='vpagebottomlink' style='width:" + playVideo->pagebottomwidth + "; height:" + playVideo->pagebottomheight + ";'><iframe id='pagebottomframe' theme='" + myTheme + "' style='width:" + playVideo->pagebottomwidth + "; height:" + playVideo->pagebottomheight + ";' frameBorder='1' scrolling='auto' ></iframe></div>", Wt::XHTMLUnsafeText, bindItems);
+            //bottomPage->setStyleClass("videomanbottompage");
+        }
+        */
+        //
         if (playVideo->pagebottom.empty())
         {
-            bottomPage = new Wt::WText("");
+            TextPageBottomIframe = Wt::WString::Empty;
         }
         else
         {
-            bottomPage =  new Wt::WText("<div id=\"vpagebottom\" class=\"vpagebottom\" style=\"width:" + playVideo->pagebottomwidth + ";height:" + playVideo->pagebottomheight + ";\">" + playVideo->pagebottom + "</div>", Wt::XHTMLUnsafeText, bindItems); // , items_
-            bottomPage->setStyleClass("videomanbottompage");
+            //Wt::WString tempPage = Wt::WString::fromUTF8("<div id='vpagebottom' class='vpagebottom' style='width:" + playVideo->pagebottomwidth + ";height:" + playVideo->pagebottomheight + ";'>" + playVideo->pagebottom + "</div>");
+            //Wt::log("error") << "VideoImpl::getVideo: set tempPage size = " << tempPage.size();
+            //bottomPage =  new Wt::WText(Wt::WString::fromUTF8("<div id='vpagebottom' class='vpagebottom' style='width:" + playVideo->pagebottomwidth + ";height:" + playVideo->pagebottomheight + ";'>" + playVideo->pagebottom + "</div>"), Wt::XHTMLUnsafeText, bindItems);
+            // bottomPage->setStyleClass("videomanbottompage");
+            //pageBottom = playVideo->pagebottom;
+            //TextPageBottomIframe = "<div id='vpagebottom' class='vpagebottom' style='width:" + pageBottomWidth + ";height:" + pageBottomHeight + ";'>" + playVideo->pagebottom + "</div>";
+            TextPageBottomIframe = "<div id='vpagebottom' class='vpagebottom' style='width:" + (playVideo->pagebottomwidth.empty() ? defaultPageBottomWidth : playVideo->pagebottomwidth) + ";height:" + (playVideo->pagebottomheight.empty() ? defaultPageBottomHeight : playVideo->pagebottomheight) + ";'>" + playVideo->pagebottom + "</div>";
         }
+
         //
-        if (playVideo->isutube)
-        {
-            yewtubesrc = playVideo->path;
-            yewtubevideo = "<div id=\"vplayer\" class=\"vplayer\"><br /><div id=\"yewtube\" class=\"yewtube\"><iframe id=\"vframe\" src=\"" + yewtubesrc + "\" width=\"" + playVideo->width + "\" height=\"" + playVideo->height + "\" style=\"\" frameBorder=\"0\" scrolling=\"no\" allowfullscreen=\"true\"></iframe></div><br /></div>";
-        }
-        else // if (playVideo->isutube)
+        if (!playVideo->isutube)
         {
 
             /* sizes="1080,720"
              *
              */
-            //std::vector <std::string> sizesFields;
-            //boost::split( sizesFields, playVideo->sizes, boost::is_any_of( "," ) );
-            QString sizeField = playVideo->sizes.c_str();
-            QStringList sizesFields = sizeField.split(",");
-            size = sizesFields.at(0).toStdString(); // FIXIT read from combobox
+            std::vector <std::string> sizesFields;
+            boost::split( sizesFields, playVideo->sizes, boost::is_any_of( "," ) );
+            //
+            size = sizesFields[0]; // FIXIT read from combobox
             int sizeCount = sizesFields.size();
             if (sizeCount > 1)
             {
@@ -749,23 +690,21 @@ void VideoImpl::GetVideo()
                     size = ComboSizes->currentText().toUTF8();
                 }
                 ComboSizes->clear();
-                for (int sizecnt=0;sizecnt<sizeCount;sizecnt++)
+                for (int sizecnt = 0; sizecnt < sizeCount;sizecnt++)
                 {
-                    if (ComboSizes->findText(sizesFields.at(sizecnt).toStdString()) == -1)
+                    if (ComboSizes->findText(sizesFields[sizecnt]) == -1)
                     {
-                        ComboSizes->addItem(sizesFields.at(sizecnt).toStdString()); // it did not exist, add it
+                        ComboSizes->addItem(sizesFields[sizecnt]); // it did not exist, add it
                     }
                     ComboSizes->setCurrentIndex(0);
                 }
-                size = sizesFields.at(0).toStdString(); // FIXIT read from combobox
+                size = sizesFields[0]; // FIXIT read from combobox
             }
             //  quality="hd,lq"
-            //std::vector <std::string> qualityFields;
-            //boost::split( qualityFields, playVideo->quality, boost::is_any_of( "," ) );
-            QString qualityField = playVideo->quality.c_str();
-            QStringList qualityFields = qualityField.split(",");
+            std::vector <std::string> qualityFields;
+            boost::split( qualityFields, playVideo->quality, boost::is_any_of( "," ) );
             int qualityCount = qualityFields.size();
-            quality = qualityFields.at(0).toStdString(); // fix read from combobox
+            quality = qualityFields[0]; // fix read from combobox
             if (qualityCount > 1)
             {
                 // Create a dropdown box
@@ -781,9 +720,9 @@ void VideoImpl::GetVideo()
                 ComboQuality->clear();
                 for (int qualitycnt=0;qualitycnt<sizeCount;qualitycnt++)
                 {
-                    if (ComboQuality->findText(qualityFields.at(qualitycnt).toStdString()) == -1)
+                    if (ComboQuality->findText(qualityFields[qualitycnt]) == -1)
                     {
-                        ComboQuality->addItem(qualityFields.at(qualitycnt).toStdString()); // it did not exist, add it
+                        ComboQuality->addItem(qualityFields[qualitycnt]); // it did not exist, add it
                     }
                     ComboQuality->setCurrentIndex(0);
                 } // end for (int qualitycnt=0;qualitycnt<sizeCount;qualitycnt++)
@@ -804,12 +743,11 @@ void VideoImpl::GetVideo()
         //
         if (playVideo->isutube)
         {
-            TextYewTubeIframe = new Wt::WText(yewtubevideo, Wt::XHTMLUnsafeText, bindItems); // , items_
-            TextYewTubeIframe->setStyleClass("yewtube");
+            TextYouTubeIframe = Wt::WString::fromUTF8("<div id='vplayer' class='vplayer'><br /><div id='yewtube' class='yewtube'><iframe id='vframe' src='" + playVideo->path + "' width='" + playVideo->width + "' height='" + playVideo->height + "' style='' frameBorder='0' scrolling='no' allowfullscreen='true'></iframe></div><br /></div>");
         }
         else
         {
-            TextYewTubeIframe = new Wt::WText(""); // this does not use an div
+            TextYouTubeIframe = Wt::WString::Empty;
         #ifdef WVIDEO
             if (!player)
             {
@@ -867,9 +805,6 @@ void VideoImpl::GetVideo()
             player->setVideoSize(std::stoi(playVideo->width), std::stoi(playVideo->height));
         #endif
         } // end if (playVideo->isutube)
-        #ifdef USE_TEMPLATE
-            videoTemplate->bindWidget("videocombobinder", ComboVideo);
-        #endif
         //
         videoTemplate->bindWidget("catcombobinder-0", new Wt::WText(""));
         videoTemplate->bindWidget("catcombobinder-1", new Wt::WText(""));
@@ -879,9 +814,17 @@ void VideoImpl::GetVideo()
         videoTemplate->bindWidget("catcombobinder-5", new Wt::WText(""));
         videoTemplate->bindWidget("videocombobinder", new Wt::WText(""));
 
-        videoTemplate->bindWidget("videoman", TextYewTubeIframe);
-        videoTemplate->bindWidget("videomanpagetop", topPage);
-        videoTemplate->bindWidget("videomanpagebottom", bottomPage);
+        videoTemplate->bindWidget("videoman", WrapView(&VideoImpl::YouTubeContent));
+        videoTemplate->bindWidget("videomanpagetop", WrapView(&VideoImpl::PageContentTop));
+        videoTemplate->bindWidget("videomanpagebottom", WrapView(&VideoImpl::PageContentBottom));
+
+
+        /*
+        std::string jsPageBottom = "document.getElementById('pagebottomframe').src='" + playVideo->pagebottomlink + "';";
+        Wt::log("notice") << " VideoImpl::getVideo() jsPageBottom = " << jsPageBottom << " ";
+        this->doJavaScript(jsPageBottom);
+        */
+
         // Commit Transaction
         t.commit();
     }
@@ -894,14 +837,89 @@ void VideoImpl::GetVideo()
     SetCookie("videomancat", categoryPath);
     SetCookie("videomanvideo", videoText);
     SetCookie("videomanquery", categoryQuery);
+    // Set Internal Path to Video
+    // FIXIT add set Cookie support
+    isChanged = true;
+    switch (numberCats)
+    {
+        case 0:
+            Wt::WApplication::instance()->setInternalPath(basePath_ + ComboCategory_0->currentText().toUTF8() + "/" + ComboVideo->currentText().toUTF8(), true);
+            break;
+        case 1:
+            Wt::WApplication::instance()->setInternalPath(basePath_ + ComboCategory_0->currentText().toUTF8() + "/" + ComboVideo->currentText().toUTF8(), true);
+            Wt::log("notice") << "<<<<<<< VideoImpl::getVideo() set Internal Path = " << ComboCategory_0->currentText().toUTF8() << "/" << ComboVideo->currentText().toUTF8() << " >>>>>>>";
+            break;
+        case 2:
+            Wt::WApplication::instance()->setInternalPath(basePath_ + ComboCategory_0->currentText().toUTF8()  + "/" + ComboCategory_1->currentText().toUTF8() + "/" + ComboVideo->currentText().toUTF8(), true);
+            break;
+        case 3:
+            Wt::WApplication::instance()->setInternalPath(basePath_ + ComboCategory_0->currentText().toUTF8() + "/" + ComboCategory_1->currentText().toUTF8() + "/" + ComboCategory_2->currentText().toUTF8() + "/" + ComboVideo->currentText().toUTF8(), true);
+            break;
+        case 4:
+            Wt::WApplication::instance()->setInternalPath(basePath_ + ComboCategory_0->currentText().toUTF8() + "/" + ComboCategory_1->currentText().toUTF8() + "/" + ComboCategory_2->currentText().toUTF8() + "/" + ComboCategory_3->currentText().toUTF8() + "/" + ComboVideo->currentText().toUTF8(), true);
+            break;
+        case 5:
+            Wt::WApplication::instance()->setInternalPath(basePath_ + ComboCategory_0->currentText().toUTF8() + "/" + ComboCategory_1->currentText().toUTF8() + "/" + ComboCategory_2->currentText().toUTF8() + "/" + ComboCategory_3->currentText().toUTF8() + "/" + ComboCategory_4->currentText().toUTF8() + "/" + ComboVideo->currentText().toUTF8(), true);
+            break;
+        case 6:
+            Wt::WApplication::instance()->setInternalPath(basePath_ + ComboCategory_0->currentText().toUTF8() + "/" + ComboCategory_1->currentText().toUTF8() + "/" + ComboCategory_2->currentText().toUTF8() + "/" + ComboCategory_3->currentText().toUTF8() + "/" + ComboCategory_4->currentText().toUTF8() + "/" + ComboCategory_5->currentText().toUTF8()+ "/" + ComboVideo->currentText().toUTF8(), true);
+            break;
+    }
+    isChanged = false;
+    currentVideoIndex = oldVideoIndex = ComboVideo->currentIndex();
     Wt::log("end") << " ** VideoImpl::getVideo() ** ";
 } // end void VideoImpl::GetVideo()
+/* ****************************************************************************
+ * Page Content Top
+ */
+Wt::WWidget* VideoImpl::PageContentTop()
+{
+    WContainerWidget *result = new WContainerWidget();
+    if (!TextPageTopIframe.empty())
+    {
+        Wt::WText *w = new Wt::WText(TextPageTopIframe, Wt::XHTMLUnsafeText, result);
+        w->setInternalPathEncoding(true);
+    }
+    return result;
+} // end PageContentTop
+/* ****************************************************************************
+ * Page Content Bottom
+ */
+Wt::WWidget* VideoImpl::PageContentBottom()
+{
+    WContainerWidget *result = new WContainerWidget();
+    if (!TextPageBottomIframe.empty())
+    {
+        Wt::WText *w = new Wt::WText(TextPageBottomIframe, Wt::XHTMLUnsafeText, result);
+        w->setInternalPathEncoding(true);
+    }
+    return result;
+} // end PageContentBottom
+/* ****************************************************************************
+ * You Tube Content
+ */
+Wt::WWidget* VideoImpl::YouTubeContent()
+{
+    WContainerWidget *result = new WContainerWidget();
+    if (!TextYouTubeIframe.empty())
+    {
+        Wt::WText *w = new Wt::WText(TextYouTubeIframe, Wt::XHTMLUnsafeText, result);
+        w->setInternalPathEncoding(true);
+    }
+    return result;
+} // end YouTubeContent
+/* ****************************************************************************
+ * Wrap View
+ */
+Wt::WWidget* VideoImpl::WrapView(Wt::WWidget *(VideoImpl::*createWidget)())
+{
+    return makeStaticModel(boost::bind(createWidget, this));
+} // end WrapView
 /* ****************************************************************************
  * Category Combo Changed
  */
 void VideoImpl::CategoryComboChanged()
 {
-    isComboChange = true;
     //videoCombo->setCurrentIndex(0);
     // Make sure we want to update URL
     if (!isChanged)
@@ -917,10 +935,11 @@ void VideoImpl::CategoryComboChanged()
  */
 void VideoImpl::VideoComboChanged()
 {
-    Wt::log("start") << " *** VideoImpl::VideoComboChanged() *** ";
+    Wt::log("start!!!!!!!!") << " *** VideoImpl::VideoComboChanged() *** currentVideoIndex = " << currentVideoIndex << " | oldVideoIndex = " << oldVideoIndex;
     // videoIndex = videoCombo->currentIndex();
     // Make sure we want to update URL
-    if (!isChanged)
+    currentVideoIndex = ComboVideo->currentIndex();
+    if (!isChanged && currentVideoIndex != oldVideoIndex)
     {
         Wt::log("notice") << "-> VideoImpl::VideoComboChanged() currentIndex = " << std::to_string(ComboVideo->currentIndex()) << " ";
         videoText = ComboVideo->currentText().toUTF8();
@@ -928,13 +947,13 @@ void VideoImpl::VideoComboChanged()
     }
 } // end void VideoImpl::VideoComboChanged()
 /* ****************************************************************************
- * Get Categories
+ * Get Categories from Catergory Combo
  * delimitor: | = categoryQuery, / category Path
  * categoryType catType,
  */
 std::string VideoImpl::GetCategories(std::string delimitor)
 {
-    if (!isComboCategory_0)
+    if (ComboCategory_0 == NULL)
     {
         return ""; // combo boxes not set yet
     }
@@ -948,7 +967,7 @@ std::string VideoImpl::GetCategories(std::string delimitor)
                 newCategory = "";
                 break;
             case 1:
-                if (ComboCategory_0)
+                if (ComboCategory_0 != NULL)
                 {
                     newCategory = categoryText_0 = ComboCategory_0->currentText().toUTF8(); // Change categoryPath
                 }
@@ -958,20 +977,20 @@ std::string VideoImpl::GetCategories(std::string delimitor)
                 }
                 break;
             case 2:
-                if (ComboCategory_0)
+                if (ComboCategory_0 != NULL)
                 {
-                    if (ComboCategory_1)
+                    if (ComboCategory_1 != NULL)
                     {
                         newCategory = ComboCategory_0->currentText().toUTF8() + delimitor + ComboCategory_1->currentText().toUTF8();
                     }
                 }
                 break;
             case 3:
-                if (ComboCategory_0)
+                if (ComboCategory_0 != NULL)
                 {
-                    if (ComboCategory_1)
+                    if (ComboCategory_1 != NULL)
                     {
-                        if (ComboCategory_2)
+                        if (ComboCategory_2 != NULL)
                         {
                             newCategory = ComboCategory_0->currentText().toUTF8() + delimitor + ComboCategory_1->currentText().toUTF8() + delimitor + ComboCategory_2->currentText().toUTF8();
                         }
@@ -979,13 +998,13 @@ std::string VideoImpl::GetCategories(std::string delimitor)
                 }
                 break;
             case 4:
-                if (ComboCategory_0)
+                if (ComboCategory_0 != NULL)
                 {
-                    if (ComboCategory_1)
+                    if (ComboCategory_1 != NULL)
                     {
-                        if (ComboCategory_2)
+                        if (ComboCategory_2 != NULL)
                         {
-                            if (ComboCategory_3)
+                            if (ComboCategory_3 != NULL)
                             {
                                 newCategory = ComboCategory_0->currentText().toUTF8() + delimitor + ComboCategory_1->currentText().toUTF8() + delimitor + ComboCategory_2->currentText().toUTF8() + delimitor + ComboCategory_3->currentText().toUTF8();
                             }
@@ -994,15 +1013,15 @@ std::string VideoImpl::GetCategories(std::string delimitor)
                 }
                 break;
             case 5:
-                if (ComboCategory_0)
+                if (ComboCategory_0 != NULL)
                 {
-                    if (ComboCategory_1)
+                    if (ComboCategory_1 != NULL)
                     {
-                        if (ComboCategory_2)
+                        if (ComboCategory_2 != NULL)
                         {
-                            if (ComboCategory_3)
+                            if (ComboCategory_3 != NULL)
                             {
-                                if (ComboCategory_4)
+                                if (ComboCategory_4 != NULL)
                                 {
                                     newCategory = ComboCategory_0->currentText().toUTF8() + delimitor + ComboCategory_1->currentText().toUTF8() + delimitor + ComboCategory_2->currentText().toUTF8() + delimitor + ComboCategory_3->currentText().toUTF8() + delimitor + ComboCategory_4->currentText().toUTF8();
                                 }
@@ -1012,17 +1031,17 @@ std::string VideoImpl::GetCategories(std::string delimitor)
                 }
                 break;
             case 6:
-                if (ComboCategory_0)
+                if (ComboCategory_0 != NULL)
                 {
-                    if (ComboCategory_1)
+                    if (ComboCategory_1 != NULL)
                     {
-                        if (ComboCategory_2)
+                        if (ComboCategory_2 != NULL)
                         {
-                            if (ComboCategory_3)
+                            if (ComboCategory_3 != NULL)
                             {
-                                if (ComboCategory_4)
+                                if (ComboCategory_4 != NULL)
                                 {
-                                    if (ComboCategory_5)
+                                    if (ComboCategory_5 != NULL)
                                     {
                                         newCategory = ComboCategory_0->currentText().toUTF8() + delimitor + ComboCategory_1->currentText().toUTF8() + delimitor + ComboCategory_2->currentText().toUTF8() + delimitor + ComboCategory_3->currentText().toUTF8() + delimitor + ComboCategory_4->currentText().toUTF8() + delimitor + ComboCategory_5->currentText().toUTF8();
                                     }
@@ -1043,7 +1062,7 @@ std::string VideoImpl::GetCategories(std::string delimitor)
     return newCategory;
 } // end std::string VideoImpl::GetCategories(std::string delimitor)
 /* ****************************************************************************
- * Get Categories Path
+ * Get Categories Path from internal Path
  * Contains first Category or Video
  * /video/cat-1/cat-2/cat-3/video-1
  * or
@@ -1058,6 +1077,7 @@ bool VideoImpl::GetCategoriesPath()
     {
         return false;
     }
+    ClearCategories();
     std::string path = app->internalPath(); // /en/video/
     std::vector<std::string> parts;
     boost::split(parts, path, boost::is_any_of("/"));
@@ -1135,234 +1155,6 @@ bool VideoImpl::GetCategoriesPath()
         categoryPath  = categoryText_0 + "/" + categoryText_1 + "/" + categoryText_2 + "/" + categoryText_3 + "/" + categoryText_4 + "/" + categoryText_5;
     }
     bool isInternalPathLegal=false;
-/*
-
-    ClearCategories();
-    categoryText_0 = app->internalPathNextPart(basePath_); // /en/video/
-    Wt::log("notice") << " <<<< VideoImpl::GetCategoriesPath() categoryText_0 = " << categoryText_0;
-    // Check each step of the Path and assign it to a variable, and set categoryQuery and videoText
-    if (!categoryText_0.empty())
-    {
-        categoryText_1 = app->internalPathNextPart(basePath_ + categoryText_0 + "/");                 // Contains first Category or Video
-        if (!categoryText_1.empty())
-        {
-            categoryText_2 = app->internalPathNextPart(basePath_ + categoryText_1 + "/");             // Contains second Category or Video
-            if (!categoryText_2.empty())
-            {
-                categoryText_3 = app->internalPathNextPart(basePath_ + categoryText_2 + "/");         // Contains third Category or Video
-                if (!categoryText_3.empty())
-                {
-                    categoryText_4 = app->internalPathNextPart(basePath_ + categoryText_3 + "/");     // Contains forth Category or Video
-                    if (!categoryText_4.empty())
-                    {
-                        categoryText_5 = app->internalPathNextPart(basePath_ + categoryText_4 + "/"); // Contains fith Category or Video
-                        if (!categoryText_5.empty())
-                        {
-                            videoText = app->internalPathNextPart(basePath_ + categoryText_5 + "/");  // Contains sixth Video
-                            if (!videoText.empty())
-                            {
-                                categoryQuery = categoryText_0 + "|" + categoryText_1 + "|" + categoryText_2 + "|" + categoryText_3 + "|" + categoryText_4 + "|" + categoryText_5;
-                                categoryPath  = categoryText_0 + "/" + categoryText_1 + "/" + categoryText_2 + "/" + categoryText_3 + "/" + categoryText_4 + "/" + categoryText_5;
-                                videoText = categoryText_5;
-                                categoryText_5 = "";
-                                if (numberCats == 5)
-                                {
-                                    isInternalPathLegal = true;
-                                }
-                                Wt::log("notice") << "1 ->>>>>>> VideoImpl::GetCategoriesPath() categoryText_3 = " << categoryText_3 << " | categoryText_4 = " << categoryText_4 << " | videoText = " << videoText << " <<<<<-";
-                            }
-                            else
-                            {
-                                categoryQuery = categoryText_0 + "|" + categoryText_1 + "|" + categoryText_2 + "|" + categoryText_3 + "|" + categoryText_4;
-                                categoryPath  = categoryText_0 + "/" + categoryText_1 + "/" + categoryText_2 + "/" + categoryText_3 + "/" + categoryText_4;
-                                videoText = categoryText_5;
-                                categoryText_5 = "";
-                                if (numberCats == 4)
-                                {
-                                    isInternalPathLegal = true;
-                                }
-                                Wt::log("notice") << "1.5 ->>>>>>> VideoImpl::GetCategoriesPath() categoryText_3 = " << categoryText_3 << " | categoryText_4 = " << categoryText_4 << " | videoText = " << videoText << " <<<<<-";
-                            }
-                        } // if (!categoryText_5.empty())
-                        else
-                        {
-                            categoryQuery = categoryText_0 + "|" + categoryText_1 + "|" + categoryText_2 + "|" + categoryText_3 + "|" + categoryText_4;
-                            categoryPath  = categoryText_0 + "/" + categoryText_1 + "/" + categoryText_2 + "/" + categoryText_3 + "/" + categoryText_4;
-                            videoText = categoryText_5;
-                            categoryText_5 = "";
-                            if (numberCats == 4)
-                            {
-                                isInternalPathLegal = true;
-                            }
-                            Wt::log("notice") << "2 ->>>>>>> VideoImpl::GetCategoriesPath() categoryText_3 = " << categoryText_3 << " | categoryText_4 = " << categoryText_4 << " | videoText = " << videoText << " <<<<<-";
-                        }
-                    } // if (!categoryText_4.empty())
-                    else
-                    {
-                        categoryQuery = categoryText_0 + "|" + categoryText_1 + "|" + categoryText_2 + "|" + categoryText_3;
-                        categoryPath  = categoryText_0 + "/" + categoryText_1 + "/" + categoryText_2 + "/" + categoryText_3;
-                        videoText     = categoryText_4;
-                        categoryText_4 = "";
-                        if (numberCats == 3)
-                        {
-                            isInternalPathLegal = true;
-                        }
-                        Wt::log("notice") << "3 ->>>>>>> VideoImpl::GetCategoriesPath() categoryText_2 = " << categoryText_2 << " | categoryText_3 = " << categoryText_3 << " | videoText = " << videoText << " <<<<<-";
-                    }
-                } // if (!categoryText_3.empty())
-                else
-                {
-                    categoryQuery = categoryText_0 + "|" + categoryText_1 + "|" + categoryText_2;
-                    categoryPath  = categoryText_0 + "/" + categoryText_1 + "/" + categoryText_2;
-                    videoText     = categoryText_3;
-                    categoryText_3 = "";
-                    if (numberCats == 2)
-                    {
-                        isInternalPathLegal = true;
-                    }
-                    Wt::log("notice") << "4 ->>>>>>> VideoImpl::GetCategoriesPath() categoryText_1 = " << categoryText_1 << " | categoryText_2 = " << categoryText_2 << " | videoText = " << videoText << " <<<<<-";
-                }
-            } // if (!categoryText_2.empty())
-            else
-            {
-                categoryPath = categoryQuery = categoryText_0;
-                videoText = categoryText_1;
-                categoryText_1 = "";
-                if (numberCats == 1)
-                {
-                    isInternalPathLegal = true;
-                }
-                Wt::log("notice") << "5 ->>>>>>> VideoImpl::GetCategoriesPath() categoryText_0 = " << categoryText_0  << "categoryText_1 = " << categoryText_1  << " | videoText = " << videoText << " <<<<<-";
-            }
-        } // end if (!categoryText_1.empty())
-        else
-        {
-            videoText = categoryText_1;
-            categoryText_1 = "";
-            if (numberCats == 0)
-            {
-                isInternalPathLegal = true;
-            }
-            Wt::log("notice") << "6 ->>>>>>> VideoImpl::GetCategoriesPath() categoryText_0 = " << categoryText_0 << " | videoText = " << videoText << " <<<<<-";
-        }
-    } // end if (!categoryText_0.empty())
-    else
-    {
-        videoText = categoryText_0;
-        categoryText_0 = "";
-        Wt::log("notice") << "7 ->>>>>>> VideoImpl::GetCategoriesPath() videoText = " << videoText << " <<<<<-";
-    }
-    // Check to see if path is legal for number of Categories
-    switch (numberCats)
-    {
-        case 0:
-            if (!categoryText_0.empty()) // Nothing Legal:
-            {
-                ClearCategories();
-                videoText = "";
-                isInternalPathLegal=false;
-            }
-            break;
-        case 1:
-            if (categoryText_0.empty())  // Nothing Legal: cat-0
-            {
-                ClearCategories();
-                videoText = "";
-                isInternalPathLegal=false;
-            }
-            break;
-        case 2:
-            if (categoryText_1.empty())  // Nothing Legal: cat-0|cat-1
-            {
-                ClearCategories();
-                videoText = "";
-                isInternalPathLegal=false;
-            }
-            if (!categoryText_2.empty())  // Nothing Legal: cat-0|cat-1
-            {
-                ClearCategories();
-                videoText = "";
-                isInternalPathLegal=false;
-            }
-            break;
-        case 3:
-            if (categoryText_2.empty())  // Nothing Legal: cat-0|cat-1|cat-2
-            {
-                ClearCategories();
-                videoText = "";
-                isInternalPathLegal=false;
-            }
-            if (!categoryText_3.empty())  // Nothing Legal: cat-0|cat-1|cat-2
-            {
-                ClearCategories();
-                videoText = "";
-                isInternalPathLegal=false;
-            }
-            break;
-        case 4:
-            if (categoryText_3.empty())  // Nothing Legal: cat-0|cat-1|cat-2|cat-3
-            {
-                ClearCategories();
-                videoText = "";
-                isInternalPathLegal=false;
-            }
-            if (!categoryText_4.empty())  // Nothing Legal: cat-0|cat-1|cat-2|cat-3
-            {
-                ClearCategories();
-                videoText = "";
-                isInternalPathLegal=false;
-            }
-            break;
-        case 5:
-            if (categoryText_4.empty())  // Nothing Legal: cat-0|cat-1|cat-2|cat-3|cat-4
-            {
-                ClearCategories();
-                videoText = "";
-                isInternalPathLegal=false;
-            }
-            if (!categoryText_5.empty())  // Nothing Legal: cat-0|cat-1|cat-2|cat-3|cat-4
-            {
-                ClearCategories();
-                videoText = "";
-                isInternalPathLegal=false;
-            }
-            break;
-        case 6:
-            if (categoryText_5.empty())  // Nothing Legal: cat-0|cat-1|cat-2|cat-3|cat-4|cat-5
-            {
-                ClearCategories();
-                videoText = "";
-                isInternalPathLegal=false;
-            }
-            break;
-    } // end switch (numberCats)
-    //
-    if (categoryPath.empty())
-    {
-        categoryPath = GetCategories("/");
-        if (!categoryPath.empty())
-        {
-            categoryQuery = GetCategories("|");
-            if (isComboVideo) // not working (ComboVideo)
-            {
-                videoText = ComboVideo->currentText().toUTF8();
-            }
-        }
-        else
-        {
-            std::string myCookieQuery = GetCookie("videomanquery");
-            std::string myCookieCat   = GetCookie("videomancat");
-            std::string myCookieVideo = GetCookie("videomanvideo");
-            if (!myCookieCat.empty())
-            {
-                categoryQuery = myCookieQuery;
-                categoryPath = myCookieCat;
-                videoText = myCookieVideo;
-                Wt::log("notice") << "VideoImpl::GetCategoriesPath() read cookie: categoryPath = " << categoryPath  << " | categoryQuery = " << categoryQuery << " | videoText = __" << videoText << "__";
-            }
-        }
-    } // end if (categoryPath.empty())
-*/
     if (!videoText.empty())
     {
         isInternalPathLegal = true;
@@ -1375,6 +1167,7 @@ bool VideoImpl::GetCategoriesPath()
  */
 void VideoImpl::HandlePathChange(const std::string& path)
 {
+    if (isChanged) { return; }
     Wt::log("start") << " *** VideoImpl::HandlePathChange(path: " << path << ") | isChanged = " << isChanged << " | basePath_ = " << basePath_ << " *** "; // /video/1/1
     // set categoryQuery
     GetCategoriesPath();
@@ -1398,11 +1191,11 @@ void VideoImpl::HandlePathChange(const std::string& path)
             if (path != newCategory)
             {
                 Wt::log("notice") << "<<<<<<<<<<<<<<<<<<<<<<< VideoImpl::HandlePathChange() Change Internal Path ";
-                if (isComboVideo) // not working (ComboVideo)
+                if (ComboVideo != NULL) // not working (ComboVideo)
                 {
                     videoText = ComboVideo->currentText().toUTF8();
+                    Wt::WApplication::instance()->setInternalPath(basePath_ + newCategory + "/" + videoText, true);
                 }
-                Wt::WApplication::instance()->setInternalPath(basePath_ + newCategory + "/" + videoText, true);
             }
         } // end if (!isChanged)
     }
