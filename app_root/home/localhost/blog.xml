@@ -160,7 +160,7 @@
     </message>
 
     <message id="blog-post-brief">
-        <div style="padding: 5px;">
+        <div class="blogpost-view" style="padding: 5px;">
             <div style="border-style:outset; border-width:5px;padding: 5px;">
                 <h4>${title}</h4>
                 <div>by ${author} on ${date}</div>

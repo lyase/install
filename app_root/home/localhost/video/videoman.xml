@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<messages>
+
+    <message id="videoman-template">
+
+        <div id="videomanpagetop">
+            ${videomanpagetop}
+        </div>
+        <div id="catcombo-0">
+            ${catcombobinder-0}
+        </div>
+        <div id="catcombo-1">
+            ${catcombobinder-1}
+        </div>
+        <div id="catcombo-2">
+            ${catcombobinder-2}
+        </div>
+        <div id="catcombo-3">
+            ${catcombobinder-3}
+        </div>
+        <div id="catcombo-4">
+            ${catcombobinder-4}
+        </div>
+        <div id="catcombo-5">
+            ${catcombobinder-5}
+        </div>
+        <div id="videocombo">
+            ${videocombobinder}
+        </div>
+        <div id="videoman">
+            ${videoman}
+        </div>
+        <div id="videomanpagebottom">
+            ${videomanpagebottom}
+        </div>
+
+    </message>
+
+</messages>

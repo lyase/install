@@ -133,6 +133,7 @@
             Благодаря абстракции виджетов, можно прямиком включать клиент чата в Ваше собственное приложение, компонуя его с классами клиента и сервера.
         </p>
     </message>
+
     <message id="serverpushwarning">Note, you do not have JavaScript and this chat will have degraded functionality</message>
 
     <message id="videoman-template">

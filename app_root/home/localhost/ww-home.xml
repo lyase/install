@@ -81,6 +81,12 @@
     <message id="banner-alt">Witty Wizard CMS</message>
     <message id="copyright">Witty Wizard Content Management System (CMS)</message>
 
+    <message id="rss-url">http://wittywizard.org/ww/en/blog</message>
+    <message id="rss-title">Witty Wizard blog</message>
+    <message id="rss-description">Witty Wizard blog</message>
+
+    <message id="home-path">/home/wittywizard/</message>
+
     <message id="home.intro">
 
         <h3><span>Witty Wizard: an introduction</span></h3>
@@ -147,39 +153,5 @@
     <message id="serverpushwarning">Note, you do not have JavaScript and this chat will have degraded functionality</message>
 
 
-    <message id="videoman-template">
-
-        <div id="videomanpagetop">
-            ${videomanpagetop}
-        </div>
-        <div id="catcombo-0">
-            ${catcombobinder-0}
-        </div>
-        <div id="catcombo-1">
-            ${catcombobinder-1}
-        </div>
-        <div id="catcombo-2">
-            ${catcombobinder-2}
-        </div>
-        <div id="catcombo-3">
-            ${catcombobinder-3}
-        </div>
-        <div id="catcombo-4">
-            ${catcombobinder-4}
-        </div>
-        <div id="catcombo-5">
-            ${catcombobinder-5}
-        </div>
-        <div id="videocombo">
-            ${videocombobinder}
-        </div>
-        <div id="videoman">
-            ${videoman}
-        </div>
-        <div id="videomanpagebottom">
-            ${videomanpagebottom}
-        </div>
-
-    </message>
 
 </messages>
