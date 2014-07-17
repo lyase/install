@@ -57,10 +57,11 @@ class TheVideo : public Wt::Dbo::Dbo<TheVideo>
         std::string height;             // Height of Video
         std::string sizes;              // coma delimited array of sizes: 1080,720 | Create check box
         std::string quality;            // coma delimited array of quality: hd,lq | Create check box
-        std::string pagetop;            // page Location: iframe = fully qualified URL path to html file, xml = message ID
+        Wt::WString pagetop;            // page Location: iframe = fully qualified URL path to html file, xml = message ID
         std::string pagetopwidth;       // page Width: 40px, 100%
         std::string pagetopheight;      // page Height: 40px, 100%
-        std::string pagebottom;         // page HTML in 1 line, no returns, no quotes
+        Wt::WString pagebottom;         // page HTML in 1 line, no returns, no quotes
+        std::string pagebottomlink;     // page HTML Link
         std::string pagebottomwidth;    // page Width: 40px, 100%
         std::string pagebottomheight;   // page Height: 40px, 100%
         //
@@ -87,6 +88,7 @@ class TheVideo : public Wt::Dbo::Dbo<TheVideo>
             Wt::Dbo::field(a, pagetopwidth,     "pagetopwidth");
             Wt::Dbo::field(a, pagetopheight,    "pagetopheight");
             Wt::Dbo::field(a, pagebottom,       "pagebottom");
+            Wt::Dbo::field(a, pagebottomlink,   "pagebottomlink");
             Wt::Dbo::field(a, pagebottomwidth,  "pagebottomwidth");
             Wt::Dbo::field(a, pagebottomheight, "pagebottomheight");
         }

@@ -46,7 +46,7 @@ VideoSession::VideoSession(const std::string& appPath, Wt::Dbo::SqlConnectionPoo
                 dropTables();
             }
             createTables();
-            std::cerr << "Created database: video " << std::endl;
+            Wt::log("error") << " *** VideoSession::VideoSession() Created database: video *** ";
             t.commit();
             if (!ImportXML())
             {
@@ -292,8 +292,7 @@ bool VideoSession::ImportXML()
                 Wt::log("error") << "VideoSession::ImportXML: Missing XML Element: pagetop = " << domain_node->name() << ")";
                 return false;
             }
-            std::string mypagetop(nodeAttrib->value(), nodeAttrib->value_size());
-            videoDb->pagetop = mypagetop;
+            videoDb->pagetop = Wt::WString::fromUTF8(nodeAttrib->value());
             Wt::log("progress") << "VideoSession::ImportXML: pagetop = "; // << mypagetop;
             // pagetopwidth
             nodeAttrib = domain_node->first_attribute("pagetopwidth");
@@ -315,6 +314,17 @@ bool VideoSession::ImportXML()
             std::string mypagetopheight(nodeAttrib->value(), nodeAttrib->value_size());
             videoDb->pagetopheight = mypagetopheight;
             Wt::log("progress") << "VideoSession::ImportXML: pagetopheight = " << mypagetopheight;
+            // pagebottomlink
+            nodeAttrib = domain_node->first_attribute("pagebottomlink");
+            if (!nodeAttrib)
+            {
+                Wt::log("error") << "VideoSession::ImportXML: Missing XML Element: pagebottomlink = " << domain_node->name() << ")";
+                return false;
+            }
+            std::string mypagebottomlink(nodeAttrib->value(), nodeAttrib->value_size());
+            videoDb->pagebottomlink = mypagebottomlink;
+            //videoDb->pagebottomlink = nodeAttrib->value();
+            Wt::log("progress") << "VideoSession::ImportXML: pagebottomlink = "; // << mypagebottomlink;
             // pagebottom
             nodeAttrib = domain_node->first_attribute("pagebottom");
             if (!nodeAttrib)
@@ -322,8 +332,7 @@ bool VideoSession::ImportXML()
                 Wt::log("error") << "VideoSession::ImportXML: Missing XML Element: pagebottom = " << domain_node->name() << ")";
                 return false;
             }
-            std::string mypagebottom(nodeAttrib->value(), nodeAttrib->value_size());
-            videoDb->pagebottom = mypagebottom;
+            videoDb->pagebottom = Wt::WString::fromUTF8(nodeAttrib->value());
             Wt::log("progress") << "VideoSession::ImportXML: pagebottom = "; // << mypagebottom;
             // pagebottomwidth
             nodeAttrib = domain_node->first_attribute("pagebottomwidth");
