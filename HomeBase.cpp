@@ -210,8 +210,6 @@ Home::Home(const Wt::WEnvironment& env) : Wt::WApplication(env), homePage_(0)
     //setTitle(MyCmsDomain.MyTitle);
     // Set Locale
     setLocale("");
-    // Set Lanuage to 0
-    language_ = 0;
 } // end Home::Home
 /* ****************************************************************************
  * Destructor ~Home
@@ -226,6 +224,19 @@ Home::~Home()
 void Home::Init()
 {
     Wt::log("start") << " *** Home::Init() *** ";
+    ReInit();
+    // Set Lanuage From Path
+    SetLanguageFromPath();
+    // now set call backs
+    internalPathChanged().connect(this, &Home::SetLanguageFromPath);
+    internalPathChanged().connect(this, &Home::LogInternalPath);
+} // end void Home::Init()
+/* ****************************************************************************
+ * Reinit
+ */
+void Home::ReInit()
+{
+    Wt::log("start") << " *** Home::ReInit() *** ";
     // Set Base URL
     SetBaseURL();
     // Clear the Screen
@@ -234,19 +245,14 @@ void Home::Init()
     CreateHome();
     // Add Home Page to root
     root()->addWidget(homePage_);
-    // Set Lanuage From Path
-    SetLanguageFromPath();
-    // now set call backs
-    internalPathChanged().connect(this, &Home::SetLanguageFromPath);
-    internalPathChanged().connect(this, &Home::LogInternalPath);
-} // end void Home::Init()
+} // end void Home::ReInit()
 /* ****************************************************************************
  * Set Base URL
  * URL Schema: http or https + Root Prefix defined in deploy-path + Language Code
  */
 void Home::SetBaseURL()
 {
-    myBaseUrl = myUrlScheme + "://" + myHost + "/" + rootPrefix + "/" + languages[language_].name_ + "/";
+    myBaseUrl = myUrlScheme + "://" + myHost + "/" + rootPrefix + "/" + languages[GetDefaultLanguage()].name_ + "/";
 } // end void Home::SetBaseURL
 /* ****************************************************************************
  * Create Home
@@ -330,6 +336,7 @@ void Home::CreateHome()
         // Add Popup Item with Description.
         Wt::WMenuItem *mi = languagePopup->addItem(Wt::WString::fromUTF8(l.longDescription_));
         mi->triggered().connect(boost::bind(&Home::HandleLanguagePopup, this, i));
+        Wt::log("info") << " <<< Home::CreateHome() set Language -> " << l.longDescription_;
     }
     // Language Popdown
     Wt::WMenuItem *item = new Wt::WMenuItem(Wt::WString::tr("language"));
@@ -342,11 +349,11 @@ void Home::CreateHome()
     for (unsigned i = 0; i < themes.size(); ++i)
     {
         // Get Theme
-        const Theme& l = themes[i];
+        const Theme& t = themes[i];
         // Add Popup Item with Description.
-        Wt::WMenuItem *mit = themePopup->addItem(Wt::WString::fromUTF8(l.name_));
+        Wt::WMenuItem *mit = themePopup->addItem(Wt::WString::fromUTF8(t.name_));
         mit->triggered().connect(boost::bind(&Home::HandleThemePopup, this, i));
-        // Wt::log("notice") << " <<<<<<<<<<<<<<< Home::CreateHome() themes " << l.name_ << " >>>>>>>>>>>>>>>>>>>>> ";
+        // Wt::log("notice") << " <<<<<<<<<<<<<<< Home::CreateHome() themes " << t.name_ << " >>>>>>>>>>>>>>>>>>>>> ";
     }
     // Theme Popdown
     Wt::WMenuItem *themeItem = new Wt::WMenuItem(Wt::WString::tr("theme"));
@@ -412,7 +419,7 @@ void Home::CreateHome()
  */
 Wt::WWidget* Home::HitCounter()
 {
-    HitView* hitCounter = new HitView(*dbConnection_, languages[language_].code_);
+    HitView* hitCounter = new HitView(*dbConnection_, languages[GetDefaultLanguage()].code_);
     hitCounter->setObjectName("hitcounter");
     //
     return hitCounter->Update();
@@ -420,38 +427,23 @@ Wt::WWidget* Home::HitCounter()
 /* ****************************************************************************
  * Handle Language Popup
  * data: passed in as a index into languages
+ * assumes path: /lang
  */
 void Home::HandleLanguagePopup(int data)
 {
-    Wt::log("start") << " *** Home::HandleLanguagePopup(data: " << data << ") *** ";
+    Wt::log("start") << " *** Home::HandleLanguagePopup(data: " << data << ") language_ = " << language_ << " *** ";
+    if (language_ == data) { return; } // Nothing to do
     std::string languagePath = internalPathNextPart("/"); // Checks First path element, its allows the Language: en, ru, cn
-    std::string thePath = internalPath(); // will always be /...
-    // Ensure Legal Language Code.
-    if (IsPathLanguage(languagePath) == -1)
+    std::string thePath = internalPath(); // will always be /lang...
+    // We must replace the Old Lanuage First
+    if (!StringReplace(thePath, languagePath, languages[data].name_))
     {
-        Wt::log("notice") << "Home::HandleLanguagePopup(Language not found in internal Path. " << ")";
-        thePath = '/' + languages[data].name_ + thePath;
+        Wt::log("error") << "Home::HandleLanguagePopup(Error in String Replace " << ")";
     }
-    else // Legal Langauge Code
-    {
-        //
-        if (languages[data].name_ == languagePath)
-        {
-            Wt::log("error") << "Home::HandleLanguagePopup(Language has not changed. " << ")";
-            return; // No Reason to change anything, they picked the same Lanuage they are in
-        }
-        else
-        {
-            // We must replace the Old Lanuage First
-            if (!StringReplace(thePath, languagePath, languages[data].name_))
-            {
-                Wt::log("error") << "Home::HandleLanguagePopup(Error in String Replace " << ")";
-            }
-        }
-    }
+    Wt::log("notice") << " *** Home::HandleLanguagePopup(data: " << data << ") set thePath = " << thePath << " *** ";
+    //
     Wt::WApplication::instance()->setInternalPath(thePath,  true);
-    language_ = data;
-    SetLanguageFromPath();
+    //SetLanguageFromPath();
     Wt::log("end") << " *** Home::HandleLanguagePopup(data: " << data << ") *** ";
 } // end void Home::HandleLanguagePopup
 /* ****************************************************************************
@@ -494,92 +486,10 @@ void Home::SetWizardTheme(bool fromCookie, int index)
     }
 } // end void Home::SetWizardTheme
 /* ****************************************************************************
- * Set Language
- * index: Index to Language
- * langPath: Language Code: en, cn, ru, ...
- */
-void Home::SetLanguage(int index, std::string languageCode)
-{
-    isPathChanging = true;
-    std::string currentLanguageCode = internalPathNextPart("/"); // Checks First path statement
-    std::string thePath = internalPath(); // begins with /
-    //std::vector<std::string> parts;
-    //boost::split(parts, path, boost::is_any_of("/"));
-    Wt::log("start") << " <<<<<<<*** Home::SetLanguage(index: " << index << ", languagePath: " << languageCode << ") " << " | thePath = " << thePath;
-    #ifdef VIDEOMAN
-        VideoView *video;
-    #endif
-    if (IsPathLanguage(currentLanguageCode) == -1)
-    {
-        // Language not set
-        thePath = '/' + languageCode + thePath;
-    }
-    else
-    {
-        currentMenuItem = internalPathNextPart('/' + languageCode + '/'); // Checks second path statement: Menu Item
-        if (!currentMenuItem.empty())
-        {
-            // FIXIT Do I need to do this?
-            #ifdef VIDEOMAN
-            if (currentMenuItem == "video")
-            {
-                video = dynamic_cast<VideoView *>(findWidget("video"));
-                if (video)
-                {
-                    Wt::log("notice") << " <<<<<<< Home::SetLanguage() menu is video do return." << " | thePath = " << thePath;
-                    isPathChanging = false; // Set isPathChanging so SetLanguageFromPath will fire
-                    return; // we do not want to handle changes: FIXIT find a way to make this generic
-                }
-            }
-            #endif
-        } // end if (!currentMenuItem.empty())
-    } // end if (IsPathLanguage(currentLanguageCode) == -1)
-    Wt::log("notice") << " *** Home::SetLanguage(index: " << index << ", languagePath: " << languageCode << ") " << " | thePath = " << thePath << " | currentMenuItem = " << currentMenuItem;
-    // << " | Wt::WEnvironment::locale() = " << Wt::WEnvironment::locale()
-    // Get Language
-    const Lang& theLanguage = languages[index];
-    // Set Local
-    setLocale(theLanguage.name_);
-    // Change Menu Base Path
-    mainMenu_->setInternalBasePath('/' + languageCode + '/');
-    // Change Path
-    Wt::WApplication::instance()->setInternalPath(thePath, true);
-    //
-    #ifdef BLOGMAN
-    BlogView *blog = dynamic_cast<BlogView *>(findWidget("blog"));
-    if (blog)
-    {
-        if (!thePath.find('/' + languageCode + "blog/"))
-        {
-            Wt::log("notice") << "Home::SetLanguage() for blog " << index <<  " | thePath = " << thePath << "blog/)";
-            blog->SetInternalBasePath(thePath + "blog/");
-        }
-    }
-    #endif // BLOGMAN
-    //
-    #ifdef VIDEOMAN
-    video = dynamic_cast<VideoView *>(findWidget("video"));
-    if (video)
-    {
-        if (!thePath.find('/' + languageCode + "video/"))
-        {
-            Wt::log("notice") << "Home::SetLanguage() for video " << index <<  " | thePath = " << thePath << "video/)";
-            video->SetInternalBasePath(thePath + "video/");
-        }
-    }
-    #endif
-    UpdateTitle();
-    if (language_ != index)
-    {
-        language_ = index; // Set language_ to current Language
-        Init();
-    }
-    language_ = index; // Set language_ to current Language
-    homeTemplate_->bindWidget("hitcounter", HitCounter());
-    isPathChanging = false; // Set isPathChanging so SetLanguageFromPath will fire
-} // end void Home::SetLanguage
-/* ****************************************************************************
- * SetLanguageFromPath
+ * Set Language From Path
+ * Path: prefix does not show up in path
+ * Path: /language/module/...
+ *
  * Fix video and other app paths
  */
 void Home::SetLanguageFromPath()
@@ -590,49 +500,175 @@ void Home::SetLanguageFromPath()
         return;
     }
     //
+    std::string languageName = internalPathNextPart("/"); // Checks First Argument
+    //
     std::string thePath = internalPath(); // begins with /
+    // Get a Valid Language, returns default if not found
+    const Lang& theLanguage = GetLanguage(languageName);
+    languageName = theLanguage.name_;
+    std::string newPath = "/" + languageName;
+    //
+    int newLanguage = GetLanguageIndex(languageName); // Set to default Language Index if not set
+    //
     std::vector<std::string> parts;
     boost::split(parts, thePath, boost::is_any_of("/"));
-    // path = /en/video/IAM/00-02-N-IAM | parts.size()=5 | parts[0]= | parts[1]=en | parts[2]=video | parts[3]=IAM | parts[4]=00-02-N-IAM
-    Wt::log("notice") << " @@@@@@@@@@ Home::SetLanguageFromPath() path = " << thePath << " | parts.size()=" << parts.size() << " | parts[0]=" << parts[0] << " | parts[1]=" << parts[1];
-    // 0 Categories 1 Video
-    if (parts.size() == 1)
-    {
-    }
-    //
-    std::string languageCode = internalPathNextPart("/"); // Checks First
-    //
-    int newLanguage = 0;
-    // If Language Code is not set, set it to a Default Language
-    if (languageCode.empty())
-    {
 
-        // Get Language
-        const Lang& theLanguage = languages[language_];
-        // Set Local
-        languageCode = theLanguage.name_;
-        /*
-        languageCode = defaultLanguage;
-        language_ = defaultLanguageIndex;
-        */
-        Wt::log("start") << " *** Home::SetLanguageFromPath() languageCode empty -> set languageCode to default = " << languageCode << " | internalPathNextPart = " << internalPathNextPart("/")  << " | thePath = " << thePath << " *** ";
+    Wt::log("start") << " Home::SetLanguageFromPath() language_ = " << language_ << " | newLanguage = " << newLanguage;
+
+    if (language_ != newLanguage)
+    {
+        Wt::log("start") << " Home::SetLanguageFromPath() Language Change ~ path = " << thePath << " | parts.size()=" << parts.size() << " | parts[0]=" << parts[0] << " | parts[1]=" << parts[1];
     }
     else
     {
-        for (unsigned i = 0; i < languages.size(); ++i)
+        Wt::log("start") << " Home::SetLanguageFromPath() No Language Change ~ path = " << thePath << " | parts.size()=" << parts.size() << " | parts[0]=" << parts[0] << " | parts[1]=" << parts[1];
+    }
+
+    // path = /                      | parts.size()=2 | parts[0]= | parts[1]=
+    // path = /en                    | parts.size()=2 | parts[0]= | parts[1]=en
+    // path = /en/video/Series/Video | parts.size()=5 | parts[0]= | parts[1]=en | parts[2]=video | parts[3]=Series | parts[4]=Video
+
+    std::string moduleName = "";
+    if (parts.size() > 2)
+    {
+        moduleName = parts[2];
+    }
+    // If Language changed, make new Path
+    if (language_ == newLanguage)
+    {
+        newPath = thePath;
+    }
+    else
+    {
+        for (unsigned i = 2; i < parts.size(); ++i)
         {
-            if (languages[i].name_ == languageCode)
+            newPath = newPath + "/" + parts[i];
+        }
+    }
+
+    Wt::log("start") << " *** Home::SetLanguageFromPath() languageCode set to = " << languageName << " | internalPathNextPart = " << internalPathNextPart("/")  << " | newPath = " << newPath << " *** ";
+
+    //
+    isPathChanging = true;
+    #ifdef VIDEOMAN
+        VideoView *video;
+        if (moduleName == "video")
+        {
+            video = dynamic_cast<VideoView *>(findWidget("video"));
+            if (video)
             {
-                newLanguage = i;
-                Wt::log("start") << " *** Home::SetLanguageFromPath() languageCode = " << languageCode << " found at " << i << " | thePath = " << thePath << " ***"; // en, cn, ru...
-                break;
+                if (language_ == newLanguage)
+                {
+                    Wt::log("notice") << " <<<<<<< Home::SetLanguageFromPath() menu is video do return." << " | thePath = " << thePath;
+                    isPathChanging = false; // Set isPathChanging so SetLanguageFromPath will fire
+                    return; // we do not want to handle changes: FIXIT find a way to make this generic
+                }
+            }
+        }
+    #endif
+    if (language_ != newLanguage)
+    {
+        // Set Local
+        setLocale(theLanguage.name_);
+        //setLocale(theLanguage.code_);
+    }
+    //
+    #ifdef BLOGMAN
+    BlogView *blog = dynamic_cast<BlogView *>(findWidget("blog"));
+    if (blog)
+    {
+        if (moduleName == "blog")
+        {
+            if (language_ != newLanguage)
+            {
+                Wt::log("notice") << "Home::SetLanguageFromPath() for blog " << languageName <<  " | newPath = " << newPath;
+                blog->SetInternalBasePath("/" + languageName + "/blog/");
             }
         }
     }
-    SetLanguage(newLanguage, languageCode);
+    #endif // BLOGMAN
+    //
+    #ifdef VIDEOMAN
+    video = dynamic_cast<VideoView *>(findWidget("video"));
+    if (video)
+    {
+        if (moduleName == "video")
+        {
+            if (language_ != newLanguage)
+            {
+                Wt::log("notice") << "Home::SetLanguageFromPath() for video " << languageName <<  " | newPath = " << newPath;
+                video->SetInternalBasePath("/" + languageName + "/video/");
+            }
+        }
+    }
+    #endif
+    UpdateTitle();
+    if (language_ != newLanguage)
+    {
+        language_ = newLanguage; // Set language_ to current Language
+        ReInit();
+    }
+    // Change Menu Base Path
+    mainMenu_->setInternalBasePath(theLanguage.name_);
+    // Change Path
+    Wt::WApplication::instance()->setInternalPath(newPath, true);
+    //
+    homeTemplate_->bindWidget("hitcounter", HitCounter());
     // Set Theme
     SetWizardTheme(true, 0);
+    Wt::log("end") << "Home::SetLanguageFromPath()";
+    isPathChanging = false; // Set isPathChanging so SetLanguageFromPath will fire
 } // end void Home::SetLanguageFromPath
+/* ****************************************************************************
+ * IsPathLanguage
+ * langPath: pass in first path string
+ * return -1 if not found, else return index of Language
+ */
+int Home::IsPathLanguage(std::string langPath)
+{
+    int foundLanguageIndex = -1;
+    for (unsigned i = 0; i < languages.size(); ++i)
+    {
+        if (languages[i].name_ == langPath)
+        {
+            foundLanguageIndex = i;
+            Wt::log("notice") << " *** Home::IsPathLanguage() langPath = " << langPath << " found at " << i << " ***"; // en, cn, ru ...
+            break;
+        }
+    }
+    return foundLanguageIndex;
+} // end Home::IsPathLanguage
+/* ****************************************************************************
+ * GetLanguageIndex
+ */
+int Home::GetLanguageIndex(std::string languageName)
+{
+    int newLanguageIndex = IsPathLanguage(languageName);
+    if (newLanguageIndex == -1)
+    {
+        newLanguageIndex = defaultLanguageIndex;
+    }
+    return newLanguageIndex;
+} // end Home::GetLanguageIndex
+/* ****************************************************************************
+ * GetLanguage
+ */
+const Lang& Home::GetLanguage(std::string languageName)
+{
+    return languages[GetLanguageIndex(languageName)];
+} // end Home::GetLanguage
+/* ****************************************************************************
+ * GetDefaultLanguage
+ */
+int Home::GetDefaultLanguage()
+{
+    int newLanguageIndex = language_;
+    if (newLanguageIndex == -1)
+    {
+        newLanguageIndex = defaultLanguageIndex;
+    }
+    return newLanguageIndex;
+} // end Home::GetDefaultLanguage
 /* ****************************************************************************
  * Update Title
  */
@@ -704,10 +740,12 @@ Wt::WWidget *Home::Blog()
 Wt::WWidget *Home::VideoMan()
 {
     //
+    Wt::log("start") << " *** Home::VideoMan() internalPath = " << internalPath();
     const Lang& l = languages[language_];
     std::string langPath = l.name_;
     VideoView* thisVideo = new VideoView(appRoot() + "home/" + domainName + "/video/", "/" + langPath + "/video/", *dbConnection_, l.code_);
     thisVideo->setObjectName("video");
+    Wt::log("end") << " *** Home::VideoMan()";
     return thisVideo;
 } // end Wt::WWidget *Home::VideoMan
 #endif // VIDEOMAN
@@ -718,25 +756,6 @@ Wt::WWidget* Home::Admin()
 {
     return new Wt::WText(Wt::WString::tr("admin"));
 } // end void Home::Admin
-/* ****************************************************************************
- * IsPathLanguage
- * langPath: pass in first path string
- * return -1 if not found, else return index of Language
- */
-int Home::IsPathLanguage(std::string langPath)
-{
-    int foundLanguage = -1;
-    for (unsigned i = 0; i < languages.size(); ++i)
-    {
-        if (languages[i].name_ == langPath)
-        {
-            foundLanguage = i;
-            Wt::log("notice") << " *** Home::IsPathLanguage() langPath = " << langPath << " found at " << i << " ***"; // en, cn, ru ...
-            break;
-        }
-    }
-    return foundLanguage;
-} // end Home::IsPathLanguage
 /* ****************************************************************************
  * chat
  */
