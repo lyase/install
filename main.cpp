@@ -4,8 +4,8 @@
  * See the LICENSE file for terms of use.
  *
  * Modified for Witty Wizard
- * Last Update: 22 May 2014
- * Version: 1.0.0
+ * Last Update: 14 July 2014
+ * Version: see MyVersion below
  *
  */
 
@@ -25,6 +25,10 @@ typedef std::map <std::string, boost::any> theConnectionPool;
 theConnectionPool myConnectionPool;
 typedef std::map <std::string, std::string> theRssFeed;
 */
+/* ****************************************************************************
+ * Global Version Number
+ */
+std::string MyVersion = "1.0.1 - 14 July 2014";
 /* ****************************************************************************
  * Global Variable
  * root Prefix: Used to set the URL Path: http:domain.tdl\prefix\root-path
@@ -101,7 +105,6 @@ std::map <std::string, std::string> myDefaultTheme;
  * FIXIT make admin function to change this on the fly *
  */
 bool initDb = false;
-std::string MyVersion = "1.0.0";
 /* ****************************************************************************
  * Global functions
  */
