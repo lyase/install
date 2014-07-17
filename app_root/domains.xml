@@ -1,4 +1,4 @@
 <?xml version="1.0" encoding="ISO-8859-1" ?>
 <domains>
-    <domain domainHost="domain.tdl" domainPath="/home/user-account/" dbName="DataBase-Name" dbUser="DataBase-User" dbPassword="DataBase-Password" dbPort="db Port" gaAccount="UA-xxxxxxxx-x" gasAccount="pub-xxxxxxxxxxxxxxxx" myIncludes="home|chat|blog|about|contact|video" defaultTheme="blue"></domain>
+    <domain domainHost="domain.tdl" domainPath="/home/user-account/" dbName="DataBase-Name" dbUser="DataBase-User" dbPassword="DataBase-Password" dbPort="db Port" gaAccount="UA-xxxxxxxx-x" gasAccount="pub-xxxxxxxxxxxxxxxx" myIncludes="|home|chat|blog|about|contact|video|" defaultTheme="blue"></domain>
 </domains>
