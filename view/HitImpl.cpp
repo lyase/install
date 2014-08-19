@@ -95,10 +95,10 @@ std::string HitImpl::getHits()
 
     try
     {
-        Wt::WLocale myString = Wt::WLocale(theLocale.c_str());
+        Wt::WLocale myFormater = Wt::WLocale(theLocale.c_str());
         // Note: this only works if you set the Separator, use case to set it
-        myString.setGroupSeparator(",");
-        std::string myReturn = myString.toString(hits).toUTF8();
+        myFormater.setGroupSeparator(",");
+        std::string myReturn = myFormater.toString((int)hits).toUTF8();
         return myReturn;
         /*
          * This requires locale to be installed and configured on server
@@ -143,10 +143,10 @@ std::string HitImpl::getUniqueHits()
 
     try
     {
-        Wt::WLocale myString = Wt::WLocale(theLocale.c_str());
+        Wt::WLocale myFormater = Wt::WLocale(theLocale.c_str());
         // Note: this only works if you set the Separator, use case to set it
-        myString.setGroupSeparator(",");
-        std::string myReturn = myString.toString(uniqueHits).toUTF8();
+        myFormater.setGroupSeparator(",");
+        std::string myReturn = myFormater.toString((int)uniqueHits).toUTF8();
         return myReturn;
         /*
          * This requires locale to be installed and configured on server
